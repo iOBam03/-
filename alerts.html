@@ -3,12 +3,73 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>แจ้งเตือนราคา — ระบบจัดซื้อวัสดุก่อสร้าง</title>
+  <title>เปรียบเทียบราคากับประวัติการซื้อ — ระบบจัดซื้อวัสดุก่อสร้าง</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    /* Inline styles for this page (จะค่อยย้ายไป style.css ทีหลังได้) */
+    .price-cell { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; }
+    .price-delta { font-size: 11.5px; padding: 2px 8px; border-radius: 999px; font-weight: 600; }
+    .price-delta.cheaper { background: var(--color-success-soft); color: var(--color-success); }
+    .price-delta.slightly { background: var(--color-warning-soft); color: var(--color-warning); }
+    .price-delta.much     { background: var(--color-danger-soft);  color: var(--color-danger); }
+
+    .history-modal-overlay {
+      position: fixed; inset: 0; background: rgba(15, 23, 42, 0.55);
+      display: none; align-items: center; justify-content: center; z-index: 1000;
+    }
+    .history-modal-overlay.open { display: flex; }
+    .history-modal {
+      background: var(--color-surface); border-radius: var(--radius-lg);
+      width: 92%; max-width: 820px; max-height: 88vh; overflow: hidden;
+      box-shadow: var(--shadow-lg); display: flex; flex-direction: column;
+    }
+    .history-modal-header {
+      padding: 18px 22px; border-bottom: 1px solid var(--color-border);
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .history-modal-body { padding: 20px 22px; overflow-y: auto; }
+    .history-modal-footer { padding: 14px 22px; border-top: 1px solid var(--color-border); display: flex; justify-content: flex-end; gap: 8px; }
+    .close-btn { background: none; border: none; cursor: pointer; padding: 6px; color: var(--color-text-secondary); border-radius: var(--radius-sm); }
+    .close-btn:hover { background: var(--color-bg); color: var(--color-text); }
+
+    .stat-mini-grid {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 16px;
+    }
+    .stat-mini {
+      padding: 12px; background: var(--color-surface-alt);
+      border: 1px solid var(--color-border); border-radius: var(--radius-md);
+    }
+    .stat-mini .lbl { font-size: 11.5px; color: var(--color-text-muted); margin-bottom: 4px; }
+    .stat-mini .val { font-size: 17px; font-weight: 700; color: var(--color-text); }
+    .stat-mini .sub { font-size: 11px; color: var(--color-text-secondary); margin-top: 2px; }
+
+    .project-chip {
+      display: inline-block; padding: 2px 8px; border-radius: 999px;
+      background: var(--color-primary-soft); color: var(--color-primary);
+      font-size: 11.5px; font-weight: 600; margin-right: 4px;
+    }
+    .cheapest-tag {
+      display: inline-block; padding: 1px 7px; border-radius: 4px;
+      background: var(--color-success-soft); color: var(--color-success);
+      font-size: 11px; font-weight: 600; margin-left: 6px;
+    }
+    .row-clickable { cursor: pointer; }
+    .row-clickable:hover { background: var(--color-surface-alt); }
+
+    .recommendation {
+      padding: 10px 14px; border-radius: var(--radius-md); margin-top: 12px;
+      display: flex; gap: 10px; align-items: flex-start;
+      font-size: 13px; line-height: 1.5;
+    }
+    .recommendation.cheaper { background: var(--color-success-soft); color: #166534; }
+    .recommendation.slightly { background: var(--color-warning-soft); color: #92400e; }
+    .recommendation.much     { background: var(--color-danger-soft);  color: #991b1b; }
+    .recommendation svg { flex-shrink: 0; margin-top: 1px; }
+  </style>
 </head>
 <body>
   <div class="app-shell">
@@ -31,7 +92,7 @@
         <ul class="sidebar-nav">
           <li><a href="suppliers.html"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-6 9 6v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg>ผู้ขายวัสดุ/ผู้รับเหมา</a></li>
           <li><a href="site-materials.html"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="M3.27 6.96L12 12.01l8.73-5.05M12 22.08V12"/></svg>วัสดุ ณ ไซต์งาน</a></li>
-          <li><a href="alerts.html" class="active"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>แจ้งเตือนราคา</a></li>
+          <li><a href="alerts.html" class="active"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 14l4-4 4 4 5-5"/></svg>เปรียบเทียบราคา</a></li>
         </ul>
       </div>
       <div class="sidebar-section">
@@ -50,14 +111,14 @@
       <div class="topbar">
         <div class="topbar-left">
           <div>
-            <div class="breadcrumb">หน้าหลัก / <strong style="color:#475569">แจ้งเตือนราคา</strong></div>
-            <div class="page-title">การแจ้งเตือนความผิดปกติของราคาวัสดุ</div>
+            <div class="breadcrumb">หน้าหลัก / <strong style="color:#475569">เปรียบเทียบราคา</strong></div>
+            <div class="page-title">เปรียบเทียบราคาซื้อใหม่กับประวัติการซื้อจริง</div>
           </div>
         </div>
         <div class="topbar-right">
           <div class="search-box">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-            <input type="text" placeholder="ค้นหาการแจ้งเตือน...">
+            <input type="text" placeholder="ค้นหารายการ...">
           </div>
           <button class="icon-btn" title="การแจ้งเตือน">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
@@ -74,53 +135,53 @@
       <main class="content">
         <div class="page-header">
           <div>
-            <h1>ระบบแจ้งเตือนราคาวัสดุก่อสร้างผิดปกติ</h1>
-            <div class="subtitle">ตรวจจับการเปลี่ยนแปลงราคาวัสดุที่ผิดปกติจากเกณฑ์มาตรฐาน เพื่อให้ทีมบริหารต้นทุนโครงการตรวจสอบทันท่วงทีก่อนกระทบงบประมาณ</div>
-          </div>
-          <div style="display:flex;gap:8px;">
-            <button class="btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>ตั้งค่าเกณฑ์</button>
+            <h1>เปรียบเทียบราคากับประวัติการซื้อ</h1>
+            <div class="subtitle">
+              ระบบจะเก็บ "ราคาซื้อจริง" ของทุกโครงการไว้เป็นประวัติ เมื่อมีการสั่งซื้อใหม่ ระบบจะเทียบราคาที่เสนอกับประวัติ เพื่อช่วยตัดสินใจว่าจะสั่งหรือต่อรอง
+            </div>
           </div>
         </div>
 
         <div id="kpi-container"></div>
 
+        <!-- Main comparison table -->
         <div class="card mb-4">
           <div class="card-header">
             <div>
-              <h3>การแจ้งเตือนทั้งหมด</h3>
-              <div class="sub">เรียงตามความรุนแรงและเวลาที่ตรวจพบ · ระบุโครงการที่ได้รับผลกระทบ</div>
+              <h3>รายการที่กำลังจะสั่งซื้อ vs ประวัติการซื้อจริง</h3>
+              <div class="sub">คลิกที่รายการเพื่อดูประวัติการซื้อย้อนหลังทั้งหมด</div>
             </div>
-            <div class="tabs" style="margin-bottom:0;border-bottom:none;gap:0;">
-              <div class="tab active" style="padding:6px 14px;font-size:12px;">ทั้งหมด</div>
-              <div class="tab" style="padding:6px 14px;font-size:12px;">รอตรวจสอบ</div>
-              <div class="tab" style="padding:6px 14px;font-size:12px;">กำลังตรวจสอบ</div>
-              <div class="tab" style="padding:6px 14px;font-size:12px;">แก้ไขแล้ว</div>
+            <div class="legend">
+              <div class="legend-item"><span class="legend-swatch" style="background:var(--color-success)"></span>ถูกกว่าประวัติ</div>
+              <div class="legend-item"><span class="legend-swatch" style="background:var(--color-warning)"></span>แพงกว่าเล็กน้อย (≤10%)</div>
+              <div class="legend-item"><span class="legend-swatch" style="background:var(--color-danger)"></span>แพงกว่ามาก (&gt;10%)</div>
             </div>
           </div>
-          <div class="card-body no-pad" id="alerts-table-container"></div>
+          <div class="card-body no-pad" id="comparison-table-container"></div>
         </div>
 
+        <!-- Bottom: insights summary -->
         <div class="grid-2">
           <div class="card">
             <div class="card-header">
               <div>
-                <h3>แนวโน้มการแจ้งเตือน 30 วัน</h3>
-                <div class="sub">จำนวนการแจ้งเตือนราคาวัสดุผิดปกติรายวัน</div>
+                <h3>สรุปตามหมวดวัสดุ</h3>
+                <div class="sub">จำนวนรายการที่แพงกว่าประวัติ ในแต่ละหมวด</div>
               </div>
             </div>
             <div class="card-body">
-              <div id="trend-chart-container"></div>
+              <div id="category-summary-container"></div>
             </div>
           </div>
           <div class="card">
             <div class="card-header">
               <div>
-                <h3>หมวดวัสดุที่มีการแจ้งเตือนบ่อย</h3>
-                <div class="sub">30 วันย้อนหลัง · เรียงตามจำนวนครั้ง</div>
+                <h3>โครงการที่ต้องเฝ้าระวัง</h3>
+                <div class="sub">เรียงตามมูลค่าส่วนต่างที่อาจประหยัดได้</div>
               </div>
             </div>
             <div class="card-body">
-              <div id="category-chart-container"></div>
+              <div id="project-summary-container"></div>
             </div>
           </div>
         </div>
@@ -128,8 +189,27 @@
 
       <footer class="app-footer">
         <span>© 2569 Construction Procurement · เวอร์ชัน 1.0.0</span>
-        <span>เกณฑ์แจ้งเตือน: ±10% จากราคาเฉลี่ย 30 วัน</span>
+        <span>เกณฑ์เปรียบเทียบ: ราคาเฉลี่ยจากประวัติการซื้อจริงทุกโครงการ</span>
       </footer>
+    </div>
+  </div>
+
+  <!-- Modal: ประวัติการซื้อย้อนหลัง -->
+  <div class="history-modal-overlay" id="historyModal">
+    <div class="history-modal">
+      <div class="history-modal-header">
+        <div>
+          <h3 id="modalTitle" style="font-size:16px;font-weight:600;">ประวัติการซื้อ</h3>
+          <div class="sub" id="modalSubtitle" style="font-size:12px;color:var(--color-text-secondary);margin-top:2px;"></div>
+        </div>
+        <button class="close-btn" onclick="closeHistoryModal()">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div class="history-modal-body" id="modalBody"></div>
+      <div class="history-modal-footer">
+        <button class="btn" onclick="closeHistoryModal()">ปิด</button>
+      </div>
     </div>
   </div>
 
@@ -142,126 +222,431 @@
     const D = window.SAMPLE_DATA;
     const on = DemoController.isOn();
 
+    /* ---------- Helper: คำนวณ stats จาก purchaseHistory ---------- */
+    function getHistoryStats(materialName) {
+      const h = D.purchaseHistory[materialName];
+      if (!h || h.records.length === 0) return null;
+      const prices = h.records.map(r => r.pricePerUnit);
+      const sum = prices.reduce((a, b) => a + b, 0);
+      const avg = sum / prices.length;
+      const min = Math.min(...prices);
+      const max = Math.max(...prices);
+      // หาโครงการที่ซื้อถูกสุด
+      const cheapest = h.records.reduce((a, b) => a.pricePerUnit < b.pricePerUnit ? a : b);
+      return {
+        avg, min, max,
+        cheapestProject: cheapest.project,
+        cheapestPrice: cheapest.pricePerUnit,
+        cheapestDate: cheapest.date,
+        recordCount: h.records.length,
+        unit: h.unit,
+        category: h.category,
+        records: h.records
+      };
+    }
+
+    /* ---------- Helper: จัดระดับราคาเทียบกับประวัติ ---------- */
+    function classify(newPrice, stats) {
+      if (!stats) return { level: 'unknown', label: 'ไม่มีประวัติ', deltaPct: 0 };
+      const deltaPct = ((newPrice - stats.avg) / stats.avg) * 100;
+      if (deltaPct <= 0) return { level: 'cheaper',  label: 'ถูกกว่าประวัติ', deltaPct };
+      if (deltaPct <= 10) return { level: 'slightly', label: 'แพงกว่าเล็กน้อย', deltaPct };
+      return { level: 'much', label: 'แพงกว่ามาก', deltaPct };
+    }
+
+    /* ---------- Helper: คำแนะนำตามระดับ ---------- */
+    function getRecommendation(level, stats, deltaPct) {
+      const savingsPerUnit = stats ? Math.max(0, stats.avg) : 0;
+      if (level === 'cheaper') {
+        return `ราคานี้ถูกกว่าค่าเฉลี่ย ${Math.abs(deltaPct).toFixed(1)}% — สั่งซื้อได้เลย ถือว่าคุ้ม`;
+      }
+      if (level === 'slightly') {
+        return `ราคานี้แพงกว่าค่าเฉลี่ย ${deltaPct.toFixed(1)}% — อยู่ในช่วงยอมรับได้ แต่ควรลองต่อรองเพื่อให้ใกล้เคียงราคาเฉลี่ย`;
+      }
+      if (level === 'much') {
+        return `ราคานี้แพงกว่าค่าเฉลี่ย ${deltaPct.toFixed(1)}% — ควรต่อรองให้ลดลงอย่างน้อย 10% หรือพิจารณาเปลี่ยนผู้ขาย`;
+      }
+      return 'ไม่มีประวัติการซื้อในระบบ ควรสอบถามราคาตลาดเพิ่มเติม';
+    }
+
+    /* ---------- Render: KPI ---------- */
     function renderKPIs() {
       const c = document.getElementById('kpi-container');
       if (!on) {
         c.innerHTML = renderEmptyState({
-          title: 'ยังไม่มีการแจ้งเตือน',
-          message: 'ระบบจะแจ้งเตือนเมื่อตรวจพบราคาวัสดุที่เปลี่ยนแปลงผิดปกติจากเกณฑ์ที่กำหนด'
+          title: 'ยังไม่มีรายการเปรียบเทียบ',
+          message: 'เมื่อมีรายการสั่งซื้อใหม่ ระบบจะเปรียบเทียบราคาที่เสนอกับประวัติการซื้อจริงในโครงการก่อนหน้า'
         });
         return;
       }
       c.className = 'kpi-grid';
-      const a = D.priceAlerts;
-      const high = a.filter(x => x.severity === 'high').length;
-      const pending = a.filter(x => x.status === 'pending' || x.status === 'investigating').length;
-      const impactedProjects = new Set(a.map(x => x.project).filter(Boolean)).size;
+
+      const plans = D.purchasePlans.map(p => {
+        const stats = getHistoryStats(p.material);
+        const cls = classify(p.proposedPrice, stats);
+        return { ...p, stats, classification: cls, savings: stats ? (p.proposedPrice - stats.avg) * p.quantity : 0 };
+      });
+
+      const totalPlans = plans.length;
+      const expensivePlans = plans.filter(p => p.classification.level === 'much').length;
+      const totalOverspend = plans.filter(p => p.savings > 0).reduce((sum, p) => sum + p.savings, 0);
+      const totalSpend = plans.reduce((sum, p) => sum + p.proposedPrice * p.quantity, 0);
+      const topConcernProject = Object.entries(
+        plans.reduce((acc, p) => {
+          acc[p.project] = (acc[p.project] || 0) + (p.savings > 0 ? p.savings : 0);
+          return acc;
+        }, {})
+      ).sort((a, b) => b[1] - a[1])[0];
+
       c.innerHTML = `
-        <div class="kpi danger"><div class="accent-bar"></div><div class="label">แจ้งเตือนทั้งหมด</div><div class="value">${a.length}<span class="unit">รายการ</span></div><div class="delta down">7 วันล่าสุด</div></div>
-        <div class="kpi danger"><div class="accent-bar"></div><div class="label">ระดับรุนแรงสูง</div><div class="value">${high}<span class="unit">รายการ</span></div><div class="delta down">ส่งผลต่อ ${impactedProjects} โครงการ</div></div>
-        <div class="kpi warning"><div class="accent-bar"></div><div class="label">รอดำเนินการ</div><div class="value">${pending}<span class="unit">รายการ</span></div><div class="delta neutral">ยังไม่ได้รับการแก้ไข</div></div>
-        <div class="kpi success"><div class="accent-bar"></div><div class="label">แก้ไขแล้ว (30 วัน)</div><div class="value">28<span class="unit">รายการ</span></div><div class="delta up">+15% จากเดือนก่อน</div></div>
+        <div class="kpi"><div class="accent-bar"></div><div class="label">รายการที่กำลังจะสั่งซื้อ</div><div class="value">${totalPlans}<span class="unit">รายการ</span></div><div class="delta neutral">มูลค่ารวม ${fmt.currencyShort(totalSpend)}</div></div>
+        <div class="kpi danger"><div class="accent-bar"></div><div class="label">แพงกว่าประวัติมาก</div><div class="value">${expensivePlans}<span class="unit">รายการ</span></div><div class="delta down">ต้องต่อรองก่อนสั่ง</div></div>
+        <div class="kpi warning"><div class="accent-bar"></div><div class="label">ส่วนต่างที่อาจประหยัดได้</div><div class="value">${fmt.currencyShort(totalOverspend)}</div><div class="delta neutral">ถ้าซื้อตามราคาเฉลี่ย</div></div>
+        <div class="kpi success"><div class="accent-bar"></div><div class="label">โครงการที่ต้องเฝ้าระวัง</div><div class="value" style="font-size:18px;">${topConcernProject ? topConcernProject[0] : '-'}</div><div class="delta neutral">${topConcernProject ? 'ส่วนต่าง ' + fmt.currencyShort(topConcernProject[1]) : ''}</div></div>
       `;
     }
 
-    function renderTable() {
-      const c = document.getElementById('alerts-table-container');
-      if (!on) { c.innerHTML = renderEmptyState({ title: 'ยังไม่มีการแจ้งเตือน', message: 'รายการแจ้งเตือนทั้งหมดจะแสดงที่นี่ เมื่อมีการตรวจพบราคาวัสดุผิดปกติ' }); return; }
-      const sorted = [...D.priceAlerts].sort((a, b) => {
-        const sevOrder = { high: 0, medium: 1, low: 2 };
-        if (sevOrder[a.severity] !== sevOrder[b.severity]) return sevOrder[a.severity] - sevOrder[b.severity];
-        return new Date(b.detected) - new Date(a.detected);
+    /* ---------- Render: Comparison Table ---------- */
+    function renderComparisonTable() {
+      const c = document.getElementById('comparison-table-container');
+      if (!on) { c.innerHTML = renderEmptyState({ title: 'ยังไม่มีรายการ', message: 'ตารางเปรียบเทียบจะแสดงเมื่อมีรายการสั่งซื้อใหม่' }); return; }
+
+      const plans = D.purchasePlans.map(p => {
+        const stats = getHistoryStats(p.material);
+        const cls = classify(p.proposedPrice, stats);
+        return { ...p, stats, classification: cls, savings: stats ? (p.proposedPrice - stats.avg) * p.quantity : 0 };
       });
+
+      // เรียงตามความรุนแรง: แพงกว่ามากก่อน
+      const order = { much: 0, slightly: 1, cheaper: 2, unknown: 3 };
+      plans.sort((a, b) => order[a.classification.level] - order[b.classification.level]);
+
       c.innerHTML = `
         <table class="data-table">
           <thead><tr>
-            <th>รหัส</th><th>วัสดุ</th><th>ผู้ขาย</th><th>โครงการที่ได้รับผลกระทบ</th>
-            <th class="num">ราคาเดิม</th><th class="num">ราคาใหม่</th><th class="num">% เปลี่ยนแปลง</th>
-            <th>ระดับ</th><th>สถานะ</th><th>ตรวจพบเมื่อ</th><th></th>
+            <th>รายการที่จะสั่งซื้อ</th>
+            <th>โครงการ / งวด</th>
+            <th>ผู้ขาย</th>
+            <th class="num">ราคาที่เสนอ</th>
+            <th class="num">ราคาเฉลี่ย (ประวัติ)</th>
+            <th class="num">ส่วนต่าง</th>
+            <th>โครงการที่ซื้อถูกสุด</th>
+            <th>สถานะ</th>
+            <th></th>
           </tr></thead>
           <tbody>
-          ${sorted.map(a => {
-            const isUp = a.change > 0;
-            const sevPill = a.severity === 'high' ? 'danger' : a.severity === 'medium' ? 'warning' : 'info';
-            const sevLabel = a.severity === 'high' ? 'สูง' : a.severity === 'medium' ? 'ปานกลาง' : 'ต่ำ';
+          ${plans.map(p => {
+            const cls = p.classification;
+            const deltaSign = cls.deltaPct > 0 ? '+' : '';
+            const deltaText = cls.deltaPct !== 0 ? `${deltaSign}${cls.deltaPct.toFixed(1)}%` : '—';
+            const totalCost = p.proposedPrice * p.quantity;
+            const cheapestProj = p.stats ? p.stats.cheapestProject : '-';
+            const cheapestPrice = p.stats ? p.stats.cheapestPrice : '-';
+            const avgPrice = p.stats ? p.stats.avg : '-';
+
             return `
-              <tr>
-                <td style="font-family:monospace;font-size:12px;color:#64748b;">${a.id}</td>
+              <tr class="row-clickable" onclick="openHistoryModal('${p.material.replace(/'/g, "\\'")}', '${p.project}', ${p.proposedPrice})">
                 <td>
-                  <strong>${a.product}</strong>
-                  <div style="font-size:11.5px;color:#94a3b8;">${a.category}</div>
+                  <strong>${p.material}</strong>
+                  <div style="font-size:11.5px;color:#94a3b8;">${p.category} · ${fmt.num(p.quantity)} ${p.stats ? p.stats.unit : ''}</div>
                 </td>
-                <td style="font-size:12.5px;">${a.supplier}</td>
-                <td style="font-size:12px;color:#475569;">${a.project || '<span style="color:#94a3b8;">ทุกโครงการ</span>'}</td>
-                <td class="num">${fmt.currency(a.oldPrice)}</td>
-                <td class="num"><strong>${fmt.currency(a.newPrice)}</strong></td>
-                <td class="num"><strong style="color:${isUp ? '#dc2626' : '#16a34a'};">${isUp ? '▲' : '▼'} ${Math.abs(a.change).toFixed(2)}%</strong></td>
-                <td><span class="pill ${sevPill}">${sevLabel}</span></td>
-                <td>${fmt.statusPill(a.status)}</td>
-                <td style="font-size:12px;color:#64748b;">${fmt.date(a.detected)}</td>
                 <td>
-                  <button class="btn btn-sm">ตรวจสอบ</button>
+                  <strong>${p.project}</strong>
+                  <div style="font-size:11.5px;color:#64748b;">${p.forPhase}</div>
                 </td>
-              </tr>`;
+                <td style="font-size:12px;">${p.supplier}</td>
+                <td class="num">
+                  <div class="price-cell" style="color:${cls.level === 'much' ? 'var(--color-danger)' : cls.level === 'slightly' ? 'var(--color-warning)' : 'var(--color-success)'};">
+                    ${fmt.currency(p.proposedPrice)}/${p.stats ? p.stats.unit : ''}
+                  </div>
+                  <div style="font-size:11px;color:#94a3b8;">รวม ${fmt.currency(totalCost)}</div>
+                </td>
+                <td class="num">${avgPrice !== '-' ? fmt.currency(avgPrice) : '-'}</td>
+                <td class="num">
+                  <span class="price-delta ${cls.level}">${deltaText}</span>
+                </td>
+                <td style="font-size:12px;">
+                  <span class="project-chip">${cheapestProj}</span>
+                  ${cheapestPrice !== '-' ? `<span style="color:#94a3b8;">@ ${fmt.currency(cheapestPrice)}</span>` : ''}
+                </td>
+                <td>
+                  <span class="pill ${cls.level === 'much' ? 'danger' : cls.level === 'slightly' ? 'warning' : cls.level === 'cheaper' ? 'success' : 'neutral'}">
+                    ${cls.label}
+                  </span>
+                </td>
+                <td>
+                  <button class="btn btn-sm" onclick="event.stopPropagation(); openHistoryModal('${p.material.replace(/'/g, "\\'")}', '${p.project}', ${p.proposedPrice})">
+                    ดูประวัติ
+                  </button>
+                </td>
+              </tr>
+              <tr style="background:var(--color-surface-alt);"><td colspan="9" style="padding:6px 16px 14px 16px;">
+                <div class="recommendation ${cls.level}">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    ${cls.level === 'cheaper' ? '<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="M22 4L12 14.01l-3-3"/>' :
+                      cls.level === 'slightly' ? '<circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/>' :
+                      '<path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><path d="M12 9v4M12 17h.01"/>'}
+                  </svg>
+                  <div>
+                    <strong>คำแนะนำ:</strong> ${getRecommendation(cls.level, p.stats, cls.deltaPct)}
+                    ${p.savings > 0 ? `<div style="margin-top:4px;font-size:12px;">หากต่อรองสำเร็จ อาจประหยัดได้ <strong>${fmt.currency(p.savings)}</strong> ในรายการนี้</div>` : ''}
+                  </div>
+                </div>
+              </td></tr>`;
           }).join('')}
           </tbody>
         </table>
       `;
     }
 
-    function renderTrendChart() {
-      const c = document.getElementById('trend-chart-container');
-      if (!on) { c.innerHTML = renderEmptyState({ title: 'ยังไม่มีข้อมูล', message: 'กราฟแนวโน้มจะแสดงเมื่อมีข้อมูลการแจ้งเตือน' }); return; }
-      c.innerHTML = '<div class="chart-container"><canvas id="trend-chart"></canvas></div>';
-      const labels = Array.from({length: 30}, (_, i) => {
-        const d = new Date(2026, 6, 20 - (29 - i));
-        return d.getDate();
+    /* ---------- Render: Category Summary ---------- */
+    function renderCategorySummary() {
+      const c = document.getElementById('category-summary-container');
+      if (!on) { c.innerHTML = renderEmptyState({ title: 'ยังไม่มีข้อมูล', message: 'สรุปตามหมวดจะแสดงเมื่อมีรายการ' }); return; }
+
+      const plans = D.purchasePlans.map(p => {
+        const stats = getHistoryStats(p.material);
+        const cls = classify(p.proposedPrice, stats);
+        return { ...p, classification: cls };
       });
-      const data = [3,2,4,5,3,2,1,2,3,4,5,6,4,3,2,3,4,5,7,6,5,4,3,4,5,6,7,5,4,3];
-      new Chart(document.getElementById('trend-chart'), {
+
+      const byCategory = {};
+      plans.forEach(p => {
+        if (!byCategory[p.category]) byCategory[p.category] = { total: 0, expensive: 0, slightly: 0, cheaper: 0 };
+        byCategory[p.category].total++;
+        if (p.classification.level === 'much') byCategory[p.category].expensive++;
+        else if (p.classification.level === 'slightly') byCategory[p.category].slightly++;
+        else if (p.classification.level === 'cheaper') byCategory[p.category].cheaper++;
+      });
+
+      const rows = Object.entries(byCategory).sort((a, b) => b[1].expensive - a[1].expensive);
+
+      c.innerHTML = `
+        <table class="data-table">
+          <thead><tr>
+            <th>หมวดวัสดุ</th>
+            <th class="num">ทั้งหมด</th>
+            <th class="num">แพงกว่ามาก</th>
+            <th class="num">แพงกว่าเล็กน้อย</th>
+            <th class="num">ถูกกว่า</th>
+          </tr></thead>
+          <tbody>
+          ${rows.map(([cat, d]) => `
+            <tr>
+              <td><strong>${cat}</strong></td>
+              <td class="num">${d.total}</td>
+              <td class="num"><span class="pill ${d.expensive > 0 ? 'danger' : 'neutral'}">${d.expensive}</span></td>
+              <td class="num"><span class="pill ${d.slightly > 0 ? 'warning' : 'neutral'}">${d.slightly}</span></td>
+              <td class="num"><span class="pill ${d.cheaper > 0 ? 'success' : 'neutral'}">${d.cheaper}</span></td>
+            </tr>
+          `).join('')}
+          </tbody>
+        </table>
+      `;
+    }
+
+    /* ---------- Render: Project Summary ---------- */
+    function renderProjectSummary() {
+      const c = document.getElementById('project-summary-container');
+      if (!on) { c.innerHTML = renderEmptyState({ title: 'ยังไม่มีข้อมูล', message: 'สรุปตามโครงการจะแสดงเมื่อมีรายการ' }); return; }
+
+      const plans = D.purchasePlans.map(p => {
+        const stats = getHistoryStats(p.material);
+        const cls = classify(p.proposedPrice, stats);
+        return {
+          ...p,
+          classification: cls,
+          overspend: stats ? Math.max(0, (p.proposedPrice - stats.avg) * p.quantity) : 0,
+          totalCost: p.proposedPrice * p.quantity
+        };
+      });
+
+      const byProject = {};
+      plans.forEach(p => {
+        if (!byProject[p.project]) byProject[p.project] = { items: 0, overspend: 0, total: 0, expensive: 0 };
+        byProject[p.project].items++;
+        byProject[p.project].overspend += p.overspend;
+        byProject[p.project].total += p.totalCost;
+        if (p.classification.level === 'much') byProject[p.project].expensive++;
+      });
+
+      const rows = Object.entries(byProject).sort((a, b) => b[1].overspend - a[1].overspend);
+
+      c.innerHTML = `
+        <table class="data-table">
+          <thead><tr>
+            <th>โครงการ</th>
+            <th class="num">รายการ</th>
+            <th class="num">มูลค่ารวม</th>
+            <th class="num">อาจประหยัดได้</th>
+            <th class="num">แพงกว่ามาก</th>
+          </tr></thead>
+          <tbody>
+          ${rows.map(([proj, d]) => `
+            <tr>
+              <td><strong>${proj}</strong></td>
+              <td class="num">${d.items}</td>
+              <td class="num">${fmt.currencyShort(d.total)}</td>
+              <td class="num"><strong style="color:${d.overspend > 0 ? 'var(--color-danger)' : 'var(--color-text-muted)'};">${fmt.currencyShort(d.overspend)}</strong></td>
+              <td class="num"><span class="pill ${d.expensive > 0 ? 'danger' : 'success'}">${d.expensive > 0 ? d.expensive + ' รายการ' : 'ไม่มี'}</span></td>
+            </tr>
+          `).join('')}
+          </tbody>
+        </table>
+      `;
+    }
+
+    /* ---------- Modal: ประวัติการซื้อ ---------- */
+    let modalChart = null;
+    function openHistoryModal(materialName, projectName, proposedPrice) {
+      const stats = getHistoryStats(materialName);
+      if (!stats) { alert('ไม่พบประวัติการซื้อสำหรับวัสดุนี้'); return; }
+
+      const cls = classify(proposedPrice, stats);
+      const recommendation = getRecommendation(cls.level, stats, cls.deltaPct);
+
+      document.getElementById('modalTitle').textContent = materialName;
+      document.getElementById('modalSubtitle').innerHTML = `
+        หมวด: <strong>${stats.category}</strong> · หน่วย: <strong>${stats.unit}</strong> · โครงการที่จะสั่ง: <strong>${projectName}</strong>
+      `;
+
+      document.getElementById('modalBody').innerHTML = `
+        <div class="stat-mini-grid">
+          <div class="stat-mini">
+            <div class="lbl">ราคาเฉลี่ย (ประวัติ)</div>
+            <div class="val">${fmt.currency(stats.avg)}</div>
+            <div class="sub">จาก ${stats.recordCount} ครั้งที่เคยซื้อ</div>
+          </div>
+          <div class="stat-mini">
+            <div class="lbl">ราคาถูกสุด</div>
+            <div class="val" style="color:var(--color-success);">${fmt.currency(stats.min)}</div>
+            <div class="sub">${stats.cheapestProject}</div>
+          </div>
+          <div class="stat-mini">
+            <div class="lbl">ราคาแพงสุด</div>
+            <div class="val" style="color:var(--color-danger);">${fmt.currency(stats.max)}</div>
+            <div class="sub">ในประวัติที่บันทึกไว้</div>
+          </div>
+          <div class="stat-mini">
+            <div class="lbl">ราคาที่เสนอตอนนี้</div>
+            <div class="val" style="color:${cls.level === 'much' ? 'var(--color-danger)' : cls.level === 'slightly' ? 'var(--color-warning)' : 'var(--color-success)'};">${fmt.currency(proposedPrice)}</div>
+            <div class="sub">${cls.label} (${cls.deltaPct > 0 ? '+' : ''}${cls.deltaPct.toFixed(1)}%)</div>
+          </div>
+        </div>
+
+        <div class="recommendation ${cls.level}" style="margin-bottom:18px;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            ${cls.level === 'cheaper' ? '<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="M22 4L12 14.01l-3-3"/>' :
+              cls.level === 'slightly' ? '<circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/>' :
+              '<path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><path d="M12 9v4M12 17h.01"/>'}
+          </svg>
+          <div>
+            <strong>คำแนะนำ:</strong> ${recommendation}
+          </div>
+        </div>
+
+        <h4 style="font-size:14px;font-weight:600;margin-bottom:10px;">กราฟราคาตามช่วงเวลา</h4>
+        <div class="chart-container sm" style="margin-bottom:18px;">
+          <canvas id="historyChart"></canvas>
+        </div>
+
+        <h4 style="font-size:14px;font-weight:600;margin-bottom:10px;">ประวัติการซื้อทั้งหมด</h4>
+        <table class="data-table">
+          <thead><tr>
+            <th>โครงการ</th>
+            <th>วันที่ซื้อ</th>
+            <th>ผู้ขาย</th>
+            <th class="num">จำนวน</th>
+            <th class="num">ราคาต่อหน่วย</th>
+            <th class="num">รวม</th>
+          </tr></thead>
+          <tbody>
+          ${[...stats.records].sort((a, b) => new Date(a.date) - new Date(b.date)).map(r => {
+            const isCheapest = r.pricePerUnit === stats.min;
+            return `
+              <tr>
+                <td><span class="project-chip">${r.project}</span>${isCheapest ? '<span class="cheapest-tag">ถูกสุด</span>' : ''}</td>
+                <td style="font-size:12px;color:#475569;">${fmt.date(r.date)}</td>
+                <td style="font-size:12px;">${r.supplier}</td>
+                <td class="num">${fmt.num(r.quantity)}</td>
+                <td class="num"><strong>${fmt.currency(r.pricePerUnit)}</strong></td>
+                <td class="num">${fmt.currency(r.pricePerUnit * r.quantity)}</td>
+              </tr>
+            `;
+          }).join('')}
+          </tbody>
+        </table>
+      `;
+
+      // Render chart
+      const sortedRecords = [...stats.records].sort((a, b) => new Date(a.date) - new Date(b.date));
+      const labels = sortedRecords.map(r => r.date);
+      const data = sortedRecords.map(r => r.pricePerUnit);
+
+      if (modalChart) modalChart.destroy();
+      const ctx = document.getElementById('historyChart').getContext('2d');
+      modalChart = new Chart(ctx, {
         type: 'line',
         data: {
           labels,
-          datasets: [{
-            label: 'จำนวนการแจ้งเตือน',
-            data,
-            borderColor: chartPalette.danger,
-            backgroundColor: 'rgba(220, 38, 38, 0.1)',
-            fill: true,
-            tension: 0.3,
-            pointRadius: 2,
-            pointBackgroundColor: chartPalette.danger,
-            borderWidth: 2
-          }]
+          datasets: [
+            {
+              label: 'ราคาที่ซื้อจริง',
+              data,
+              borderColor: chartPalette.primary,
+              backgroundColor: 'rgba(30, 58, 95, 0.1)',
+              fill: true,
+              tension: 0.3,
+              pointRadius: 5,
+              pointBackgroundColor: chartPalette.primary,
+              borderWidth: 2
+            },
+            {
+              label: 'ราคาที่เสนอตอนนี้',
+              data: Array(sortedRecords.length).fill(proposedPrice),
+              borderColor: cls.level === 'much' ? chartPalette.danger : cls.level === 'slightly' ? chartPalette.warning : chartPalette.success,
+              borderDash: [6, 4],
+              borderWidth: 2,
+              pointRadius: 0,
+              fill: false
+            },
+            {
+              label: 'ราคาเฉลี่ย',
+              data: Array(sortedRecords.length).fill(stats.avg),
+              borderColor: chartPalette.text,
+              borderDash: [3, 3],
+              borderWidth: 1.5,
+              pointRadius: 0,
+              fill: false
+            }
+          ]
         },
-        options: defaultChartOptions
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: { legend: { position: 'bottom', labels: { font: { family: 'Sarabun', size: 11 } } } },
+          scales: {
+            y: { ticks: { callback: (v) => '฿' + v.toLocaleString(), font: { family: 'Sarabun' } } },
+            x: { ticks: { font: { family: 'Sarabun', size: 10 } } }
+          }
+        }
       });
+
+      document.getElementById('historyModal').classList.add('open');
     }
 
-    function renderCategoryChart() {
-      const c = document.getElementById('category-chart-container');
-      if (!on) { c.innerHTML = renderEmptyState({ title: 'ยังไม่มีข้อมูล', message: 'สถิติตามหมวดวัสดุจะแสดงเมื่อมีข้อมูลการแจ้งเตือน' }); return; }
-      c.innerHTML = '<div class="chart-container"><canvas id="cat-chart"></canvas></div>';
-      new Chart(document.getElementById('cat-chart'), {
-        type: 'bar',
-        data: {
-          labels: ['ปูนซีเมนต์', 'เหล็กและโลหะ', 'วัสดุก่อสร้าง', 'สีและเคมีภัณฑ์', 'ไฟฟ้าและประปา', 'เครื่องมือช่าง'],
-          datasets: [{
-            label: 'จำนวนการแจ้งเตือน',
-            data: [12, 9, 7, 6, 5, 2],
-            backgroundColor: ['#dc2626', '#ea580c', '#d97706', '#0891b2', '#2563eb', '#16a34a'],
-            borderRadius: 4,
-            maxBarThickness: 32
-          }]
-        },
-        options: { ...defaultChartOptions, plugins: { ...defaultChartOptions.plugins, legend: { display: false } } }
-      });
+    function closeHistoryModal() {
+      document.getElementById('historyModal').classList.remove('open');
+      if (modalChart) { modalChart.destroy(); modalChart = null; }
     }
+
+    document.getElementById('historyModal').addEventListener('click', (e) => {
+      if (e.target.id === 'historyModal') closeHistoryModal();
+    });
 
     renderKPIs();
-    renderTable();
-    renderTrendChart();
-    renderCategoryChart();
+    renderComparisonTable();
+    renderCategorySummary();
+    renderProjectSummary();
   </script>
 </body>
 </html>

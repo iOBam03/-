@@ -156,15 +156,87 @@ window.SAMPLE_DATA = {
     }
   ],
 
-  /* ---------- การแจ้งเตือนราคาวัสดุ ---------- */
-  priceAlerts: [
-    { id: 'ALT-2569-142', material: 'ปูนซีเมนต์ปอร์ตแลนด์ 50 กก.', category: 'ปูนซีเมนต์', supplier: 'บริษัท ซีเมนต์ไทย จำกัด', oldPrice: 165, newPrice: 215, change: 30.3, severity: 'high', detected: '2569-07-19 09:42', status: 'investigating' },
-    { id: 'ALT-2569-141', material: 'เหล็กเส้น RB 12mm x 10m', category: 'เหล็กและโลหะ', supplier: 'ห้างหุ้นส่วน เหล็กไทยก้าวหน้า', oldPrice: 285, newPrice: 248, change: -12.98, severity: 'medium', detected: '2569-07-19 08:15', status: 'investigating' },
-    { id: 'ALT-2569-140', material: 'สีน้ำอะครีลิก 5 แกลลอน', category: 'สีและเคมีภัณฑ์', supplier: 'บริษัท สีโปรเฟสชั่นนัล จำกัด', oldPrice: 1450, newPrice: 1820, change: 25.52, severity: 'high', detected: '2569-07-18 16:30', status: 'pending' },
-    { id: 'ALT-2569-139', material: 'ทรายหยาบ (คิวบิกเมตร)', category: 'วัสดุก่อสร้าง', supplier: 'บริษัท วัสดุภัณฑ์ก่อสร้าง จำกัด', oldPrice: 850, newPrice: 980, change: 15.29, severity: 'medium', detected: '2569-07-18 11:20', status: 'pending' },
-    { id: 'ALT-2569-138', material: 'กระเบื้องเซรามิก 60x60 ซม.', category: 'กระเบื้อง/พื้น', supplier: 'บริษัท เซรามิคไทยแลนด์ จำกัด', oldPrice: 320, newPrice: 285, change: -10.94, severity: 'low', detected: '2569-07-17 14:05', status: 'resolved' },
-    { id: 'ALT-2569-137', material: 'ท่อ PVC 4 นิ้ว (3m)', category: 'ไฟฟ้า/ประปา', supplier: 'ห้างหุ้นส่วน ไทยพลาสติก', oldPrice: 245, newPrice: 295, change: 20.41, severity: 'high', detected: '2569-07-17 10:48', status: 'investigating' },
-    { id: 'ALT-2569-136', material: 'อิฐมอญ ขนาดมาตรฐาน', category: 'วัสดุก่อสร้าง', supplier: 'บริษัท อิฐไทยอุตสาหกรรม จำกัด', oldPrice: 9, newPrice: 11, change: 22.22, severity: 'medium', detected: '2569-07-16 13:22', status: 'pending' }
+  /* ---------- ประวัติการซื้อจริง (ย้อนหลัง) — ใช้เปรียบเทียบกับการซื้อใหม่ ---------- */
+  // แต่ละ record = การซื้อจริง 1 ครั้ง จากโครงการหนึ่ง
+  // ระบบจะคำนวณ avg/min/max อัตโนมัติ เพื่อเทียบกับราคาที่เสนอใหม่
+  purchaseHistory: {
+    'ปูนซีเมนต์ปอร์ตแลนด์ 50 กก.': {
+      material: 'ปูนซีเมนต์ปอร์ตแลนด์ 50 กก.',
+      category: 'ปูนซีเมนต์',
+      unit: 'ถุง',
+      records: [
+        { project: 'โครงการดิออเนอร์', date: '2567-03-15', supplier: 'บริษัท ซีเมนต์ไทย จำกัด',     pricePerUnit: 165, quantity: 2400 },
+        { project: 'โครงการดิออเนอร์', date: '2567-08-22', supplier: 'บริษัท ซีเมนต์ไทย จำกัด',     pricePerUnit: 168, quantity: 1800 },
+        { project: 'บ้านริมธาร',       date: '2568-02-10', supplier: 'บริษัท ซีเมนต์ไทย จำกัด',     pricePerUnit: 167, quantity: 1500 },
+        { project: 'กรีนวิลล์ 2',       date: '2569-02-08', supplier: 'บริษัท ซีเมนต์ไทย จำกัด',     pricePerUnit: 165, quantity: 1850 },
+        { project: 'เดอะพาร์ค',         date: '2569-04-18', supplier: 'บริษัท ซีเมนต์ไทย จำกัด',     pricePerUnit: 170, quantity: 1500 },
+      ]
+    },
+    'เหล็กเส้น RB 12mm x 10m': {
+      material: 'เหล็กเส้น RB 12mm x 10m',
+      category: 'เหล็กและโลหะ',
+      unit: 'เส้น',
+      records: [
+        { project: 'โครงการดิออเนอร์', date: '2567-04-02', supplier: 'ห้างหุ้นส่วน เหล็กไทยก้าวหน้า', pricePerUnit: 258, quantity: 800 },
+        { project: 'บ้านริมธาร',       date: '2568-03-15', supplier: 'ห้างหุ้นส่วน เหล็กไทยก้าวหน้า', pricePerUnit: 245, quantity: 1200 },
+        { project: 'กรีนวิลล์ 2',       date: '2569-01-25', supplier: 'ห้างหุ้นส่วน เหล็กไทยก้าวหน้า', pricePerUnit: 250, quantity: 2400 },
+        { project: 'เดอะพาร์ค',         date: '2569-05-12', supplier: 'ห้างหุ้นส่วน เหล็กไทยก้าวหน้า', pricePerUnit: 240, quantity: 1800 },
+      ]
+    },
+    'กระเบื้องเซรามิก 60x60 ซม.': {
+      material: 'กระเบื้องเซรามิก 60x60 ซม.',
+      category: 'กระเบื้อง/พื้น',
+      unit: 'กล่อง',
+      records: [
+        { project: 'โครงการดิออเนอร์', date: '2567-05-20', supplier: 'บริษัท เซรามิคไทยแลนด์ จำกัด', pricePerUnit: 295, quantity: 600 },
+        { project: 'บ้านริมธาร',       date: '2568-06-05', supplier: 'บริษัท เซรามิคไทยแลนด์ จำกัด', pricePerUnit: 290, quantity: 800 },
+        { project: 'เดอะพาร์ค',         date: '2569-03-15', supplier: 'บริษัท เซรามิคไทยแลนด์ จำกัด', pricePerUnit: 280, quantity: 500 },
+      ]
+    },
+    'ทรายหยาบ (คิวบิกเมตร)': {
+      material: 'ทรายหยาบ (คิวบิกเมตร)',
+      category: 'วัสดุก่อสร้าง',
+      unit: 'คิว',
+      records: [
+        { project: 'โครงการดิออเนอร์', date: '2567-04-12', supplier: 'บริษัท วัสดุภัณฑ์ก่อสร้าง จำกัด', pricePerUnit: 820, quantity: 200 },
+        { project: 'บ้านริมธาร',       date: '2568-04-22', supplier: 'บริษัท วัสดุภัณฑ์ก่อสร้าง จำกัด', pricePerUnit: 850, quantity: 150 },
+        { project: 'กรีนวิลล์ 2',       date: '2569-02-15', supplier: 'บริษัท วัสดุภัณฑ์ก่อสร้าง จำกัด', pricePerUnit: 870, quantity: 180 },
+        { project: 'เดอะพาร์ค',         date: '2569-05-08', supplier: 'บริษัท วัสดุภัณฑ์ก่อสร้าง จำกัด', pricePerUnit: 890, quantity: 120 },
+      ]
+    },
+    'เหล็กแผ่น HR 5mm': {
+      material: 'เหล็กแผ่น HR 5mm',
+      category: 'เหล็กและโลหะ',
+      unit: 'แผ่น',
+      records: [
+        { project: 'โครงการดิออเนอร์', date: '2567-06-08', supplier: 'ห้างหุ้นส่วน เหล็กไทยก้าวหน้า', pricePerUnit: 1620, quantity: 80 },
+        { project: 'กรีนวิลล์ 2',       date: '2569-03-20', supplier: 'ห้างหุ้นส่วน เหล็กไทยก้าวหน้า', pricePerUnit: 1680, quantity: 145 },
+      ]
+    },
+    'อิฐมอญ ขนาดมาตรฐาน': {
+      material: 'อิฐมอญ ขนาดมาตรฐาน',
+      category: 'วัสดุก่อสร้าง',
+      unit: 'ก้อน',
+      records: [
+        { project: 'โครงการดิออเนอร์', date: '2567-05-15', supplier: 'บริษัท อิฐไทยอุตสาหกรรม จำกัด', pricePerUnit: 9.0, quantity: 30000 },
+        { project: 'บ้านริมธาร',       date: '2568-07-20', supplier: 'บริษัท อิฐไทยอุตสาหกรรม จำกัด', pricePerUnit: 9.2, quantity: 25000 },
+        { project: 'กรีนวิลล์ 2',       date: '2569-02-25', supplier: 'บริษัท อิฐไทยอุตสาหกรรม จำกัด', pricePerUnit: 9.3, quantity: 28000 },
+        { project: 'เดอะพาร์ค',         date: '2569-05-18', supplier: 'บริษัท อิฐไทยอุตสาหกรรม จำกัด', pricePerUnit: 9.5, quantity: 22000 },
+      ]
+    },
+  },
+
+  /* ---------- รายการที่กำลังจะสั่งซื้อ (ต้องตัดสินใจ) ---------- */
+  // proposedPrice จะถูกนำไปเทียบกับราคาเฉลี่ยใน purchaseHistory
+  purchasePlans: [
+    { id: 'PLAN-2569-008', material: 'ปูนซีเมนต์ปอร์ตแลนด์ 50 กก.',  project: 'เดอะวัลเลย์', forPhase: 'งานฐานราก',     supplier: 'บริษัท ซีเมนต์ไทย จำกัด',     proposedPrice: 215, quantity: 800,  proposedDate: '2569-07-25', requestedBy: 'คุณชัยวัฒน์ (หัวหน้าไซต์)',  status: 'pending' },
+    { id: 'PLAN-2569-009', material: 'เหล็กเส้น RB 12mm x 10m',     project: 'เดอะวัลเลย์', forPhase: 'งานฐานราก',     supplier: 'ห้างหุ้นส่วน เหล็กไทยก้าวหน้า', proposedPrice: 235, quantity: 1200, proposedDate: '2569-07-26', requestedBy: 'คุณชัยวัฒน์ (หัวหน้าไซต์)',  status: 'pending' },
+    { id: 'PLAN-2569-010', material: 'กระเบื้องเซรามิก 60x60 ซม.', project: 'กรีนวิลล์ 2',  forPhase: 'งานตกแต่ง',     supplier: 'บริษัท เซรามิคไทยแลนด์ จำกัด', proposedPrice: 305, quantity: 350,  proposedDate: '2569-07-27', requestedBy: 'คุณวิทยา (PM กรีนวิลล์ 2)', status: 'pending' },
+    { id: 'PLAN-2569-011', material: 'ทรายหยาบ (คิวบิกเมตร)',      project: 'เดอะพาร์ค',   forPhase: 'งานผนัง',       supplier: 'บริษัท วัสดุภัณฑ์ก่อสร้าง จำกัด', proposedPrice: 950, quantity: 100,  proposedDate: '2569-07-28', requestedBy: 'คุณปรีชา (PM เดอะพาร์ค)',   status: 'pending' },
+    { id: 'PLAN-2569-012', material: 'เหล็กแผ่น HR 5mm',            project: 'กรีนวิลล์ 2',  forPhase: 'งานโครงสร้าง',   supplier: 'ห้างหุ้นส่วน เหล็กไทยก้าวหน้า', proposedPrice: 1820, quantity: 60,  proposedDate: '2569-07-29', requestedBy: 'คุณวิทยา (PM กรีนวิลล์ 2)', status: 'pending' },
+    { id: 'PLAN-2569-013', material: 'อิฐมอญ ขนาดมาตรฐาน',         project: 'เดอะพาร์ค',   forPhase: 'งานผนัง',       supplier: 'บริษัท อิฐไทยอุตสาหกรรม จำกัด', proposedPrice: 8.8, quantity: 8000, proposedDate: '2569-07-30', requestedBy: 'คุณปรีชา (PM เดอะพาร์ค)',   status: 'pending' },
+    { id: 'PLAN-2569-014', material: 'ปูนซีเมนต์ปอร์ตแลนด์ 50 กก.',  project: 'กรีนวิลล์ 2',  forPhase: 'งานผนัง',       supplier: 'บริษัท ซีเมนต์ไทย จำกัด',     proposedPrice: 160, quantity: 600,  proposedDate: '2569-07-31', requestedBy: 'คุณวิทยา (PM กรีนวิลล์ 2)', status: 'pending' },
+    { id: 'PLAN-2569-015', material: 'เหล็กแผ่น HR 5mm',            project: 'เดอะวัลเลย์', forPhase: 'งานฐานราก',     supplier: 'ห้างหุ้นส่วน เหล็กไทยก้าวหน้า', proposedPrice: 1700, quantity: 40,  proposedDate: '2569-08-01', requestedBy: 'คุณชัยวัฒน์ (หัวหน้าไซต์)',  status: 'pending' },
   ],
 
   /* ---------- ผู้ขายวัสดุ + ผู้รับเหมา ---------- */
