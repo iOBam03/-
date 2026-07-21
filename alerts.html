@@ -43,6 +43,77 @@
     }
     .upload-card label.btn { cursor: pointer; }
 
+    /* Sample buttons (สำหรับ demo โดยไม่ต้องมีไฟล์) */
+    .divider-with-text {
+      display: flex; align-items: center; gap: 12px;
+      margin: 22px 0 16px;
+      color: var(--color-text-muted);
+      font-size: 12px;
+    }
+    .divider-with-text::before,
+    .divider-with-text::after {
+      content: ''; flex: 1; height: 1px; background: var(--color-border);
+    }
+    .sample-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
+      margin-bottom: 6px;
+    }
+    .sample-btn {
+      display: flex; align-items: center; gap: 10px;
+      padding: 12px 14px;
+      background: var(--color-surface);
+      border: 1px solid var(--color-border-strong);
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      transition: all 0.15s;
+      text-align: left;
+      font-family: inherit;
+    }
+    .sample-btn:hover {
+      border-color: var(--color-accent);
+      background: var(--color-accent-soft);
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-sm);
+    }
+    .sample-btn .sample-icon {
+      width: 38px; height: 38px; flex-shrink: 0;
+      background: var(--color-primary-soft);
+      border-radius: var(--radius-md);
+      display: flex; align-items: center; justify-content: center;
+      color: var(--color-primary);
+    }
+    .sample-btn .sample-info { flex: 1; min-width: 0; }
+    .sample-btn .sample-name {
+      font-size: 13px; font-weight: 600; color: var(--color-text);
+      line-height: 1.3;
+    }
+    .sample-btn .sample-meta {
+      font-size: 11.5px; color: var(--color-text-muted);
+      margin-top: 2px;
+    }
+    .demo-hint-card {
+      margin-top: 14px;
+      padding: 10px 14px;
+      background: var(--color-info-soft);
+      border-radius: var(--radius-md);
+      color: var(--color-info);
+      font-size: 12px;
+      display: flex; gap: 8px; align-items: flex-start;
+    }
+    .demo-hint-card svg { flex-shrink: 0; margin-top: 1px; }
+
+    /* Sample tag ใน file info bar */
+    .sample-tag {
+      display: inline-block;
+      padding: 2px 8px;
+      background: var(--color-warning);
+      color: #fff;
+      font-size: 10.5px; font-weight: 600;
+      border-radius: 4px;
+      margin-left: 6px;
+      letter-spacing: 0.3px;
+    }
+
     /* File info bar (after upload) */
     .file-info-bar {
       display: flex; align-items: center; gap: 14px;
@@ -247,7 +318,21 @@
     const on = DemoController.isOn();
 
     /* ---------- State ---------- */
-    let uploadedBOQ = null;  // { projectId, projectName, phase, items: [...], fileName }
+    let uploadedBOQ = null;  // { projectId, projectName, phase, items: [...], fileName, isSample }
+
+    /* ---------- Sample BOQs สำหรับ demo ---------- */
+    const SAMPLE_BOQS = [
+      { project: 'เดอะวัลเลย์',     phase: 'ฐานราก',  icon: 'foundation', fileName: 'BOQ_วัลเลย์_ฐานราก.xlsx',  desc: '5 รายการ' },
+      { project: 'กรีนวิลล์ 2',      phase: 'โครงสร้าง', icon: 'structure', fileName: 'BOQ_กรีนวิลล์2_โครงสร้าง.xlsx', desc: '3 รายการ' },
+      { project: 'กรีนวิลล์ 2',      phase: 'ผนัง',    icon: 'walls',    fileName: 'BOQ_กรีนวิลล์2_ผนัง.xlsx', desc: '2 รายการ' },
+      { project: 'เดอะพาร์ค',       phase: 'ผนัง',    icon: 'walls',    fileName: 'BOQ_เดอะพาร์ค_ผนัง.xlsx', desc: '3 รายการ' },
+    ];
+
+    const SAMPLE_ICONS = {
+      foundation: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 22h20"/><path d="M6 18v-5"/><path d="M10 18v-5"/><path d="M14 18v-5"/><path d="M18 18v-5"/><path d="M3 13l9-4 9 4"/></svg>',
+      structure:  '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-4"/></svg>',
+      walls:      '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="1"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg>',
+    };
 
     /* ---------- Helpers ---------- */
     function getHistoryStats(materialName) {
@@ -282,7 +367,10 @@
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg>
             </div>
             <div class="file-meta">
-              <div class="name">📄 ${uploadedBOQ.fileName}</div>
+              <div class="name">
+                📄 ${uploadedBOQ.fileName}
+                ${uploadedBOQ.isSample ? '<span class="sample-tag">ตัวอย่าง</span>' : ''}
+              </div>
               <div class="detail">
                 โครงการ: <strong>${uploadedBOQ.projectName}</strong>
                 · งวด: <strong>${uploadedBOQ.phase}</strong>
@@ -297,7 +385,7 @@
           </div>
         `;
       } else {
-        // แสดง upload card
+        // แสดง upload card พร้อมปุ่มตัวอย่าง
         c.innerHTML = `
           <div class="upload-card" id="uploadCard">
             <div class="upload-icon">
@@ -316,6 +404,29 @@
               <span>.xls</span>
               <span>.csv</span>
             </div>
+
+            <div class="divider-with-text">
+              <span>หรือทดลองใช้งาน</span>
+            </div>
+
+            <p style="margin-bottom:12px;">เลือก BOQ ตัวอย่างเพื่อดูว่าจะเจออะไรบ้างเมื่อแนบ BOQ เข้าไป:</p>
+
+            <div class="sample-grid">
+              ${SAMPLE_BOQS.map((s, i) => `
+                <button class="sample-btn" onclick="loadSampleBOQ(${i})">
+                  <div class="sample-icon">${SAMPLE_ICONS[s.icon] || SAMPLE_ICONS.structure}</div>
+                  <div class="sample-info">
+                    <div class="sample-name">${s.project}</div>
+                    <div class="sample-meta">${s.phase} · ${s.desc}</div>
+                  </div>
+                </button>
+              `).join('')}
+            </div>
+
+            <div class="demo-hint-card">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+              <span>ต้นแบบนี้ยังไม่ได้เชื่อมต่อไฟล์จริง — กดปุ่มตัวอย่างเพื่อจำลองการแนบ BOQ</span>
+            </div>
           </div>
         `;
 
@@ -326,30 +437,38 @@
         card.addEventListener('drop', (e) => {
           e.preventDefault();
           card.classList.remove('dragover');
-          if (e.dataTransfer.files.length > 0) simulateUpload(e.dataTransfer.files[0].name);
+          if (e.dataTransfer.files.length > 0) simulateUpload(e.dataTransfer.files[0].name, 'เดอะวัลเลย์', 'ฐานราก', false);
         });
       }
     }
 
     function handleFileUpload(event) {
       const file = event.target.files[0];
-      if (file) simulateUpload(file.name);
+      if (file) simulateUpload(file.name, 'เดอะวัลเลย์', 'ฐานราก', false);
     }
 
-    function simulateUpload(fileName) {
-      // ใน prototype: เลือก BOQ แรกจากข้อมูลตัวอย่าง (เดอะวัลเลย์ ฐานราก — มี 5 รายการ)
+    function loadSampleBOQ(idx) {
+      const sample = SAMPLE_BOQS[idx];
+      simulateUpload(sample.fileName, sample.project, sample.phase, true);
+    }
+
+    function simulateUpload(fileName, projectName, phase, isSample) {
+      // ใน prototype: load ตาม project+phase ที่เลือก
       // ในของจริง จะ parse ไฟล์ .xlsx/.csv ที่อัปโหลด
-      const sampleBOQ = D.boq.filter(b => b.projectName === 'เดอะวัลเลย์' && b.phase === 'ฐานราก');
-      const project = D.projects.find(p => p.name === 'เดอะวัลเลย์');
+      const sampleBOQ = D.boq.filter(b => b.projectName === projectName && b.phase === phase);
+      const project = D.projects.find(p => p.name === projectName);
       uploadedBOQ = {
-        projectId: project.id,
-        projectName: project.name,
-        phase: 'ฐานราก',
+        projectId: project ? project.id : projectName,
+        projectName: projectName,
+        phase: phase,
         items: sampleBOQ,
-        fileName: fileName
+        fileName: fileName,
+        isSample: isSample
       };
       renderUploadSection();
       renderComparison();
+      // Scroll to comparison
+      document.getElementById('comparisonSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
 
     function clearUpload() {
