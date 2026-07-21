@@ -369,15 +369,30 @@ window.SAMPLE_DATA = {
     { sku: 'TIL-ROOF', name: 'กระเบื้องหลังคาคอนกรีต', project: 'PRJ-2569-001', projectName: 'กรีนวิลล์ 2', location: 'Block C', phase: 'หลังคา', received: 2400, used: 1800, remaining: 600, expectedUse: 800, reorderLevel: 400, unit: 'แผ่น', lastDelivery: '2569-07-14', status: 'normal' }
   ],
 
-  /* ---------- BOQ (Bill of Quantities) ตัวอย่าง ---------- */
+  /* ---------- BOQ (Bill of Quantities) ---------- */
+  // ใช้เป็นจุดตั้งต้นของหน้าเปรียบเทียบราคา: ดูว่าโครงการต้องใช้อะไร → เทียบกับประวัติการซื้อจริง
   boq: [
-    { project: 'PRJ-2569-001', projectName: 'กรีนวิลล์ 2', phase: 'โครงสร้าง', material: 'ปูนซีเมนต์ปอร์ตแลนด์ 50 กก.', qtyPerUnit: 50, totalRequired: 6000, ordered: 5800, delivered: 5600, unit: 'ถุง' },
-    { project: 'PRJ-2569-001', projectName: 'กรีนวิลล์ 2', phase: 'โครงสร้าง', material: 'เหล็กเส้น RB 12mm', qtyPerUnit: 24, totalRequired: 2880, ordered: 2880, delivered: 2400, unit: 'เส้น' },
-    { project: 'PRJ-2569-001', projectName: 'กรีนวิลล์ 2', phase: 'ผนัง', material: 'อิฐมอญ', qtyPerUnit: 2200, totalRequired: 264000, ordered: 260000, delivered: 250000, unit: 'ก้อน' },
-    { project: 'PRJ-2569-001', projectName: 'กรีนวิลล์ 2', phase: 'หลังคา', material: 'กระเบื้องหลังคาคอนกรีต', qtyPerUnit: 20, totalRequired: 2400, ordered: 2400, delivered: 2400, unit: 'แผ่น' },
-    { project: 'PRJ-2569-002', projectName: 'เดอะพาร์ค', phase: 'ผนัง', material: 'อิฐมอญ', qtyPerUnit: 1800, totalRequired: 144000, ordered: 140000, delivered: 132000, unit: 'ก้อน' },
-    { project: 'PRJ-2569-002', projectName: 'เดอะพาร์ค', phase: 'ผนัง', material: 'ปูนซีเมนต์ปอร์ตแลนด์ 50 กก.', qtyPerUnit: 40, totalRequired: 3200, ordered: 3000, delivered: 2500, unit: 'ถุง' },
-    { project: 'PRJ-2570-003', projectName: 'เดอะวัลเลย์', phase: 'ฐานราก', material: 'หินคลุก', qtyPerUnit: 8, totalRequired: 480, ordered: 480, delivered: 320, unit: 'คิว' },
+    // === หมู่บ้านเดอะวัลเลย์ (ฐานราก) ===
+    { project: 'PRJ-2570-003', projectName: 'เดอะวัลเลย์', phase: 'ฐานราก', material: 'ปูนซีเมนต์ปอร์ตแลนด์ 50 กก.', qtyPerUnit: 80,  totalRequired: 4800, ordered: 800,  delivered: 0,    unit: 'ถุง' },
+    { project: 'PRJ-2570-003', projectName: 'เดอะวัลเลย์', phase: 'ฐานราก', material: 'เหล็กเส้น RB 12mm x 10m',       qtyPerUnit: 24,  totalRequired: 1440, ordered: 1200, delivered: 0,    unit: 'เส้น' },
+    { project: 'PRJ-2570-003', projectName: 'เดอะวัลเลย์', phase: 'ฐานราก', material: 'ทรายหยาบ (คิวบิกเมตร)',         qtyPerUnit: 8,   totalRequired: 480,  ordered: 100,  delivered: 0,    unit: 'คิว' },
+    { project: 'PRJ-2570-003', projectName: 'เดอะวัลเลย์', phase: 'ฐานราก', material: 'หินคลุก',                          qtyPerUnit: 8,   totalRequired: 480,  ordered: 480,  delivered: 320,  unit: 'คิว' },
+    { project: 'PRJ-2570-003', projectName: 'เดอะวัลเลย์', phase: 'ฐานราก', material: 'เหล็กแผ่น HR 5mm',                qtyPerUnit: 2,   totalRequired: 120,  ordered: 40,   delivered: 0,    unit: 'แผ่น' },
+
+    // === หมู่บ้านกรีนวิลล์ 2 (โครงสร้าง + ผนัง + หลังคา) ===
+    { project: 'PRJ-2569-001', projectName: 'กรีนวิลล์ 2', phase: 'โครงสร้าง', material: 'ปูนซีเมนต์ปอร์ตแลนด์ 50 กก.',     qtyPerUnit: 50, totalRequired: 6000,  ordered: 5800, delivered: 5600, unit: 'ถุง' },
+    { project: 'PRJ-2569-001', projectName: 'กรีนวิลล์ 2', phase: 'โครงสร้าง', material: 'เหล็กเส้น RB 12mm x 10m',          qtyPerUnit: 24, totalRequired: 2880,  ordered: 2880, delivered: 2400, unit: 'เส้น' },
+    { project: 'PRJ-2569-001', projectName: 'กรีนวิลล์ 2', phase: 'โครงสร้าง', material: 'เหล็กแผ่น HR 5mm',                 qtyPerUnit: 4,  totalRequired: 480,   ordered: 145,  delivered: 98,   unit: 'แผ่น' },
+    { project: 'PRJ-2569-001', projectName: 'กรีนวิลล์ 2', phase: 'ผนัง',       material: 'อิฐมอญ ขนาดมาตรฐาน',              qtyPerUnit: 2200, totalRequired: 264000, ordered: 260000, delivered: 250000, unit: 'ก้อน' },
+    { project: 'PRJ-2569-001', projectName: 'กรีนวิลล์ 2', phase: 'ผนัง',       material: 'ปูนซีเมนต์ปอร์ตแลนด์ 50 กก.',     qtyPerUnit: 12, totalRequired: 1440,  ordered: 600,  delivered: 0,    unit: 'ถุง' },
+    { project: 'PRJ-2569-001', projectName: 'กรีนวิลล์ 2', phase: 'ตกแต่ง',     material: 'กระเบื้องเซรามิก 60x60 ซม.',     qtyPerUnit: 35, totalRequired: 4200,  ordered: 350,  delivered: 0,    unit: 'กล่อง' },
+    { project: 'PRJ-2569-001', projectName: 'กรีนวิลล์ 2', phase: 'หลังคา',     material: 'กระเบื้องหลังคาคอนกรีต',          qtyPerUnit: 20, totalRequired: 2400,  ordered: 2400, delivered: 2400, unit: 'แผ่น' },
+
+    // === เดอะพาร์คเรสซิเดนซ์ (ผนัง) ===
+    { project: 'PRJ-2569-002', projectName: 'เดอะพาร์ค', phase: 'ผนัง',       material: 'อิฐมอญ ขนาดมาตรฐาน',              qtyPerUnit: 1800, totalRequired: 144000, ordered: 140000, delivered: 132000, unit: 'ก้อน' },
+    { project: 'PRJ-2569-002', projectName: 'เดอะพาร์ค', phase: 'ผนัง',       material: 'ปูนซีเมนต์ปอร์ตแลนด์ 50 กก.',     qtyPerUnit: 40, totalRequired: 3200,  ordered: 3000, delivered: 2500, unit: 'ถุง' },
+    { project: 'PRJ-2569-002', projectName: 'เดอะพาร์ค', phase: 'ผนัง',       material: 'ทรายหยาบ (คิวบิกเมตร)',          qtyPerUnit: 4,  totalRequired: 320,   ordered: 100,  delivered: 0,    unit: 'คิว' },
+    { project: 'PRJ-2569-002', projectName: 'เดอะพาร์ค', phase: 'โครงสร้าง',  material: 'เหล็กแผ่น HR 5mm',                 qtyPerUnit: 5,  totalRequired: 400,   ordered: 0,    delivered: 0,    unit: 'แผ่น' },
   ],
 
   /* ---------- ใบสั่งซื้อล่าสุด (ส่งตรงไซต์งาน) ---------- */
