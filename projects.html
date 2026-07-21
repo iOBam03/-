@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>โครงการ — ระบบจัดซื้อวัสดุก่อสร้าง</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+  <div class="app-shell">
+
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <div class="logo-mark">CP</div>
+        <div class="brand-text">Construction Procurement<small>ระบบจัดซื้อวัสดุก่อสร้าง</small></div>
+      </div>
+      <div class="sidebar-section">
+        <div class="sidebar-section-title">ภาพรวม</div>
+        <ul class="sidebar-nav">
+          <li><a href="dashboard.html"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>Dashboard</a></li>
+          <li><a href="projects.html" class="active"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-4"/><path d="M9 9v.01M9 12v.01M9 15v.01M9 18v.01"/></svg>โครงการ</a></li>
+          <li><a href="ai-analysis.html"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>วิเคราะห์แนวโน้มราคาวัสดุ</a></li>
+        </ul>
+      </div>
+      <div class="sidebar-section">
+        <div class="sidebar-section-title">การจัดการ</div>
+        <ul class="sidebar-nav">
+          <li><a href="suppliers.html"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-6 9 6v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg>ผู้ขายวัสดุ/ผู้รับเหมา</a></li>
+          <li><a href="site-materials.html"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="M3.27 6.96L12 12.01l8.73-5.05M12 22.08V12"/></svg>วัสดุ ณ ไซต์งาน</a></li>
+          <li><a href="alerts.html"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>แจ้งเตือนราคา</a></li>
+        </ul>
+      </div>
+      <div class="sidebar-section">
+        <div class="sidebar-section-title">วิเคราะห์</div>
+        <ul class="sidebar-nav">
+          <li><a href="reports.html"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg>รายงาน</a></li>
+        </ul>
+      </div>
+      <div class="sidebar-footer">
+        <div>ผู้ใช้: <strong style="color:#cbd5e1">ฝ่ายจัดซื้อ</strong></div>
+        <div style="margin-top:4px">v1.0.0 — Prototype</div>
+      </div>
+    </aside>
+
+    <div class="main-area">
+      <div class="topbar">
+        <div class="topbar-left">
+          <div>
+            <div class="breadcrumb">หน้าหลัก / <strong style="color:#475569">โครงการ</strong></div>
+            <div class="page-title">จัดการโครงการก่อสร้าง</div>
+          </div>
+        </div>
+        <div class="topbar-right">
+          <div class="search-box">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+            <input type="text" placeholder="ค้นหาโครงการ...">
+          </div>
+          <div class="user-chip">
+            <div class="avatar">จซ</div>
+            <span class="user-name">ฝ่ายจัดซื้อ</span>
+          </div>
+          <div id="demo-toggle-mount"></div>
+        </div>
+      </div>
+
+      <main class="content">
+        <div class="page-header">
+          <div>
+            <h1>โครงการก่อสร้างทั้งหมด</h1>
+            <div class="subtitle">ติดตามความคืบหน้า งบประมาณ และการจัดซื้อวัสดุของแต่ละโครงการ</div>
+          </div>
+          <div style="display:flex;gap:8px;">
+            <button class="btn btn-primary"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>เพิ่มโครงการใหม่</button>
+          </div>
+        </div>
+
+        <div id="kpi-container"></div>
+
+        <div class="card mb-4">
+          <div class="card-header">
+            <div>
+              <h3>ความคืบหน้าตามงวดงานก่อสร้าง</h3>
+              <div class="sub">แสดงเฉพาะโครงการที่กำลังดำเนินการ</div>
+            </div>
+          </div>
+          <div class="card-body" id="projects-grid"></div>
+        </div>
+
+        <div class="card mb-4">
+          <div class="card-header">
+            <div>
+              <h3>รายการโครงการทั้งหมด</h3>
+              <div class="sub">เรียงตามความคืบหน้า (สูง → ต่ำ)</div>
+            </div>
+            <div style="display:flex;gap:6px;">
+              <select class="form-control" style="width:auto;font-size:12px;padding:5px 8px;">
+                <option>ทุกสถานะ</option>
+                <option>กำลังก่อสร้าง</option>
+                <option>ปิดงาน</option>
+              </select>
+              <select class="form-control" style="width:auto;font-size:12px;padding:5px 8px;">
+                <option>ทุกประเภท</option>
+                <option>บ้านเดี่ยว 1 ชั้น</option>
+                <option>บ้านเดี่ยว 2 ชั้น</option>
+                <option>ทาวน์เฮ้าส์</option>
+              </select>
+            </div>
+          </div>
+          <div class="card-body no-pad" id="projects-table"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <h3>มาตรฐานงวดงานก่อสร้าง</h3>
+              <div class="sub">ใช้เป็นแม่แบบในการจัดทำ BOQ และติดตามความคืบหน้า</div>
+            </div>
+          </div>
+          <div class="card-body no-pad" id="phases-container"></div>
+        </div>
+      </main>
+
+      <footer class="app-footer">
+        <span>© 2569 Construction Procurement · เวอร์ชัน 1.0.0</span>
+        <span>ข้อมูลโครงการอัปเดต: 20 ก.ค. 2569</span>
+      </footer>
+    </div>
+  </div>
+
+  <script src="js/data.js"></script>
+  <script src="js/demo.js"></script>
+  <script>
+    DemoController.injectToggle('#demo-toggle-mount');
+    DemoController.injectBanner();
+
+    const D = window.SAMPLE_DATA;
+    const on = DemoController.isOn();
+
+    function renderKPIs() {
+      const c = document.getElementById('kpi-container');
+      if (!on) {
+        c.innerHTML = renderEmptyState({ title: 'ยังไม่มีข้อมูลโครงการ', message: 'เพิ่มโครงการแรกเพื่อเริ่มใช้งานระบบ' });
+        return;
+      }
+      c.className = 'kpi-grid';
+      const projects = D.projects;
+      const totalUnits = projects.reduce((s, p) => s + p.totalUnits, 0);
+      const inProgressUnits = projects.reduce((s, p) => s + p.inProgressUnits, 0);
+      const totalContract = projects.reduce((s, p) => s + p.contractValue, 0);
+      const totalSpent = projects.reduce((s, p) => s + p.spent, 0);
+      c.innerHTML = `
+        <div class="kpi"><div class="accent-bar"></div><div class="label">โครงการทั้งหมด</div><div class="value">${projects.length}<span class="unit">โครงการ</span></div><div class="delta neutral">${projects.filter(p=>p.status==='in-progress').length} กำลังดำเนินการ</div></div>
+        <div class="kpi success"><div class="accent-bar"></div><div class="label">ยูนิตรวม</div><div class="value">${fmt.num(totalUnits)}<span class="unit">หลัง</span></div><div class="delta up">${fmt.num(inProgressUnits)} หลังกำลังสร้าง</div></div>
+        <div class="kpi"><div class="accent-bar"></div><div class="label">มูลค่าสัญญารวม</div><div class="value">${fmt.currencyShort(totalContract)}<span class="unit">บาท</span></div><div class="delta neutral">ทุกโครงการ</div></div>
+        <div class="kpi warning"><div class="accent-bar"></div><div class="label">ใช้ไปแล้ว</div><div class="value">${fmt.currencyShort(totalSpent)}<span class="unit">บาท</span></div><div class="delta neutral">${Math.round(totalSpent/totalContract*100)}% ของมูลค่าสัญญา</div></div>
+      `;
+    }
+
+    function renderProjectsGrid() {
+      const c = document.getElementById('projects-grid');
+      if (!on) { c.innerHTML = renderEmptyState({ title: 'ยังไม่มีโครงการ', message: 'เพิ่มโครงการเพื่อเริ่มติดตามความคืบหน้า' }); return; }
+      const inProgress = D.projects.filter(p => p.status === 'in-progress');
+      c.innerHTML = `<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:14px;">${inProgress.map(p => {
+        const spentPct = Math.round((p.spent / p.contractValue) * 100);
+        const unitsPct = Math.round((p.completedUnits / p.totalUnits) * 100);
+        return `
+          <div style="padding:16px;border:1px solid var(--color-border);border-radius:8px;background:var(--color-surface);">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;">
+              <div>
+                <div style="font-weight:600;font-size:14.5px;">${p.name}</div>
+                <div style="font-size:12px;color:#64748b;margin-top:3px;">${p.id} · ${p.location}</div>
+              </div>
+              ${fmt.statusPill(p.status)}
+            </div>
+
+            <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:14px;font-size:12px;">
+              <div><span style="color:#94a3b8;">ประเภท:</span> <strong>${p.type}</strong></div>
+              <div><span style="color:#94a3b8;">พื้นที่:</span> <strong>${p.landArea}</strong></div>
+              <div><span style="color:#94a3b8;">Block:</span> <strong>${p.blocks.join(', ')}</strong></div>
+              <div><span style="color:#94a3b8;">งวดปัจจุบัน:</span> <strong style="color:#2563eb;">${p.currentPhase}</strong></div>
+            </div>
+
+            <div style="margin-bottom:10px;">
+              <div style="display:flex;justify-content:space-between;font-size:11.5px;margin-bottom:4px;">
+                <span style="color:#64748b;">ความคืบหน้าก่อสร้าง (${p.completedUnits}/${p.totalUnits} หลัง)</span>
+                <strong>${unitsPct}%</strong>
+              </div>
+              <div style="height:8px;background:#e2e8f0;border-radius:4px;overflow:hidden;display:flex;">
+                <div style="width:${p.completedUnits/p.totalUnits*100}%;background:#16a34a;"></div>
+                <div style="width:${p.inProgressUnits/p.totalUnits*100}%;background:#fbbf24;"></div>
+              </div>
+            </div>
+
+            <div style="margin-bottom:10px;">
+              <div style="display:flex;justify-content:space-between;font-size:11.5px;margin-bottom:4px;">
+                <span style="color:#64748b;">งบใช้ไป</span>
+                <strong>${fmt.currencyShort(p.spent)} / ${fmt.currencyShort(p.contractValue)} (${spentPct}%)</strong>
+              </div>
+              <div style="height:6px;background:#e2e8f0;border-radius:3px;overflow:hidden;">
+                <div style="width:${spentPct}%;height:100%;background:${spentPct > 90 ? '#dc2626' : spentPct > 70 ? '#d97706' : '#2563eb'};"></div>
+              </div>
+            </div>
+
+            <div style="display:flex;justify-content:space-between;padding-top:10px;border-top:1px solid #e2e8f0;font-size:11.5px;color:#64748b;">
+              <span>PM: <strong style="color:#475569;">${p.projectManager}</strong></span>
+              <span>ส่งมอบ: <strong style="color:#475569;">${fmt.date(p.expectedFinish)}</strong></span>
+            </div>
+          </div>
+        `;
+      }).join('')}</div>`;
+    }
+
+    function renderProjectsTable() {
+      const c = document.getElementById('projects-table');
+      if (!on) { c.innerHTML = renderEmptyState({ title: 'ยังไม่มีโครงการ', message: 'เพิ่มโครงการเพื่อเริ่มใช้งาน' }); return; }
+      const sorted = [...D.projects].sort((a, b) => (b.completedUnits/b.totalUnits) - (a.completedUnits/a.totalUnits));
+      c.innerHTML = `
+        <table class="data-table">
+          <thead><tr>
+            <th>รหัส</th><th>ชื่อโครงการ</th><th>ประเภท</th>
+            <th class="num">หลังรวม</th><th class="num">เสร็จแล้ว</th><th>งวดปัจจุบัน</th>
+            <th class="num">งบประมาณ</th><th class="num">ใช้ไป</th><th>กำหนดส่งมอบ</th><th>สถานะ</th><th></th>
+          </tr></thead>
+          <tbody>
+          ${sorted.map(p => {
+            const unitsPct = Math.round(p.completedUnits/p.totalUnits*100);
+            return `
+              <tr>
+                <td style="font-family:monospace;font-size:12px;color:#64748b;">${p.id}</td>
+                <td><strong>${p.name}</strong><div style="font-size:11.5px;color:#94a3b8;">${p.location}</div></td>
+                <td>${p.type}</td>
+                <td class="num">${p.totalUnits}</td>
+                <td class="num"><strong>${p.completedUnits}</strong> (${unitsPct}%)</td>
+                <td>${p.currentPhase}</td>
+                <td class="num">${fmt.currencyShort(p.contractValue)}</td>
+                <td class="num">${fmt.currencyShort(p.spent)}</td>
+                <td>${fmt.date(p.expectedFinish)}</td>
+                <td>${fmt.statusPill(p.status)}</td>
+                <td><button class="btn btn-sm">ดูรายละเอียด</button></td>
+              </tr>`;
+          }).join('')}
+          </tbody>
+        </table>
+      `;
+    }
+
+    function renderPhases() {
+      const c = document.getElementById('phases-container');
+      if (!on) { c.innerHTML = renderEmptyState({ title: 'ยังไม่มีข้อมูลงวดงาน', message: 'ข้อมูลงวดงานมาตรฐานจะแสดงที่นี่' }); return; }
+      c.innerHTML = `
+        <table class="data-table">
+          <thead><tr><th style="width:50px;">#</th><th>งวดงาน</th><th>ระยะเวลา</th><th>วัสดุหลักที่ใช้</th></tr></thead>
+          <tbody>
+            ${D.phases.map((ph, i) => `
+              <tr>
+                <td><strong style="color:#94a3b8;">${i + 1}</strong></td>
+                <td><strong>${ph.name}</strong></td>
+                <td>${ph.duration}</td>
+                <td>${ph.keyMaterials.length > 0 ? ph.keyMaterials.map(m => `<span class="pill neutral" style="margin-right:4px;">${m}</span>`).join('') : '<span style="color:#94a3b8;">-</span>'}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      `;
+    }
+
+    renderKPIs();
+    renderProjectsGrid();
+    renderProjectsTable();
+    renderPhases();
+  </script>
+</body>
+</html>

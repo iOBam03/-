@@ -1,0 +1,22 @@
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
+
+# Environment
+.env
+.env.local
+
+# Node / build artifacts (ไม่ใช้ในโปรเจคนี้ แต่กันไว้)
+node_modules/
+dist/
+build/

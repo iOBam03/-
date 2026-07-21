@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ผู้ขายวัสดุ/ผู้รับเหมา — ระบบจัดซื้อวัสดุก่อสร้าง</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+  <div class="app-shell">
+
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <div class="logo-mark">CP</div>
+        <div class="brand-text">Construction Procurement<small>ระบบจัดซื้อวัสดุก่อสร้าง</small></div>
+      </div>
+      <div class="sidebar-section">
+        <div class="sidebar-section-title">ภาพรวม</div>
+        <ul class="sidebar-nav">
+          <li><a href="dashboard.html"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>Dashboard</a></li>
+          <li><a href="projects.html"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-4"/><path d="M9 9v.01M9 12v.01M9 15v.01M9 18v.01"/></svg>โครงการ</a></li>
+          <li><a href="ai-analysis.html"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>วิเคราะห์แนวโน้มราคาวัสดุ</a></li>
+        </ul>
+      </div>
+      <div class="sidebar-section">
+        <div class="sidebar-section-title">การจัดการ</div>
+        <ul class="sidebar-nav">
+          <li><a href="suppliers.html" class="active"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-6 9 6v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg>ผู้ขายวัสดุ/ผู้รับเหมา</a></li>
+          <li><a href="site-materials.html"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="M3.27 6.96L12 12.01l8.73-5.05M12 22.08V12"/></svg>วัสดุ ณ ไซต์งาน</a></li>
+          <li><a href="alerts.html"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>แจ้งเตือนราคา</a></li>
+        </ul>
+      </div>
+      <div class="sidebar-section">
+        <div class="sidebar-section-title">วิเคราะห์</div>
+        <ul class="sidebar-nav">
+          <li><a href="reports.html"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg>รายงาน</a></li>
+        </ul>
+      </div>
+      <div class="sidebar-footer">
+        <div>ผู้ใช้: <strong style="color:#cbd5e1">ฝ่ายจัดซื้อ</strong></div>
+        <div style="margin-top:4px">v1.0.0 — Prototype</div>
+      </div>
+    </aside>
+
+    <div class="main-area">
+      <div class="topbar">
+        <div class="topbar-left">
+          <div>
+            <div class="breadcrumb">หน้าหลัก / <strong style="color:#475569">ผู้ขายวัสดุ/ผู้รับเหมา</strong></div>
+            <div class="page-title">ฐานข้อมูลผู้ขายวัสดุและผู้รับเหมา</div>
+          </div>
+        </div>
+        <div class="topbar-right">
+          <div class="search-box">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+            <input type="text" placeholder="ค้นหาผู้ขาย/ผู้รับเหมา...">
+          </div>
+          <button class="icon-btn" title="การแจ้งเตือน">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+            <span class="badge-dot"></span>
+          </button>
+          <div class="user-chip">
+            <div class="avatar">จซ</div>
+            <span class="user-name">ฝ่ายจัดซื้อ</span>
+          </div>
+          <div id="demo-toggle-mount"></div>
+        </div>
+      </div>
+
+      <main class="content">
+        <div class="page-header">
+          <div>
+            <h1>ฐานข้อมูลผู้ขายวัสดุและผู้รับเหมา</h1>
+            <div class="subtitle">ประเมินตามเกณฑ์คุณภาพวัสดุ ความตรงเวลาจัดส่ง ตรงตาม BOQ และความสามารถในการส่งมอบตามงวดงาน</div>
+          </div>
+          <div style="display:flex;gap:8px;">
+            <button class="btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>ส่งออก Excel</button>
+            <button class="btn btn-primary"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>เพิ่มคู่ค้า</button>
+          </div>
+        </div>
+
+        <div id="kpi-container"></div>
+
+        <div class="grid-2 mb-4">
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <h3>Lead Time เฉลี่ยตามประเภทวัสดุ</h3>
+                <div class="sub">เปรียบเทียบ Lead Time ที่สัญญาไว้กับ Lead Time จริง (จัดส่งตรงไซต์งาน)</div>
+              </div>
+            </div>
+            <div class="card-body">
+              <div id="lead-chart-container"></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <h3>การกระจายตัวของคะแนนคู่ค้า</h3>
+                <div class="sub">คะแนนรวม 0-100 คำนวณจากคุณภาพวัสดุและความตรงเวลาจัดส่ง</div>
+              </div>
+            </div>
+            <div class="card-body">
+              <div id="score-chart-container"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card mb-4">
+          <div class="card-header">
+            <div>
+              <h3>การวิเคราะห์ความเสี่ยงคู่ค้า (Spend Risk Analysis)</h3>
+              <div class="sub">ระบุคู่ค้า tier-1 ที่มีผู้ขายเดียวและยังไม่มี break-glass plan (ตามหลัก Procurement Optimizer)</div>
+            </div>
+          </div>
+          <div class="card-body" id="risk-table-container"></div>
+        </div>
+
+        <div class="card mb-4">
+          <div class="card-header">
+            <div>
+              <h3>การจัดกลุ่มวันต่อสัญญา (Renewal Date Clustering)</h3>
+              <div class="sub">หากสัญญา tier-1 หลายฉบับหมดอายุในเดือนเดียวกัน จะสูญเสียอำนาจต่อรอง</div>
+            </div>
+          </div>
+          <div class="card-body" id="renewal-container"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <h3>รายชื่อคู่ค้าทั้งหมด</h3>
+              <div class="sub">เรียงตามคะแนนรวม (สูง → ต่ำ) · แยกระหว่างผู้ขายวัสดุและผู้รับเหมา</div>
+            </div>
+            <div style="display:flex;gap:6px;">
+              <select class="form-control" id="type-filter" style="width:auto;font-size:12px;padding:5px 8px;">
+                <option value="all">ทุกประเภท</option>
+                <option value="vendor">ผู้ขายวัสดุ</option>
+                <option value="contractor">ผู้รับเหมา</option>
+              </select>
+              <select class="form-control" style="width:auto;font-size:12px;padding:5px 8px;">
+                <option>ทุกหมวดหมู่</option>
+                <option>ปูนซีเมนต์</option>
+                <option>เหล็กและโลหะ</option>
+                <option>วัสดุก่อสร้าง</option>
+                <option>สีและเคมีภัณฑ์</option>
+                <option>ไฟฟ้าและประปา</option>
+                <option>ผู้รับเหมางานโครงสร้าง</option>
+                <option>ผู้รับเหมางานสถาปัตย์</option>
+              </select>
+            </div>
+          </div>
+          <div class="card-body no-pad" id="table-container"></div>
+        </div>
+      </main>
+
+      <footer class="app-footer">
+        <span>© 2569 Construction Procurement · เวอร์ชัน 1.0.0</span>
+        <span>ข้อมูลคู่ค้าอัปเดต: 20 ก.ค. 2569</span>
+      </footer>
+    </div>
+  </div>
+
+  <script src="js/data.js"></script>
+  <script src="js/demo.js"></script>
+  <script>
+    DemoController.injectToggle('#demo-toggle-mount');
+    DemoController.injectBanner();
+
+    const D = window.SAMPLE_DATA;
+    const on = DemoController.isOn();
+
+    function renderKPIs() {
+      const c = document.getElementById('kpi-container');
+      if (!on) {
+        c.innerHTML = renderEmptyState({
+          title: 'ยังไม่มีข้อมูลคู่ค้า',
+          message: 'ระบบจะคำนวณคะแนนประเมินอัตโนมัติจากข้อมูลการสั่งซื้อและการจัดส่งวัสดุเข้าไซต์งาน'
+        });
+        return;
+      }
+      c.className = 'kpi-grid';
+      const partners = D.suppliers;
+      const vendors = partners.filter(p => p.type === 'vendor');
+      const contractors = partners.filter(p => p.type === 'contractor');
+      const avgScore = Math.round(partners.reduce((s, x) => s + x.rating, 0) / partners.length);
+      const onTimeAvg = Math.round(partners.reduce((s, x) => s + x.onTime, 0) / partners.length);
+      const totalSpend = partners.reduce((s, x) => s + x.totalSpend, 0);
+      c.innerHTML = `
+        <div class="kpi success"><div class="accent-bar"></div><div class="label">คู่ค้าทั้งหมด</div><div class="value">${partners.length}<span class="unit">ราย</span></div><div class="delta up">ผู้ขาย ${vendors.length} · ผู้รับเหมา ${contractors.length}</div></div>
+        <div class="kpi"><div class="accent-bar"></div><div class="label">คะแนนเฉลี่ยรวม</div><div class="value">${avgScore}<span class="unit">/ 100</span></div><div class="delta up">+2.4 คะแนน จากไตรมาสก่อน</div></div>
+        <div class="kpi warning"><div class="accent-bar"></div><div class="label">ความตรงเวลาเฉลี่ย</div><div class="value">${onTimeAvg}<span class="unit">%</span></div><div class="delta neutral">เป้าหมาย: 90% (จัดส่งตรงไซต์)</div></div>
+        <div class="kpi"><div class="accent-bar"></div><div class="label">มูลค่าการจัดซื้อรวม</div><div class="value">${fmt.currency(totalSpend)}</div><div class="delta up">YTD · ม.ค.-ก.ค. 2569</div></div>
+      `;
+    }
+
+    function renderLeadChart() {
+      const c = document.getElementById('lead-chart-container');
+      if (!on) { c.innerHTML = renderEmptyState({ title: 'ยังไม่มีข้อมูล Lead Time', message: 'กราฟเปรียบเทียบ Lead Time ตามประเภทวัสดุจะแสดงเมื่อมีข้อมูลการจัดส่งเข้าไซต์งาน' }); return; }
+      c.innerHTML = '<div class="chart-container"><canvas id="lead-chart"></canvas></div>';
+      new Chart(document.getElementById('lead-chart'), {
+        type: 'bar',
+        data: {
+          labels: D.leadTimeData.labels,
+          datasets: [
+            { label: 'Lead Time ที่สัญญาไว้', data: D.leadTimeData.promised, backgroundColor: '#cbd5e1', borderRadius: 4, maxBarThickness: 30 },
+            { label: 'Lead Time จริง (จัดส่งไซต์งาน)', data: D.leadTimeData.actual, backgroundColor: chartPalette.accent, borderRadius: 4, maxBarThickness: 30 }
+          ]
+        },
+        options: { ...defaultChartOptions, scales: { ...defaultChartOptions.scales, y: { ...defaultChartOptions.scales.y, ticks: { ...defaultChartOptions.scales.y.ticks, callback: v => v + ' วัน' } } } }
+      });
+    }
+
+    function renderScoreChart() {
+      const c = document.getElementById('score-chart-container');
+      if (!on) { c.innerHTML = renderEmptyState({ title: 'ยังไม่มีข้อมูลคะแนน', message: 'การกระจายตัวของคะแนนจะแสดงเมื่อมีการประเมินคู่ค้า' }); return; }
+      c.innerHTML = '<div class="chart-container"><canvas id="score-chart"></canvas></div>';
+      const sorted = [...D.suppliers].sort((a, b) => a.rating - b.rating);
+      new Chart(document.getElementById('score-chart'), {
+        type: 'bar',
+        data: {
+          labels: sorted.map(s => s.name.substring(0, 16) + (s.name.length > 16 ? '...' : '')),
+          datasets: [{
+            label: 'คะแนนรวม',
+            data: sorted.map(s => s.rating),
+            backgroundColor: sorted.map(s => s.rating >= 90 ? chartPalette.success : s.rating >= 80 ? chartPalette.warning : chartPalette.danger),
+            borderRadius: 4,
+            maxBarThickness: 24
+          }]
+        },
+        options: {
+          ...defaultChartOptions,
+          indexAxis: 'y',
+          plugins: { ...defaultChartOptions.plugins, legend: { display: false } },
+          scales: {
+            x: { ...defaultChartOptions.scales.x, max: 100, ticks: { ...defaultChartOptions.scales.x.ticks, callback: v => v + ' คะแนน' } },
+            y: { ...defaultChartOptions.scales.y, grid: { display: false } }
+          }
+        }
+      });
+    }
+
+    function renderTable() {
+      const c = document.getElementById('table-container');
+      if (!on) { c.innerHTML = renderEmptyState({ title: 'ยังไม่มีรายชื่อคู่ค้า', message: 'เพิ่มผู้ขายวัสดุหรือผู้รับเหมารายแรกเพื่อเริ่มติดตามคะแนนการประเมิน' }); return; }
+      const sorted = [...D.suppliers].sort((a, b) => b.rating - a.rating);
+      const typeLabel = t => t === 'vendor' ? '<span class="status-pill" style="background:#dbeafe;color:#1e40af;">ผู้ขายวัสดุ</span>' : '<span class="status-pill" style="background:#fef3c7;color:#92400e;">ผู้รับเหมา</span>';
+      c.innerHTML = `
+        <table class="data-table">
+          <thead><tr>
+            <th>รหัส</th><th>ชื่อคู่ค้า</th><th>ประเภท</th><th>หมวดหมู่</th><th>ระดับ</th>
+            <th>ความเสี่ยง</th><th class="num">ความตรงเวลา</th><th class="num">คุณภาพ</th><th class="num">Lead Time</th>
+            <th class="num">คะแนนรวม</th><th class="num">มูลค่าสั่งซื้อ</th><th>สถานะ</th><th></th>
+          </tr></thead>
+          <tbody>
+          ${sorted.map(s => {
+            const scoreClass = s.rating >= 90 ? '' : s.rating >= 80 ? 'medium' : 'low';
+            const meta = D.supplierMeta[s.id];
+            let riskBadge = '';
+            if (s.tier === 'tier-1' && meta && meta.singleSource && !meta.breakGlassPlan) {
+              riskBadge = '<span class="pill danger" title="tier-1 ที่มีผู้ขายเดียวและยังไม่มี break-glass plan">ความเสี่ยงสูง</span>';
+            } else if (s.tier === 'tier-1' && meta && meta.singleSource) {
+              riskBadge = '<span class="pill warning" title="tier-1 single-source แต่มี break-glass plan">single-source</span>';
+            } else {
+              riskBadge = '<span class="pill success">ปกติ</span>';
+            }
+            return `
+              <tr>
+                <td style="color:#64748b;font-family:monospace;font-size:12px;">${s.id}</td>
+                <td><strong>${s.name}</strong><div style="font-size:11.5px;color:#94a3b8;">${s.contact} · ${s.phone}</div></td>
+                <td>${typeLabel(s.type)}</td>
+                <td>${s.category}</td>
+                <td>${fmt.statusPill(s.tier)}</td>
+                <td>${riskBadge}</td>
+                <td class="num">${s.onTime}%</td>
+                <td class="num">${s.quality}%</td>
+                <td class="num">${s.leadTime} วัน</td>
+                <td class="num">
+                  <div class="score-bar">
+                    <div class="track"><div class="fill ${scoreClass}" style="width:${s.rating}%"></div></div>
+                    <span class="num">${s.rating}</span>
+                  </div>
+                </td>
+                <td class="num">${fmt.currency(s.totalSpend)}</td>
+                <td>${fmt.statusPill(s.status)}</td>
+                <td><button class="btn btn-sm btn-ghost">ดู</button></td>
+              </tr>`;
+          }).join('')}
+          </tbody>
+        </table>
+      `;
+    }
+
+    function renderRiskTable() {
+      const c = document.getElementById('risk-table-container');
+      if (!on) { c.innerHTML = renderEmptyState({ title: 'ยังไม่มีข้อมูลความเสี่ยง', message: 'การวิเคราะห์ความเสี่ยงจะแสดงเมื่อมีข้อมูลคู่ค้า' }); return; }
+      const riskRows = D.suppliers
+        .filter(s => s.tier === 'tier-1')
+        .map(s => ({ ...s, meta: D.supplierMeta[s.id] }))
+        .sort((a, b) => {
+          // single-source + no break-glass = highest risk first
+          const score = s => (s.meta.singleSource ? 2 : 0) + (s.meta.breakGlassPlan ? 0 : 1);
+          return score(b) - score(a);
+        });
+      c.innerHTML = `
+        <table class="data-table">
+          <thead><tr>
+            <th>คู่ค้า Tier 1</th><th>หมวด</th>
+            <th>single-source?</th><th>break-glass plan</th>
+            <th>สถานะ</th><th>สัญญาหมดอายุ</th><th>ข้อเสนอแนะ</th>
+          </tr></thead>
+          <tbody>
+          ${riskRows.map(s => {
+            const isHigh = s.meta.singleSource && !s.meta.breakGlassPlan;
+            const isMid = s.meta.singleSource && s.meta.breakGlassPlan;
+            const status = isHigh ? '<span class="pill danger">ความเสี่ยงสูง</span>' : isMid ? '<span class="pill warning">เฝ้าระวัง</span>' : '<span class="pill success">ปกติ</span>';
+            const advice = isHigh
+              ? '<strong style="color:#dc2626;">DO NOT CONSOLIDATE</strong> — ต้องจัดทำ break-glass plan 72 ชม. ก่อน'
+              : isMid
+              ? 'มีแผนแล้ว ทบทวนแผนทุกไตรมาส'
+              : 'มีผู้ขายสำรอง สามารถ consolidate ได้';
+            return `
+              <tr style="${isHigh ? 'background:#fef2f2;' : ''}">
+                <td><strong>${s.name}</strong><div style="font-size:11.5px;color:#94a3b8;">${s.contact}</div></td>
+                <td>${s.category}</td>
+                <td>${s.meta.singleSource ? '<span class="pill danger">ใช่</span>' : '<span class="pill success">ไม่</span>'}</td>
+                <td>${s.meta.breakGlassPlan ? '<span class="pill success">มี</span>' : '<span class="pill danger">ไม่มี</span>'}</td>
+                <td>${status}</td>
+                <td style="font-size:12px;color:#475569;">${fmt.date(s.meta.contractEnd)}</td>
+                <td style="font-size:12.5px;">${advice}</td>
+              </tr>`;
+          }).join('')}
+          </tbody>
+        </table>
+      `;
+    }
+
+    function renderRenewals() {
+      const c = document.getElementById('renewal-container');
+      if (!on) { c.innerHTML = renderEmptyState({ title: 'ยังไม่มีข้อมูลการต่อสัญญา', message: 'การวิเคราะห์จะแสดงเมื่อมีข้อมูลสัญญา' }); return; }
+      c.innerHTML = D.renewals.map(group => {
+        const tier1Count = group.contracts.filter(x => x.tier === 'tier-1').length;
+        const isClusterRisk = tier1Count >= 3;
+        const headerBg = isClusterRisk ? '#fef2f2' : '#f8fafc';
+        const borderColor = isClusterRisk ? '#dc2626' : '#cbd5e1';
+        return `
+          <div style="border:1px solid ${borderColor};border-radius:8px;margin-bottom:12px;overflow:hidden;">
+            <div style="background:${headerBg};padding:10px 14px;border-bottom:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center;">
+              <div>
+                <strong style="color:#1e293b;font-size:14px;">${group.month}</strong>
+                <span style="margin-left:10px;font-size:12px;color:#64748b;">${group.contracts.length} สัญญา · ${tier1Count} tier-1</span>
+              </div>
+              ${isClusterRisk ? '<span class="pill danger">Renewal Cluster Risk</span>' : '<span class="pill success">กระจายตัวดี</span>'}
+            </div>
+            <table class="data-table" style="margin:0;">
+              <tbody>
+              ${group.contracts.map(ct => `
+                <tr>
+                  <td><strong>${ct.supplier}</strong></td>
+                  <td style="font-size:12.5px;color:#64748b;">${ct.category}</td>
+                  <td>${fmt.statusPill(ct.tier)}</td>
+                  <td>${ct.singleSource ? '<span class="pill warning">single-source</span>' : '<span style="color:#94a3b8;font-size:12px;">มีสำรอง</span>'}</td>
+                  <td style="font-size:12px;">${fmt.date(ct.endDate)}</td>
+                </tr>`).join('')}
+              </tbody>
+            </table>
+          </div>`;
+      }).join('') + `
+        <div style="margin-top:14px;padding:12px 14px;background:#f1f5f9;border-radius:6px;font-size:12.5px;color:#475569;">
+          <strong>ข้อแนะนำ:</strong> กระจายวันต่อสัญญา tier-1 ออกจากเดือนเดียวกัน เพื่อรักษาอำนาจต่อรอง และลดความเสี่ยงที่ผู้ขายจะบีงราคาพร้อมกัน
+        </div>
+      `;
+    }
+
+    renderKPIs();
+    renderLeadChart();
+    renderScoreChart();
+    renderTable();
+    renderRiskTable();
+    renderRenewals();
+  </script>
+</body>
+</html>

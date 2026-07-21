@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard — ระบบจัดซื้อวัสดุก่อสร้าง</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+  <div class="app-shell">
+
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <div class="logo-mark">CP</div>
+        <div class="brand-text">Construction Procurement<small>ระบบจัดซื้อวัสดุก่อสร้าง</small></div>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-section-title">ภาพรวม</div>
+        <ul class="sidebar-nav">
+          <li><a href="dashboard.html" class="active"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>Dashboard</a></li>
+          <li><a href="projects.html"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-4"/><path d="M9 9v.01M9 12v.01M9 15v.01M9 18v.01"/></svg>โครงการ</a></li>
+          <li><a href="ai-analysis.html"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>วิเคราะห์แนวโน้มราคาวัสดุ</a></li>
+        </ul>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-section-title">การจัดการ</div>
+        <ul class="sidebar-nav">
+          <li><a href="suppliers.html"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-6 9 6v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg>ผู้ขายวัสดุ/ผู้รับเหมา</a></li>
+          <li><a href="site-materials.html"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="M3.27 6.96L12 12.01l8.73-5.05M12 22.08V12"/></svg>วัสดุ ณ ไซต์งาน</a></li>
+          <li><a href="alerts.html"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>แจ้งเตือนราคา</a></li>
+        </ul>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-section-title">วิเคราะห์</div>
+        <ul class="sidebar-nav">
+          <li><a href="reports.html"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg>รายงาน</a></li>
+        </ul>
+      </div>
+
+      <div class="sidebar-footer">
+        <div>ผู้ใช้: <strong style="color:#cbd5e1">ฝ่ายจัดซื้อ</strong></div>
+        <div style="margin-top:4px">v1.0.0 — Prototype</div>
+      </div>
+    </aside>
+
+    <div class="main-area">
+      <div class="topbar">
+        <div class="topbar-left">
+          <div>
+            <div class="breadcrumb">หน้าหลัก / <strong style="color:#475569">Dashboard</strong></div>
+            <div class="page-title">ภาพรวมการจัดซื้อวัสดุก่อสร้าง</div>
+          </div>
+        </div>
+        <div class="topbar-right">
+          <div class="search-box">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+            <input type="text" placeholder="ค้นหาโครงการ / วัสดุ / PO...">
+          </div>
+          <button class="icon-btn" title="การแจ้งเตือน">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+            <span class="badge-dot"></span>
+          </button>
+          <div class="user-chip">
+            <div class="avatar">จซ</div>
+            <span class="user-name">ฝ่ายจัดซื้อ</span>
+          </div>
+          <div id="demo-toggle-mount"></div>
+        </div>
+      </div>
+
+      <main class="content">
+        <div class="page-header">
+          <div>
+            <h1>ภาพรวมการจัดซื้อวัสดุก่อสร้าง</h1>
+            <div class="subtitle">ข้อมูล ณ วันที่ 20 กรกฎาคม 2569 · อัปเดตล่าสุดเมื่อ 10 นาทีที่แล้ว</div>
+          </div>
+          <div style="display:flex;gap:8px;">
+            <select class="form-control" style="width:auto;">
+              <option>ทุกโครงการ</option>
+              <option>กรีนวิลล์ 2</option>
+              <option>เดอะพาร์คเรสซิเดนซ์</option>
+              <option>บ้านริมธาร</option>
+              <option>เดอะวัลเลย์</option>
+            </select>
+            <button class="btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>ส่งออกรายงาน</button>
+          </div>
+        </div>
+
+        <!-- KPI Tiles -->
+        <div id="kpi-container"></div>
+
+        <!-- Spend Risk Optimization (ตามหลัก Procurement Optimizer) -->
+        <div class="card mb-4" id="spend-optimization-card">
+          <div class="card-header">
+            <div>
+              <h3>Spend Risk Optimization</h3>
+              <div class="sub">สรุปความเสี่ยงด้านการจัดซื้อตามหลัก Pareto · Risk-balanced · Goldratt's TOC</div>
+            </div>
+            <a href="reports.html" class="btn btn-sm btn-ghost">ดูรายงานเต็ม →</a>
+          </div>
+          <div class="card-body" id="spend-optimization-container"></div>
+        </div>
+
+        <!-- Charts -->
+        <div class="grid-2 mb-4">
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <h3>งบประมาณจัดซื้อรายเดือน</h3>
+                <div class="sub">เปรียบเทียบแผนงบประมาณกับการใช้จ่ายจริง (รวมทุกโครงการ)</div>
+              </div>
+            </div>
+            <div class="card-body">
+              <div id="spend-chart-container"></div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <h3>สัดส่วนการจัดซื้อตามประเภทวัสดุ</h3>
+                <div class="sub">6 เดือนย้อนหลัง · รวมทุกโครงการ</div>
+              </div>
+            </div>
+            <div class="card-body">
+              <div id="material-chart-container"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Project Progress Overview -->
+        <div class="card mb-4">
+          <div class="card-header">
+            <div>
+              <h3>ความคืบหน้าโครงการ</h3>
+              <div class="sub">สถานะงวดงานและการเบิกจ่ายงบประมาณ</div>
+            </div>
+            <a href="projects.html" class="btn btn-sm btn-ghost">ดูโครงการทั้งหมด →</a>
+          </div>
+          <div class="card-body" id="projects-container"></div>
+        </div>
+
+        <!-- Recommendations -->
+        <div class="card mb-4">
+          <div class="card-header">
+            <div>
+              <h3>คำแนะนำจากระบบวิเคราะห์</h3>
+              <div class="sub">วิเคราะห์จากงวดงานแต่ละโครงการ ราคาตลาด และปัจจัยภายนอก</div>
+            </div>
+            <a href="ai-analysis.html" class="btn btn-sm btn-ghost">ดูการวิเคราะห์ทั้งหมด →</a>
+          </div>
+          <div class="card-body" id="ai-recs-container"></div>
+        </div>
+
+        <!-- Recent POs -->
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <h3>ใบสั่งซื้อล่าสุด (ส่งตรงไซต์งาน)</h3>
+              <div class="sub">วัสดุจะถูกจัดส่งไปยังไซต์งานโดยตรง</div>
+            </div>
+            <button class="btn btn-sm">ดูทั้งหมด</button>
+          </div>
+          <div class="card-body no-pad" id="po-table-container"></div>
+        </div>
+      </main>
+
+      <footer class="app-footer">
+        <span>© 2569 Construction Procurement · เวอร์ชัน 1.0.0</span>
+        <span>อัปเดตล่าสุด: 20 ก.ค. 2569 · 10:42 น.</span>
+      </footer>
+    </div>
+  </div>
+
+  <script src="js/data.js"></script>
+  <script src="js/demo.js"></script>
+  <script>
+    DemoController.injectToggle('#demo-toggle-mount');
+    DemoController.injectBanner();
+
+    const D = window.SAMPLE_DATA;
+    const on = DemoController.isOn();
+
+    /* KPI Tiles */
+    function renderKPIs() {
+      const c = document.getElementById('kpi-container');
+      if (!on) {
+        c.innerHTML = renderEmptyState({
+          title: 'ยังไม่มีข้อมูลสรุป',
+          message: 'ระบบจะแสดงตัวชี้วัดสำคัญ เช่น จำนวนโครงการ หลังที่กำลังก่อสร้าง มูลค่าจัดซื้อรายเดือน เมื่อมีการบันทึกข้อมูลจริง'
+        });
+        return;
+      }
+      c.className = 'kpi-grid';
+      const k = D.kpi;
+      c.innerHTML = `
+        <div class="kpi"><div class="accent-bar"></div><div class="label">${k.activeProjects.label}</div><div class="value">${k.activeProjects.value}<span class="unit">โครงการ</span></div><div class="delta neutral">${k.activeProjects.delta}</div></div>
+        <div class="kpi success"><div class="accent-bar"></div><div class="label">${k.unitsInProgress.label}</div><div class="value">${fmt.num(k.unitsInProgress.value)}<span class="unit">หลัง</span></div><div class="delta up">${k.unitsInProgress.delta}</div></div>
+        <div class="kpi warning"><div class="accent-bar"></div><div class="label">${k.monthlySpend.label}</div><div class="value">${fmt.currencyShort(k.monthlySpend.value)}<span class="unit">บาท</span></div><div class="delta up">${k.monthlySpend.delta}</div></div>
+        <div class="kpi danger"><div class="accent-bar"></div><div class="label">${k.priceAlerts.label}</div><div class="value">${k.priceAlerts.value}<span class="unit">รายการ</span></div><div class="delta down">${k.priceAlerts.delta}</div></div>
+      `;
+    }
+
+    /* Spend Optimization Summary */
+    function renderSpendOptimization() {
+      const c = document.getElementById('spend-optimization-container');
+      if (!on) { c.innerHTML = renderEmptyState({ title: 'ยังไม่มีข้อมูล Spend Optimization', message: 'ระบบจะวิเคราะห์ความเสี่ยงการจัดซื้อตามหลัก Pareto, Tier risk, Goldratt bottleneck เมื่อมีข้อมูลเพียงพอ' }); return; }
+      const opt = D.spendOptimization;
+      const topCategories = D.pareto.ranked.slice(0, 3);
+      c.innerHTML = `
+        <div style="display:grid;grid-template-columns:repeat(4, 1fr);gap:12px;margin-bottom:14px;">
+          <div style="padding:14px;background:${opt.tier1NoBreakGlassCount > 0 ? '#fef2f2' : '#f0fdf4'};border-radius:6px;border-left:3px solid ${opt.tier1NoBreakGlassCount > 0 ? '#dc2626' : '#16a34a'};">
+            <div style="font-size:11.5px;color:#64748b;text-transform:uppercase;letter-spacing:0.4px;">Tier-1 single-source<br>ที่ไม่มี break-glass plan</div>
+            <div style="font-size:28px;font-weight:700;color:${opt.tier1NoBreakGlassCount > 0 ? '#dc2626' : '#16a34a'};margin-top:6px;">${opt.tier1NoBreakGlassCount}</div>
+            <div style="font-size:12px;color:#475569;margin-top:4px;">${opt.tier1NoBreakGlassCount > 0 ? '<strong>DO NOT CONSOLIDATE</strong> — ต้องจัดทำแผน 72 ชม. ก่อน' : 'ทุก tier-1 มีแผนสำรอง'}</div>
+          </div>
+          <div style="padding:14px;background:${opt.renewalClusterAlerts > 0 ? '#fffbeb' : '#f0fdf4'};border-radius:6px;border-left:3px solid ${opt.renewalClusterAlerts > 0 ? '#d97706' : '#16a34a'};">
+            <div style="font-size:11.5px;color:#64748b;text-transform:uppercase;letter-spacing:0.4px;">Renewal Cluster Risk<br>(tier-1 ≥ 3 ฉบับ/เดือน)</div>
+            <div style="font-size:28px;font-weight:700;color:${opt.renewalClusterAlerts > 0 ? '#d97706' : '#16a34a'};margin-top:6px;">${opt.renewalClusterAlerts}</div>
+            <div style="font-size:12px;color:#475569;margin-top:4px;">${opt.renewalClusterAlerts > 0 ? 'ก.ย. 2569: tier-1 หมด 6 ฉบับ' : 'กระจายตัวดี'}</div>
+          </div>
+          <div style="padding:14px;background:#fef2f2;border-radius:6px;border-left:3px solid #dc2626;">
+            <div style="font-size:11.5px;color:#64748b;text-transform:uppercase;letter-spacing:0.4px;">Purchasing Bottlenecks<br>(ใช้เวลา > 2x median)</div>
+            <div style="font-size:28px;font-weight:700;color:#dc2626;margin-top:6px;">${opt.bottleneckCategoryCount}</div>
+            <div style="font-size:12px;color:#475569;margin-top:4px;">หมวด: เหล็ก ปูน วัสดุก่อสร้าง ไฟฟ้า</div>
+          </div>
+          <div style="padding:14px;background:#f8fafc;border-radius:6px;border-left:3px solid #94a3b8;">
+            <div style="font-size:11.5px;color:#64748b;text-transform:uppercase;letter-spacing:0.4px;">Pareto Insight<br>(Top 20% ของหมวด)</div>
+            <div style="font-size:18px;font-weight:700;color:#1e3a5f;margin-top:6px;">${topCategories.length} หมวด = ${D.pareto.ranked.slice(0,3).reduce((s,x)=>s+x.sharePct,0).toFixed(1)}% ของงบ</div>
+            <div style="font-size:12px;color:#475569;margin-top:4px;">${D.pareto.insight}</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:10px;padding:10px 14px;background:#f1f5f9;border-radius:6px;font-size:12.5px;color:#475569;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;margin-top:1px;"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+          <div><strong>ข้อแนะนำ:</strong> เร่งจัดทำ break-glass plan สำหรับ ${opt.tier1NoBreakGlassCount} tier-1 single-source ก่อน · กระจายวันต่อสัญญาออกจากเดือน ก.ย. · แก้ที่ Lead Time ของ 4 bottleneck ก่อนจะ optimize หมวดอื่น</div>
+        </div>
+      `;
+    }
+
+    /* Spend Chart */
+    function renderSpendChart() {
+      const c = document.getElementById('spend-chart-container');
+      if (!on) { c.innerHTML = renderEmptyState({ title: 'ยังไม่มีข้อมูลการใช้จ่าย', message: 'กราฟเปรียบเทียบแผนงบประมาณกับการใช้จ่ายจริงจะแสดงเมื่อมีการบันทึกธุรกรรมจัดซื้อ' }); return; }
+      c.innerHTML = '<div class="chart-container"><canvas id="spend-chart"></canvas></div>';
+      new Chart(document.getElementById('spend-chart'), {
+        type: 'bar',
+        data: {
+          labels: D.monthlySpend.labels,
+          datasets: [
+            { type: 'line', label: 'แผนงบประมาณ', data: D.monthlySpend.budget, borderColor: chartPalette.primary, backgroundColor: chartPalette.primaryLight, borderWidth: 2, tension: 0.3, pointRadius: 3, pointBackgroundColor: chartPalette.primary, fill: false },
+            { label: 'ใช้จ่ายจริง', data: D.monthlySpend.actual, backgroundColor: chartPalette.accent, borderRadius: 4, maxBarThickness: 28 }
+          ]
+        },
+        options: { ...defaultChartOptions, scales: { ...defaultChartOptions.scales, y: { ...defaultChartOptions.scales.y, ticks: { ...defaultChartOptions.scales.y.ticks, callback: v => fmt.currencyShort(v) } } } }
+      });
+    }
+
+    /* Material Chart */
+    function renderMaterialChart() {
+      const c = document.getElementById('material-chart-container');
+      if (!on) { c.innerHTML = renderEmptyState({ title: 'ยังไม่มีข้อมูลประเภทวัสดุ', message: 'สัดส่วนการจัดซื้อตามประเภทวัสดุจะแสดงเมื่อมีการจัดหมวดหมู่' }); return; }
+      c.innerHTML = '<div class="chart-container"><canvas id="mat-chart"></canvas></div>';
+      const colors = ['#1e3a5f', '#2563eb', '#0891b2', '#16a34a', '#d97706', '#dc2626', '#7c3aed', '#db2777'];
+      new Chart(document.getElementById('mat-chart'), {
+        type: 'doughnut',
+        data: { labels: D.materialSpend.labels, datasets: [{ data: D.materialSpend.values, backgroundColor: colors, borderWidth: 2, borderColor: '#fff' }] },
+        options: { ...defaultChartOptions, cutout: '60%', plugins: { ...defaultChartOptions.plugins, legend: { ...defaultChartOptions.plugins.legend, position: 'bottom' } }, scales: {} }
+      });
+    }
+
+    /* Projects Overview */
+    function renderProjects() {
+      const c = document.getElementById('projects-container');
+      if (!on) { c.innerHTML = renderEmptyState({ title: 'ยังไม่มีข้อมูลโครงการ', message: 'ระบบจะแสดงความคืบหน้าของแต่ละโครงการเมื่อมีการเพิ่มโครงการเข้ามา' }); return; }
+      const projects = D.projects.filter(p => p.status === 'in-progress');
+      c.innerHTML = projects.map(p => {
+        const spentPercent = Math.round((p.spent / p.contractValue) * 100);
+        const unitsPercent = Math.round((p.completedUnits / p.totalUnits) * 100);
+        return `
+          <div style="padding:16px 18px;border:1px solid var(--color-border);border-radius:8px;margin-bottom:12px;background:var(--color-surface-alt);">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;">
+              <div>
+                <div style="font-weight:600;color:var(--color-text);font-size:14px;">${p.name}</div>
+                <div style="font-size:12px;color:var(--color-text-secondary);margin-top:2px;">${p.location} · ${p.type}</div>
+              </div>
+              <div style="text-align:right;">
+                <div style="font-size:12px;color:var(--color-text-muted);">กำลังอยู่ในงวด</div>
+                <div style="font-weight:600;color:var(--color-accent);font-size:13px;">${p.currentPhase}</div>
+              </div>
+            </div>
+
+            <div style="display:grid;grid-template-columns:repeat(3, 1fr);gap:14px;margin-top:12px;">
+              <div>
+                <div style="display:flex;justify-content:space-between;font-size:11.5px;margin-bottom:4px;">
+                  <span style="color:var(--color-text-muted);">ความคืบหน้าก่อสร้าง</span>
+                  <strong style="color:var(--color-text);">${p.completedUnits}/${p.totalUnits} หลัง (${unitsPercent}%)</strong>
+                </div>
+                <div style="height:6px;background:#e2e8f0;border-radius:3px;overflow:hidden;">
+                  <div style="width:${unitsPercent}%;height:100%;background:var(--color-success);"></div>
+                </div>
+              </div>
+              <div>
+                <div style="display:flex;justify-content:space-between;font-size:11.5px;margin-bottom:4px;">
+                  <span style="color:var(--color-text-muted);">งบใช้ไป</span>
+                  <strong style="color:var(--color-text);">${fmt.currencyShort(p.spent)} / ${fmt.currencyShort(p.contractValue)}</strong>
+                </div>
+                <div style="height:6px;background:#e2e8f0;border-radius:3px;overflow:hidden;">
+                  <div style="width:${spentPercent}%;height:100%;background:${spentPercent > 90 ? 'var(--color-danger)' : spentPercent > 70 ? 'var(--color-warning)' : 'var(--color-accent)'};"></div>
+                </div>
+              </div>
+              <div>
+                <div style="display:flex;justify-content:space-between;font-size:11.5px;margin-bottom:4px;">
+                  <span style="color:var(--color-text-muted);">กำหนดส่งมอบ</span>
+                  <strong style="color:var(--color-text);">${fmt.date(p.expectedFinish)}</strong>
+                </div>
+                <div style="font-size:11px;color:var(--color-text-muted);margin-top:2px;">PM: ${p.projectManager}</div>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    /* Recommendations */
+    function renderAIRecs() {
+      const c = document.getElementById('ai-recs-container');
+      if (!on) { c.innerHTML = renderEmptyState({ title: 'ยังไม่มีคำแนะนำจากระบบ', message: 'ระบบจะวิเคราะห์ข้อมูลราคาและความคืบหน้าของแต่ละโครงการเพื่อแนะนำจังหวะการจัดซื้อ เมื่อมีข้อมูลเพียงพอ' }); return; }
+      c.innerHTML = D.aiRecommendations.map(r => `
+        <div class="insight-box ${r.type}">
+          <div class="insight-title">${r.title} ${r.project ? `<span style="font-weight:400;font-size:12px;color:#64748b;">— ${r.project}</span>` : ''}</div>
+          <div class="insight-body">
+            ${r.detail}
+            <div class="confidence-bar">
+              <span style="font-size:12px;color:#64748b">ความมั่นใจ</span>
+              <div class="track"><div class="fill" style="width:${r.confidence}%;background:${r.type==='danger'?'#dc2626':r.type==='warning'?'#d97706':'#16a34a'}"></div></div>
+              <span class="label">${r.confidence}%</span>
+            </div>
+            <div style="margin-top:8px;font-size:12px;color:#475569;"><strong>ข้อเสนอแนะ:</strong> ${r.action}</div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    /* PO Table */
+    function renderPOTable() {
+      const c = document.getElementById('po-table-container');
+      if (!on) { c.innerHTML = renderEmptyState({ title: 'ยังไม่มีใบสั่งซื้อ', message: 'รายการใบสั่งซื้อล่าสุดจะแสดงที่นี่เมื่อมีการสร้างใบสั่งซื้อในระบบ' }); return; }
+      c.innerHTML = `
+        <table class="data-table">
+          <thead><tr><th>เลขที่ PO</th><th>ผู้ขาย/ผู้รับเหมา</th><th>จัดส่งไป</th><th class="num">รายการ</th><th class="num">มูลค่า</th><th>วันที่สั่ง</th><th>กำหนดส่ง</th><th>สถานะ</th></tr></thead>
+          <tbody>
+            ${D.recentPOs.map(p => `
+              <tr>
+                <td><strong>${p.poNo}</strong></td>
+                <td>${p.supplier}</td>
+                <td><span style="font-size:12px;">${p.deliverTo}</span></td>
+                <td class="num">${p.items}</td>
+                <td class="num">${fmt.currency(p.total)}</td>
+                <td>${fmt.date(p.orderDate)}</td>
+                <td>${fmt.date(p.deliveryDate)}</td>
+                <td>${fmt.statusPill(p.status)}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      `;
+    }
+
+    renderKPIs();
+    renderSpendOptimization();
+    renderSpendChart();
+    renderMaterialChart();
+    renderProjects();
+    renderAIRecs();
+    renderPOTable();
+  </script>
+</body>
+</html>

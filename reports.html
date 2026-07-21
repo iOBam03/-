@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>รายงาน — ระบบจัดซื้อวัสดุก่อสร้าง</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+  <div class="app-shell">
+
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <div class="logo-mark">CP</div>
+        <div class="brand-text">Construction Procurement<small>ระบบจัดซื้อวัสดุก่อสร้าง</small></div>
+      </div>
+      <div class="sidebar-section">
+        <div class="sidebar-section-title">ภาพรวม</div>
+        <ul class="sidebar-nav">
+          <li><a href="dashboard.html"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>Dashboard</a></li>
+          <li><a href="projects.html"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-4"/><path d="M9 9v.01M9 12v.01M9 15v.01M9 18v.01"/></svg>โครงการ</a></li>
+          <li><a href="ai-analysis.html"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>วิเคราะห์แนวโน้มราคาวัสดุ</a></li>
+        </ul>
+      </div>
+      <div class="sidebar-section">
+        <div class="sidebar-section-title">การจัดการ</div>
+        <ul class="sidebar-nav">
+          <li><a href="suppliers.html"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-6 9 6v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg>ผู้ขายวัสดุ/ผู้รับเหมา</a></li>
+          <li><a href="site-materials.html"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="M3.27 6.96L12 12.01l8.73-5.05M12 22.08V12"/></svg>วัสดุ ณ ไซต์งาน</a></li>
+          <li><a href="alerts.html"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>แจ้งเตือนราคา</a></li>
+        </ul>
+      </div>
+      <div class="sidebar-section">
+        <div class="sidebar-section-title">วิเคราะห์</div>
+        <ul class="sidebar-nav">
+          <li><a href="reports.html" class="active"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg>รายงาน</a></li>
+        </ul>
+      </div>
+      <div class="sidebar-footer">
+        <div>ผู้ใช้: <strong style="color:#cbd5e1">ฝ่ายจัดซื้อ</strong></div>
+        <div style="margin-top:4px">v1.0.0 — Prototype</div>
+      </div>
+    </aside>
+
+    <div class="main-area">
+      <div class="topbar">
+        <div class="topbar-left">
+          <div>
+            <div class="breadcrumb">หน้าหลัก / <strong style="color:#475569">รายงาน</strong></div>
+            <div class="page-title">รายงานและการวิเคราะห์ตามโครงการ</div>
+          </div>
+        </div>
+        <div class="topbar-right">
+          <div class="search-box">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+            <input type="text" placeholder="ค้นหารายงาน...">
+          </div>
+          <button class="icon-btn" title="การแจ้งเตือน">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+            <span class="badge-dot"></span>
+          </button>
+          <div class="user-chip">
+            <div class="avatar">จซ</div>
+            <span class="user-name">ฝ่ายจัดซื้อ</span>
+          </div>
+          <div id="demo-toggle-mount"></div>
+        </div>
+      </div>
+
+      <main class="content">
+        <div class="page-header">
+          <div>
+            <h1>ศูนย์รายงานการจัดซื้อวัสดุก่อสร้าง</h1>
+            <div class="subtitle">สรุปผลการจัดซื้อแยกตามโครงการ วิเคราะห์ความคืบหน้างบประมาณ BOQ และประสิทธิภาพของผู้ขายวัสดุ/ผู้รับเหมา</div>
+          </div>
+          <div style="display:flex;gap:8px;">
+            <select class="form-control" style="width:auto;">
+              <option>มกราคม - กรกฎาคม 2569</option>
+              <option>กรกฎาคม 2569</option>
+              <option>ไตรมาส 3 / 2569</option>
+              <option>ไตรมาส 2 / 2569</option>
+              <option>ปี 2569 ทั้งหมด</option>
+            </select>
+            <button class="btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>ส่งออก PDF</button>
+          </div>
+        </div>
+
+        <div id="kpi-container"></div>
+
+        <div class="card mb-4">
+          <div class="card-header">
+            <div>
+              <h3>สรุปการจัดซื้อแยกตามโครงการ</h3>
+              <div class="sub">งบประมาณจัดซื้อ · ใช้ไปแล้ว · % ความคืบหน้า · จำนวนงวดงานที่เปิด PO</div>
+            </div>
+          </div>
+          <div class="card-body no-pad" id="project-summary-container"></div>
+        </div>
+
+        <div class="grid-2 mb-4">
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <h3>แนวโน้มการใช้จ่ายรายเดือน</h3>
+                <div class="sub">เปรียบเทียบ 6 เดือนย้อนหลัง · รวมทุกโครงการ</div>
+              </div>
+            </div>
+            <div class="card-body">
+              <div id="spend-trend-container"></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <h3>สัดส่วนการจัดซื้อตามประเภทวัสดุ</h3>
+                <div class="sub">ช่วงเวลาที่เลือก</div>
+              </div>
+            </div>
+            <div class="card-body">
+              <div id="category-container"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card mb-4">
+          <div class="card-header">
+            <div>
+              <h3>Top 10 วัสดุที่มีมูลค่าจัดซื้อสูงสุด</h3>
+              <div class="sub">ช่วงเวลาที่เลือก · คิดตามมูลค่าสั่งซื้อรวม</div>
+            </div>
+            <button class="btn btn-sm">ดูทั้งหมด</button>
+          </div>
+          <div class="card-body no-pad" id="top-products-container"></div>
+        </div>
+
+        <div class="card mb-4">
+          <div class="card-header">
+            <div>
+              <h3>Pareto Analysis — หมวดวัสดุที่ใช้เงินสูงสุด</h3>
+              <div class="sub">หลักการ 80/20 · หาหมวด 20% ที่กินเงิน 80% ของงบจัดซื้อ</div>
+            </div>
+          </div>
+          <div class="card-body">
+            <div id="pareto-container"></div>
+          </div>
+        </div>
+
+        <div class="grid-2 mb-4">
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <h3>อัตราการเติบโตรายปี (YoY) ตามหมวด</h3>
+                <div class="sub">เปรียบเทียบปี 2568 vs 2569</div>
+              </div>
+            </div>
+            <div class="card-body">
+              <div id="yoy-container"></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <h3>Bottleneck ของ Purchasing Cycle</h3>
+                <div class="sub">หมวดที่ใช้เวลาเกิน 2 เท่าของค่ามัธยฐาน (Goldratt's TOC)</div>
+              </div>
+            </div>
+            <div class="card-body">
+              <div id="cycle-container"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid-2 mb-4">
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <h3>ประสิทธิภาพการจัดส่งเข้าไซต์งาน</h3>
+                <div class="sub">% การส่งมอบตรงเวลาเทียบกับเป้าหมาย 90%</div>
+              </div>
+            </div>
+            <div class="card-body">
+              <div id="ontime-container"></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <h3>สรุปการแจ้งเตือนราคา</h3>
+                <div class="sub">สถิติการตรวจจับความผิดปกติของราคาวัสดุ</div>
+              </div>
+            </div>
+            <div class="card-body">
+              <div id="alerts-summary-container"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <h3>สรุปสำหรับผู้บริหาร</h3>
+              <div class="sub">ประเด็นสำคัญและข้อเสนอแนะจากระบบวิเคราะห์</div>
+            </div>
+          </div>
+          <div class="card-body" id="executive-summary-container"></div>
+        </div>
+      </main>
+
+      <footer class="app-footer">
+        <span>© 2569 Construction Procurement · เวอร์ชัน 1.0.0</span>
+        <span>รายงานสร้างเมื่อ: 20 ก.ค. 2569 · 10:42 น.</span>
+      </footer>
+    </div>
+  </div>
+
+  <script src="js/data.js"></script>
+  <script src="js/demo.js"></script>
+  <script>
+    DemoController.injectToggle('#demo-toggle-mount');
+    DemoController.injectBanner();
+
+    const D = window.SAMPLE_DATA;
+    const on = DemoController.isOn();
+
+    function renderKPIs() {
+      const c = document.getElementById('kpi-container');
+      if (!on) {
+        c.innerHTML = renderEmptyState({
+          title: 'ยังไม่มีข้อมูลรายงาน',
+          message: 'ระบบจะสร้างรายงานสรุปผลการจัดซื้อตามโครงการและการวิเคราะห์เชิงลึก เมื่อมีข้อมูลธุรกรรมเพียงพอ'
+        });
+        return;
+      }
+      c.className = 'kpi-grid';
+      const totalBudget = D.projects.reduce((s, p) => s + p.budget, 0);
+      const totalSpent = D.projects.reduce((s, p) => s + p.spent, 0);
+      const totalUnits = D.projects.reduce((s, p) => s + p.units, 0);
+      const completedUnits = D.projects.reduce((s, p) => s + p.completedUnits, 0);
+      c.innerHTML = `
+        <div class="kpi"><div class="accent-bar"></div><div class="label">มูลค่าการจัดซื้อรวม (YTD)</div><div class="value">${fmt.currency(totalSpent)}</div><div class="delta up">ของงบ ${fmt.currency(totalBudget)}</div></div>
+        <div class="kpi success"><div class="accent-bar"></div><div class="label">ประหยัดจากการวิเคราะห์แนวโน้ม</div><div class="value">฿1.8M</div><div class="delta up">14.5% ของงบจัดซื้อ</div></div>
+        <div class="kpi"><div class="accent-bar"></div><div class="label">ความคืบหน้ารวมทุกโครงการ</div><div class="value">${completedUnits}<span class="unit">/${totalUnits} หลัง</span></div><div class="delta up">${Math.round(completedUnits/totalUnits*100)}% ของแผนงาน</div></div>
+        <div class="kpi warning"><div class="accent-bar"></div><div class="label">การแจ้งเตือนที่ยังค้าง</div><div class="value">5<span class="unit">รายการ</span></div><div class="delta down">ต้องตรวจสอบ</div></div>
+      `;
+    }
+
+    function renderProjectSummary() {
+      const c = document.getElementById('project-summary-container');
+      if (!on) { c.innerHTML = renderEmptyState({ title: 'ยังไม่มีข้อมูลโครงการ', message: 'ตารางสรุปตามโครงการจะแสดงเมื่อมีข้อมูล' }); return; }
+      c.innerHTML = `
+        <table class="data-table">
+          <thead><tr>
+            <th>รหัส</th><th>โครงการ</th><th class="num">หน่วย</th><th class="num">งบประมาณ</th>
+            <th class="num">ใช้ไป</th><th class="num">คงเหลือ</th><th>ความคืบหน้า</th><th>สถานะ</th>
+          </tr></thead>
+          <tbody>
+          ${D.projects.map(p => {
+            const remain = p.budget - p.spent;
+            const remainPct = (remain / p.budget) * 100;
+            return `
+              <tr>
+                <td style="font-family:monospace;font-size:12px;color:#64748b;">${p.id}</td>
+                <td>
+                  <strong>${p.name}</strong>
+                  <div style="font-size:11.5px;color:#94a3b8;">${p.location}</div>
+                </td>
+                <td class="num">${p.completedUnits}/${p.units}</td>
+                <td class="num">${fmt.currency(p.budget)}</td>
+                <td class="num"><strong>${fmt.currency(p.spent)}</strong></td>
+                <td class="num">${fmt.currency(remain)}<div style="font-size:11px;color:${remainPct < 20 ? '#dc2626' : '#64748b'};">${remainPct.toFixed(0)}% เหลือ</div></td>
+                <td>
+                  <div style="display:flex;align-items:center;gap:8px;">
+                    <div style="flex:1;height:6px;background:#e2e8f0;border-radius:3px;overflow:hidden;min-width:100px;">
+                      <div style="width:${p.progress}%;height:100%;background:${p.progress >= 70 ? '#16a34a' : p.progress >= 40 ? '#2563eb' : '#d97706'};"></div>
+                    </div>
+                    <span style="font-size:12px;color:#475569;min-width:36px;text-align:right;">${p.progress}%</span>
+                  </div>
+                </td>
+                <td>${fmt.statusPill(p.status)}</td>
+              </tr>`;
+          }).join('')}
+          </tbody>
+        </table>
+      `;
+    }
+
+    function renderSpendTrend() {
+      const c = document.getElementById('spend-trend-container');
+      if (!on) { c.innerHTML = renderEmptyState({ title: 'ยังไม่มีข้อมูล', message: 'กราฟแนวโน้มการใช้จ่ายจะแสดงเมื่อมีข้อมูล' }); return; }
+      c.innerHTML = '<div class="chart-container"><canvas id="spend-chart"></canvas></div>';
+      new Chart(document.getElementById('spend-chart'), {
+        type: 'line',
+        data: {
+          labels: D.monthlySpend.labels,
+          datasets: [{
+            label: 'มูลค่าการจัดซื้อ (บาท)',
+            data: D.monthlySpend.actual,
+            borderColor: chartPalette.primary,
+            backgroundColor: chartPalette.primaryLight,
+            fill: true,
+            tension: 0.3,
+            pointRadius: 4,
+            pointBackgroundColor: chartPalette.primary,
+            borderWidth: 2.5
+          }]
+        },
+        options: { ...defaultChartOptions, scales: { ...defaultChartOptions.scales, y: { ...defaultChartOptions.scales.y, ticks: { ...defaultChartOptions.scales.y.ticks, callback: v => fmt.currency(v) } } } }
+      });
+    }
+
+    function renderCategory() {
+      const c = document.getElementById('category-container');
+      if (!on) { c.innerHTML = renderEmptyState({ title: 'ยังไม่มีข้อมูล', message: 'สัดส่วนตามประเภทวัสดุจะแสดงเมื่อมีข้อมูลการจัดซื้อ' }); return; }
+      c.innerHTML = '<div class="chart-container"><canvas id="cat-chart"></canvas></div>';
+      const colors = ['#1e3a5f', '#2563eb', '#0891b2', '#16a34a', '#d97706', '#dc2626'];
+      new Chart(document.getElementById('cat-chart'), {
+        type: 'doughnut',
+        data: { labels: D.categorySpend.labels, datasets: [{ data: D.categorySpend.values, backgroundColor: colors, borderWidth: 2, borderColor: '#fff' }] },
+        options: { ...defaultChartOptions, cutout: '55%', plugins: { ...defaultChartOptions.plugins, legend: { ...defaultChartOptions.plugins.legend, position: 'bottom' } }, scales: {} }
+      });
+    }
+
+    function renderTopProducts() {
+      const c = document.getElementById('top-products-container');
+      if (!on) { c.innerHTML = renderEmptyState({ title: 'ยังไม่มีข้อมูล', message: 'รายการวัสดุที่มีมูลค่าจัดซื้อสูงสุดจะแสดงที่นี่' }); return; }
+      const items = [
+        { name: 'เหล็กแผ่น HR 5mm x 4x8 ฟุต', cat: 'เหล็กและโลหะ', amount: 1850000, qty: 1000, orders: 24 },
+        { name: 'ปูนซีเมนต์ปอร์ตแลนด์ 50 กก.', cat: 'ปูนซีเมนต์', amount: 1320000, qty: 8000, orders: 18 },
+        { name: 'กระเบื้องเซรามิก 60x60 ซม.', cat: 'วัสดุก่อสร้าง', amount: 960000, qty: 3000, orders: 12 },
+        { name: 'ค่าจ้างผู้รับเหมาหลัก - หมู่บ้านกรีนวิลล์ 2', cat: 'ผู้รับเหมา', amount: 2450000, qty: 1, orders: 4 },
+        { name: 'สายไฟ THW 2.5 sq.mm (100m)', cat: 'ไฟฟ้าและประปา', amount: 728000, qty: 400, orders: 14 },
+        { name: 'ท่อ PVC 4 นิ้ว (3m)', cat: 'ไฟฟ้าและประปา', amount: 612500, qty: 2500, orders: 9 },
+        { name: 'เหล็กเส้น RB 12mm x 10m', cat: 'เหล็กและโลหะ', amount: 855000, qty: 3000, orders: 11 },
+        { name: 'สีน้ำอะครีลิก 5 แกลลอน', cat: 'สีและเคมีภัณฑ์', amount: 580000, qty: 400, orders: 16 },
+        { name: 'ทรายหยาบ', cat: 'วัสดุก่อสร้าง', amount: 425000, qty: 500, orders: 8 },
+        { name: 'อิฐมอญ', cat: 'วัสดุก่อสร้าง', amount: 346800, qty: 12000, orders: 22 },
+      ];
+      const max = Math.max(...items.map(x => x.amount));
+      c.innerHTML = `
+        <table class="data-table">
+          <thead><tr>
+            <th style="width:40px;">#</th><th>วัสดุ</th><th>หมวดหมู่</th>
+            <th class="num">จำนวนสั่งซื้อ</th><th class="num">ปริมาณ</th><th class="num">มูลค่า</th><th>สัดส่วน</th>
+          </tr></thead>
+          <tbody>
+          ${items.map((it, idx) => `
+            <tr>
+              <td style="color:#94a3b8;">${idx + 1}</td>
+              <td><strong>${it.name}</strong></td>
+              <td>${it.cat}</td>
+              <td class="num">${it.orders}</td>
+              <td class="num">${fmt.num(it.qty)}</td>
+              <td class="num"><strong>${fmt.currency(it.amount)}</strong></td>
+              <td>
+                <div style="display:flex;align-items:center;gap:8px;">
+                  <div style="flex:1;height:6px;background:#e2e8f0;border-radius:3px;overflow:hidden;min-width:80px;">
+                    <div style="width:${(it.amount / max * 100).toFixed(0)}%;height:100%;background:#2563eb;"></div>
+                  </div>
+                  <span style="font-size:12px;color:#64748b;min-width:42px;text-align:right;">${(it.amount / max * 100).toFixed(0)}%</span>
+                </div>
+              </td>
+            </tr>
+          `).join('')}
+          </tbody>
+        </table>
+      `;
+    }
+
+    function renderPareto() {
+      const c = document.getElementById('pareto-container');
+      if (!on) { c.innerHTML = renderEmptyState({ title: 'ยังไม่มีข้อมูล', message: 'การวิเคราะห์ Pareto จะแสดงเมื่อมีข้อมูลการจัดซื้อ' }); return; }
+      const p = D.pareto;
+      const max = Math.max(...p.ranked.map(x => x.spend));
+      c.innerHTML = `
+        <div style="display:flex;gap:14px;align-items:center;margin-bottom:14px;padding:10px 14px;background:#f1f5f9;border-radius:6px;font-size:13px;">
+          <div><strong style="color:#16a34a;font-size:18px;">${p.insight}</strong></div>
+        </div>
+        <div>
+          ${p.ranked.map((x, idx) => {
+            const pct = (x.spend / max) * 100;
+            const isTop = idx < 3;
+            const fillColor = isTop ? '#2563eb' : '#94a3b8';
+            const cumBg = x.cumulativePct >= 80 && x.cumulativePct - x.sharePct < 80 ? '#fef3c7' : 'transparent';
+            return `
+              <div style="display:grid;grid-template-columns:200px 1fr 80px 80px;align-items:center;gap:10px;padding:10px 6px;border-bottom:1px solid #f1f5f9;${cumBg}">
+                <div>
+                  <strong style="color:${isTop ? '#1e3a5f' : '#475569'};">${x.category}</strong>
+                  ${isTop ? '<span class="pill" style="background:#dbeafe;color:#1e40af;font-size:10px;padding:2px 6px;margin-left:6px;">Top 3</span>' : ''}
+                </div>
+                <div style="height:18px;background:#e2e8f0;border-radius:4px;overflow:hidden;">
+                  <div style="width:${pct}%;height:100%;background:${fillColor};"></div>
+                </div>
+                <div style="text-align:right;font-size:13px;color:#475569;">${fmt.currencyShort(x.spend)}</div>
+                <div style="text-align:right;font-size:12px;color:#64748b;">
+                  ${x.sharePct.toFixed(1)}% · <span style="color:${x.cumulativePct >= 80 ? '#16a34a' : '#dc2626'};">∑${x.cumulativePct.toFixed(1)}%</span>
+                </div>
+              </div>`;
+          }).join('')}
+        </div>
+        <div style="margin-top:14px;padding:12px 14px;background:#f8fafc;border-radius:6px;font-size:12.5px;color:#475569;">
+          <strong>วิธีอ่าน:</strong> แถบยาว = มูลค่าเดี่ยว · ตัวเลขขวา = สัดส่วนของหมวดนั้น (% ของงบทั้งหมด) และ ∑% = ผลรวมสะสม (cumulative) เมื่อใดที่ ∑ ≥ 80% คือจุดตัด Pareto
+        </div>
+      `;
+    }
+
+    function renderYoY() {
+      const c = document.getElementById('yoy-container');
+      if (!on) { c.innerHTML = renderEmptyState({ title: 'ยังไม่มีข้อมูล', message: 'การเปรียบเทียบ YoY จะแสดงเมื่อมีข้อมูลปีก่อน' }); return; }
+      c.innerHTML = '<div class="chart-container"><canvas id="yoy-chart"></canvas></div>';
+      new Chart(document.getElementById('yoy-chart'), {
+        type: 'bar',
+        data: {
+          labels: D.yoyGrowth.labels,
+          datasets: [
+            {
+              label: 'ปี 2568',
+              data: D.yoyGrowth.lastYear,
+              backgroundColor: '#cbd5e1',
+              borderRadius: 4,
+              maxBarThickness: 24
+            },
+            {
+              label: 'ปี 2569',
+              data: D.yoyGrowth.thisYear,
+              backgroundColor: chartPalette.accent,
+              borderRadius: 4,
+              maxBarThickness: 24
+            }
+          ]
+        },
+        options: { ...defaultChartOptions, scales: { ...defaultChartOptions.scales, y: { ...defaultChartOptions.scales.y, ticks: { ...defaultChartOptions.scales.y.ticks, callback: v => fmt.currencyShort(v) } } } }
+      });
+    }
+
+    function renderCycle() {
+      const c = document.getElementById('cycle-container');
+      if (!on) { c.innerHTML = renderEmptyState({ title: 'ยังไม่มีข้อมูล', message: 'วงรอบการจัดซื้อจะแสดงเมื่อมีข้อมูล' }); return; }
+      const cy = D.purchasingCycle;
+      const sorted = [...cy.categories].sort((a, b) => b.totalDays - a.totalDays);
+      c.innerHTML = `
+        <div style="font-size:12px;color:#64748b;margin-bottom:10px;">
+          Median รวม: <strong style="color:#1e3a5f;">${cy.medianOverall} วัน</strong> · Bottleneck = หมวดที่ใช้เวลา > 36 วัน (2× median)
+        </div>
+        <table class="data-table" style="font-size:12.5px;">
+          <thead><tr>
+            <th>หมวด</th>
+            <th class="num">ขอซื้อ→PO</th>
+            <th class="num">PO→รับของ</th>
+            <th class="num">รับ→จ่าย</th>
+            <th class="num">รวม</th>
+            <th>สถานะ</th>
+          </tr></thead>
+          <tbody>
+          ${sorted.map(x => `
+            <tr style="${x.bottleneck ? 'background:#fef2f2;' : ''}">
+              <td><strong>${x.category}</strong></td>
+              <td class="num">${x.requestToPO}</td>
+              <td class="num">${x.poToReceive}</td>
+              <td class="num">${x.receiveToPay}</td>
+              <td class="num"><strong>${x.totalDays}</strong></td>
+              <td>${x.bottleneck ? '<span class="pill danger">Bottleneck</span>' : '<span class="pill success">ปกติ</span>'}</td>
+            </tr>`).join('')}
+          </tbody>
+        </table>
+        <div style="margin-top:12px;padding:10px 12px;background:#fef3c7;border-left:3px solid #d97706;border-radius:4px;font-size:12px;color:#78350f;">
+          <strong>Theory of Constraints:</strong> throughput ของระบบถูกจำกัดด้วยขั้นตอนที่ช้าสุด ปัจจุบันมี 4 หมวดที่เป็นคอขวด (เหล็ก ปูน วัสดุก่อสร้าง ไฟฟ้า/ประปา) — ควรเร่งแก้ที่ PO→รับของ เป็นอันดับแรก
+        </div>
+      `;
+    }
+
+    function renderOntime() {
+      const c = document.getElementById('ontime-container');
+      if (!on) { c.innerHTML = renderEmptyState({ title: 'ยังไม่มีข้อมูล', message: 'ประสิทธิภาพการจัดส่งจะแสดงเมื่อมีข้อมูล' }); return; }
+      c.innerHTML = '<div class="chart-container"><canvas id="ot-chart"></canvas></div>';
+      new Chart(document.getElementById('ot-chart'), {
+        type: 'bar',
+        data: {
+          labels: ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.'],
+          datasets: [
+            {
+              type: 'bar',
+              label: '% ส่งตรงเวลา (เข้าไซต์งาน)',
+              data: [82, 84, 85, 86, 88, 87, 89],
+              backgroundColor: chartPalette.success,
+              borderRadius: 4,
+              maxBarThickness: 32
+            },
+            {
+              type: 'line',
+              label: 'เป้าหมาย',
+              data: [90, 90, 90, 90, 90, 90, 90],
+              borderColor: chartPalette.danger,
+              borderWidth: 2,
+              borderDash: [4, 4],
+              pointRadius: 0,
+              fill: false
+            }
+          ]
+        },
+        options: { ...defaultChartOptions, scales: { ...defaultChartOptions.scales, y: { ...defaultChartOptions.scales.y, max: 100, ticks: { ...defaultChartOptions.scales.y.ticks, callback: v => v + '%' } } } }
+      });
+    }
+
+    function renderAlertsSummary() {
+      const c = document.getElementById('alerts-summary-container');
+      if (!on) { c.innerHTML = renderEmptyState({ title: 'ยังไม่มีข้อมูล', message: 'สรุปการแจ้งเตือนจะแสดงเมื่อมีข้อมูล' }); return; }
+      c.innerHTML = `
+        <div style="display:flex;flex-direction:column;gap:14px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 14px;background:#fef2f2;border-radius:6px;">
+            <div><strong style="color:#991b1b;">ระดับรุนแรงสูง</strong><div style="font-size:12px;color:#7f1d1d;">ต้องดำเนินการทันที</div></div>
+            <div style="font-size:22px;font-weight:700;color:#dc2626;">4</div>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 14px;background:#fffbeb;border-radius:6px;">
+            <div><strong style="color:#92400e;">ระดับปานกลาง</strong><div style="font-size:12px;color:#78350f;">ตรวจสอบภายใน 24 ชม.</div></div>
+            <div style="font-size:22px;font-weight:700;color:#d97706;">3</div>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 14px;background:#f0fdf4;border-radius:6px;">
+            <div><strong style="color:#166534;">แก้ไขแล้ว</strong><div style="font-size:12px;color:#14532d;">เดือนนี้</div></div>
+            <div style="font-size:22px;font-weight:700;color:#16a34a;">28</div>
+          </div>
+          <div style="padding:12px 14px;background:#f8fafc;border-radius:6px;font-size:12.5px;color:#475569;">
+            <strong>ค่าเฉลี่ยการตอบสนอง:</strong> 2.4 ชั่วโมง<br>
+            <strong>ค่าเฉลี่ยการแก้ไข:</strong> 18.7 ชั่วโมง
+          </div>
+        </div>
+      `;
+    }
+
+    function renderExecutiveSummary() {
+      const c = document.getElementById('executive-summary-container');
+      if (!on) { c.innerHTML = renderEmptyState({ title: 'ยังไม่มีข้อมูล', message: 'สรุปสำหรับผู้บริหารจะแสดงเมื่อมีข้อมูลเพียงพอ' }); return; }
+      c.innerHTML = `
+        <div style="display:grid;grid-template-columns:repeat(3, 1fr);gap:14px;">
+          <div class="insight-box success">
+            <div class="insight-title">จุดแข็ง: ส่งมอบตรงตามงวดงาน</div>
+            <div class="insight-body">ความตรงเวลาเฉลี่ยเพิ่มขึ้น 3.2% เมื่อเทียบกับไตรมาสก่อน ผู้รับเหมาหลักทุกรายมีคะแนนคุณภาพสูงกว่า 90</div>
+          </div>
+          <div class="insight-box warning">
+            <div class="insight-title">ข้อควรระวัง: ความผันผวนของราคาวัสดุ</div>
+            <div class="insight-body">ตรวจพบราคาวัสดุ 5 รายการที่เปลี่ยนแปลงเกิน 15% ภายในสัปดาห์เดียว แนะนำติดตามแนวโน้มราคาตลาดโลกอย่างใกล้ชิด</div>
+          </div>
+          <div class="insight-box">
+            <div class="insight-title">โอกาส: ลดต้นทุนด้วยการวิเคราะห์ข้อมูล</div>
+            <div class="insight-body">ระบบวิเคราะห์แนวโน้มช่วยประหยัดงบจัดซื้อได้ 1.8 ล้านบาท (14.5% ของงบทั้งหมด) ผ่านการแนะนำจังหวะการสั่งซื้อและเจรจาต่อรอง</div>
+          </div>
+        </div>
+      `;
+    }
+
+    renderKPIs();
+    renderProjectSummary();
+    renderSpendTrend();
+    renderCategory();
+    renderTopProducts();
+    renderPareto();
+    renderYoY();
+    renderCycle();
+    renderOntime();
+    renderAlertsSummary();
+    renderExecutiveSummary();
+  </script>
+</body>
+</html>

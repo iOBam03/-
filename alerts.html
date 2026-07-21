@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>แจ้งเตือนราคา — ระบบจัดซื้อวัสดุก่อสร้าง</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+  <div class="app-shell">
+
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <div class="logo-mark">CP</div>
+        <div class="brand-text">Construction Procurement<small>ระบบจัดซื้อวัสดุก่อสร้าง</small></div>
+      </div>
+      <div class="sidebar-section">
+        <div class="sidebar-section-title">ภาพรวม</div>
+        <ul class="sidebar-nav">
+          <li><a href="dashboard.html"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>Dashboard</a></li>
+          <li><a href="projects.html"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-4"/><path d="M9 9v.01M9 12v.01M9 15v.01M9 18v.01"/></svg>โครงการ</a></li>
+          <li><a href="ai-analysis.html"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>วิเคราะห์แนวโน้มราคาวัสดุ</a></li>
+        </ul>
+      </div>
+      <div class="sidebar-section">
+        <div class="sidebar-section-title">การจัดการ</div>
+        <ul class="sidebar-nav">
+          <li><a href="suppliers.html"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-6 9 6v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg>ผู้ขายวัสดุ/ผู้รับเหมา</a></li>
+          <li><a href="site-materials.html"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="M3.27 6.96L12 12.01l8.73-5.05M12 22.08V12"/></svg>วัสดุ ณ ไซต์งาน</a></li>
+          <li><a href="alerts.html" class="active"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>แจ้งเตือนราคา</a></li>
+        </ul>
+      </div>
+      <div class="sidebar-section">
+        <div class="sidebar-section-title">วิเคราะห์</div>
+        <ul class="sidebar-nav">
+          <li><a href="reports.html"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg>รายงาน</a></li>
+        </ul>
+      </div>
+      <div class="sidebar-footer">
+        <div>ผู้ใช้: <strong style="color:#cbd5e1">ฝ่ายจัดซื้อ</strong></div>
+        <div style="margin-top:4px">v1.0.0 — Prototype</div>
+      </div>
+    </aside>
+
+    <div class="main-area">
+      <div class="topbar">
+        <div class="topbar-left">
+          <div>
+            <div class="breadcrumb">หน้าหลัก / <strong style="color:#475569">แจ้งเตือนราคา</strong></div>
+            <div class="page-title">การแจ้งเตือนความผิดปกติของราคาวัสดุ</div>
+          </div>
+        </div>
+        <div class="topbar-right">
+          <div class="search-box">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+            <input type="text" placeholder="ค้นหาการแจ้งเตือน...">
+          </div>
+          <button class="icon-btn" title="การแจ้งเตือน">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+            <span class="badge-dot"></span>
+          </button>
+          <div class="user-chip">
+            <div class="avatar">จซ</div>
+            <span class="user-name">ฝ่ายจัดซื้อ</span>
+          </div>
+          <div id="demo-toggle-mount"></div>
+        </div>
+      </div>
+
+      <main class="content">
+        <div class="page-header">
+          <div>
+            <h1>ระบบแจ้งเตือนราคาวัสดุก่อสร้างผิดปกติ</h1>
+            <div class="subtitle">ตรวจจับการเปลี่ยนแปลงราคาวัสดุที่ผิดปกติจากเกณฑ์มาตรฐาน เพื่อให้ทีมบริหารต้นทุนโครงการตรวจสอบทันท่วงทีก่อนกระทบงบประมาณ</div>
+          </div>
+          <div style="display:flex;gap:8px;">
+            <button class="btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>ตั้งค่าเกณฑ์</button>
+          </div>
+        </div>
+
+        <div id="kpi-container"></div>
+
+        <div class="card mb-4">
+          <div class="card-header">
+            <div>
+              <h3>การแจ้งเตือนทั้งหมด</h3>
+              <div class="sub">เรียงตามความรุนแรงและเวลาที่ตรวจพบ · ระบุโครงการที่ได้รับผลกระทบ</div>
+            </div>
+            <div class="tabs" style="margin-bottom:0;border-bottom:none;gap:0;">
+              <div class="tab active" style="padding:6px 14px;font-size:12px;">ทั้งหมด</div>
+              <div class="tab" style="padding:6px 14px;font-size:12px;">รอตรวจสอบ</div>
+              <div class="tab" style="padding:6px 14px;font-size:12px;">กำลังตรวจสอบ</div>
+              <div class="tab" style="padding:6px 14px;font-size:12px;">แก้ไขแล้ว</div>
+            </div>
+          </div>
+          <div class="card-body no-pad" id="alerts-table-container"></div>
+        </div>
+
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <h3>แนวโน้มการแจ้งเตือน 30 วัน</h3>
+                <div class="sub">จำนวนการแจ้งเตือนราคาวัสดุผิดปกติรายวัน</div>
+              </div>
+            </div>
+            <div class="card-body">
+              <div id="trend-chart-container"></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <h3>หมวดวัสดุที่มีการแจ้งเตือนบ่อย</h3>
+                <div class="sub">30 วันย้อนหลัง · เรียงตามจำนวนครั้ง</div>
+              </div>
+            </div>
+            <div class="card-body">
+              <div id="category-chart-container"></div>
+            </div>
+          </div>
+        </div>
+      </main>
+
+      <footer class="app-footer">
+        <span>© 2569 Construction Procurement · เวอร์ชัน 1.0.0</span>
+        <span>เกณฑ์แจ้งเตือน: ±10% จากราคาเฉลี่ย 30 วัน</span>
+      </footer>
+    </div>
+  </div>
+
+  <script src="js/data.js"></script>
+  <script src="js/demo.js"></script>
+  <script>
+    DemoController.injectToggle('#demo-toggle-mount');
+    DemoController.injectBanner();
+
+    const D = window.SAMPLE_DATA;
+    const on = DemoController.isOn();
+
+    function renderKPIs() {
+      const c = document.getElementById('kpi-container');
+      if (!on) {
+        c.innerHTML = renderEmptyState({
+          title: 'ยังไม่มีการแจ้งเตือน',
+          message: 'ระบบจะแจ้งเตือนเมื่อตรวจพบราคาวัสดุที่เปลี่ยนแปลงผิดปกติจากเกณฑ์ที่กำหนด'
+        });
+        return;
+      }
+      c.className = 'kpi-grid';
+      const a = D.priceAlerts;
+      const high = a.filter(x => x.severity === 'high').length;
+      const pending = a.filter(x => x.status === 'pending' || x.status === 'investigating').length;
+      const impactedProjects = new Set(a.map(x => x.project).filter(Boolean)).size;
+      c.innerHTML = `
+        <div class="kpi danger"><div class="accent-bar"></div><div class="label">แจ้งเตือนทั้งหมด</div><div class="value">${a.length}<span class="unit">รายการ</span></div><div class="delta down">7 วันล่าสุด</div></div>
+        <div class="kpi danger"><div class="accent-bar"></div><div class="label">ระดับรุนแรงสูง</div><div class="value">${high}<span class="unit">รายการ</span></div><div class="delta down">ส่งผลต่อ ${impactedProjects} โครงการ</div></div>
+        <div class="kpi warning"><div class="accent-bar"></div><div class="label">รอดำเนินการ</div><div class="value">${pending}<span class="unit">รายการ</span></div><div class="delta neutral">ยังไม่ได้รับการแก้ไข</div></div>
+        <div class="kpi success"><div class="accent-bar"></div><div class="label">แก้ไขแล้ว (30 วัน)</div><div class="value">28<span class="unit">รายการ</span></div><div class="delta up">+15% จากเดือนก่อน</div></div>
+      `;
+    }
+
+    function renderTable() {
+      const c = document.getElementById('alerts-table-container');
+      if (!on) { c.innerHTML = renderEmptyState({ title: 'ยังไม่มีการแจ้งเตือน', message: 'รายการแจ้งเตือนทั้งหมดจะแสดงที่นี่ เมื่อมีการตรวจพบราคาวัสดุผิดปกติ' }); return; }
+      const sorted = [...D.priceAlerts].sort((a, b) => {
+        const sevOrder = { high: 0, medium: 1, low: 2 };
+        if (sevOrder[a.severity] !== sevOrder[b.severity]) return sevOrder[a.severity] - sevOrder[b.severity];
+        return new Date(b.detected) - new Date(a.detected);
+      });
+      c.innerHTML = `
+        <table class="data-table">
+          <thead><tr>
+            <th>รหัส</th><th>วัสดุ</th><th>ผู้ขาย</th><th>โครงการที่ได้รับผลกระทบ</th>
+            <th class="num">ราคาเดิม</th><th class="num">ราคาใหม่</th><th class="num">% เปลี่ยนแปลง</th>
+            <th>ระดับ</th><th>สถานะ</th><th>ตรวจพบเมื่อ</th><th></th>
+          </tr></thead>
+          <tbody>
+          ${sorted.map(a => {
+            const isUp = a.change > 0;
+            const sevPill = a.severity === 'high' ? 'danger' : a.severity === 'medium' ? 'warning' : 'info';
+            const sevLabel = a.severity === 'high' ? 'สูง' : a.severity === 'medium' ? 'ปานกลาง' : 'ต่ำ';
+            return `
+              <tr>
+                <td style="font-family:monospace;font-size:12px;color:#64748b;">${a.id}</td>
+                <td>
+                  <strong>${a.product}</strong>
+                  <div style="font-size:11.5px;color:#94a3b8;">${a.category}</div>
+                </td>
+                <td style="font-size:12.5px;">${a.supplier}</td>
+                <td style="font-size:12px;color:#475569;">${a.project || '<span style="color:#94a3b8;">ทุกโครงการ</span>'}</td>
+                <td class="num">${fmt.currency(a.oldPrice)}</td>
+                <td class="num"><strong>${fmt.currency(a.newPrice)}</strong></td>
+                <td class="num"><strong style="color:${isUp ? '#dc2626' : '#16a34a'};">${isUp ? '▲' : '▼'} ${Math.abs(a.change).toFixed(2)}%</strong></td>
+                <td><span class="pill ${sevPill}">${sevLabel}</span></td>
+                <td>${fmt.statusPill(a.status)}</td>
+                <td style="font-size:12px;color:#64748b;">${fmt.date(a.detected)}</td>
+                <td>
+                  <button class="btn btn-sm">ตรวจสอบ</button>
+                </td>
+              </tr>`;
+          }).join('')}
+          </tbody>
+        </table>
+      `;
+    }
+
+    function renderTrendChart() {
+      const c = document.getElementById('trend-chart-container');
+      if (!on) { c.innerHTML = renderEmptyState({ title: 'ยังไม่มีข้อมูล', message: 'กราฟแนวโน้มจะแสดงเมื่อมีข้อมูลการแจ้งเตือน' }); return; }
+      c.innerHTML = '<div class="chart-container"><canvas id="trend-chart"></canvas></div>';
+      const labels = Array.from({length: 30}, (_, i) => {
+        const d = new Date(2026, 6, 20 - (29 - i));
+        return d.getDate();
+      });
+      const data = [3,2,4,5,3,2,1,2,3,4,5,6,4,3,2,3,4,5,7,6,5,4,3,4,5,6,7,5,4,3];
+      new Chart(document.getElementById('trend-chart'), {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [{
+            label: 'จำนวนการแจ้งเตือน',
+            data,
+            borderColor: chartPalette.danger,
+            backgroundColor: 'rgba(220, 38, 38, 0.1)',
+            fill: true,
+            tension: 0.3,
+            pointRadius: 2,
+            pointBackgroundColor: chartPalette.danger,
+            borderWidth: 2
+          }]
+        },
+        options: defaultChartOptions
+      });
+    }
+
+    function renderCategoryChart() {
+      const c = document.getElementById('category-chart-container');
+      if (!on) { c.innerHTML = renderEmptyState({ title: 'ยังไม่มีข้อมูล', message: 'สถิติตามหมวดวัสดุจะแสดงเมื่อมีข้อมูลการแจ้งเตือน' }); return; }
+      c.innerHTML = '<div class="chart-container"><canvas id="cat-chart"></canvas></div>';
+      new Chart(document.getElementById('cat-chart'), {
+        type: 'bar',
+        data: {
+          labels: ['ปูนซีเมนต์', 'เหล็กและโลหะ', 'วัสดุก่อสร้าง', 'สีและเคมีภัณฑ์', 'ไฟฟ้าและประปา', 'เครื่องมือช่าง'],
+          datasets: [{
+            label: 'จำนวนการแจ้งเตือน',
+            data: [12, 9, 7, 6, 5, 2],
+            backgroundColor: ['#dc2626', '#ea580c', '#d97706', '#0891b2', '#2563eb', '#16a34a'],
+            borderRadius: 4,
+            maxBarThickness: 32
+          }]
+        },
+        options: { ...defaultChartOptions, plugins: { ...defaultChartOptions.plugins, legend: { display: false } } }
+      });
+    }
+
+    renderKPIs();
+    renderTable();
+    renderTrendChart();
+    renderCategoryChart();
+  </script>
+</body>
+</html>

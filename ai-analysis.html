@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>วิเคราะห์แนวโน้มราคาวัสดุ — ระบบจัดซื้อวัสดุก่อสร้าง</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+  <div class="app-shell">
+
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <div class="logo-mark">CP</div>
+        <div class="brand-text">Construction Procurement<small>ระบบจัดซื้อวัสดุก่อสร้าง</small></div>
+      </div>
+      <div class="sidebar-section">
+        <div class="sidebar-section-title">ภาพรวม</div>
+        <ul class="sidebar-nav">
+          <li><a href="dashboard.html"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>Dashboard</a></li>
+          <li><a href="projects.html"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-4"/><path d="M9 9v.01M9 12v.01M9 15v.01M9 18v.01"/></svg>โครงการ</a></li>
+          <li><a href="ai-analysis.html" class="active"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>วิเคราะห์แนวโน้มราคาวัสดุ</a></li>
+        </ul>
+      </div>
+      <div class="sidebar-section">
+        <div class="sidebar-section-title">การจัดการ</div>
+        <ul class="sidebar-nav">
+          <li><a href="suppliers.html"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-6 9 6v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg>ผู้ขายวัสดุ/ผู้รับเหมา</a></li>
+          <li><a href="site-materials.html"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="M3.27 6.96L12 12.01l8.73-5.05M12 22.08V12"/></svg>วัสดุ ณ ไซต์งาน</a></li>
+          <li><a href="alerts.html"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>แจ้งเตือนราคา</a></li>
+        </ul>
+      </div>
+      <div class="sidebar-section">
+        <div class="sidebar-section-title">วิเคราะห์</div>
+        <ul class="sidebar-nav">
+          <li><a href="reports.html"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg>รายงาน</a></li>
+        </ul>
+      </div>
+      <div class="sidebar-footer">
+        <div>ผู้ใช้: <strong style="color:#cbd5e1">ฝ่ายจัดซื้อ</strong></div>
+        <div style="margin-top:4px">v1.0.0 — Prototype</div>
+      </div>
+    </aside>
+
+    <div class="main-area">
+      <div class="topbar">
+        <div class="topbar-left">
+          <div>
+            <div class="breadcrumb">หน้าหลัก / <strong style="color:#475569">วิเคราะห์แนวโน้มราคาวัสดุ</strong></div>
+            <div class="page-title">การวิเคราะห์แนวโน้มราคาวัสดุก่อสร้าง</div>
+          </div>
+        </div>
+        <div class="topbar-right">
+          <button class="icon-btn" title="การแจ้งเตือน">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+            <span class="badge-dot"></span>
+          </button>
+          <div class="user-chip">
+            <div class="avatar">จซ</div>
+            <span class="user-name">ฝ่ายจัดซื้อ</span>
+          </div>
+          <div id="demo-toggle-mount"></div>
+        </div>
+      </div>
+
+      <main class="content">
+        <div class="page-header">
+          <div>
+            <h1>วิเคราะห์ราคาวัสดุ & แนะนำจังหวะการสั่งซื้อ</h1>
+            <div class="subtitle">วิเคราะห์ราคาย้อนหลังจากข้อมูลจริง คาดการณ์แนวโน้ม และแนะนำจังหวะการสั่งซื้อที่เหมาะสมกับงวดงานแต่ละโครงการ</div>
+          </div>
+          <div style="display:flex;gap:8px;">
+            <select class="form-control" id="product-select" style="width:auto;min-width:300px;">
+              <option value="CMT-POR-50">ปูนซีเมนต์ปอร์ตแลนด์ 50 กก.</option>
+              <option value="STL-RB12">เหล็กเส้น RB 12mm x 10m</option>
+              <option value="STL-HR5">เหล็กแผ่น HR 5mm</option>
+              <option value="BRK-MOONG">อิฐมอญ</option>
+            </select>
+            <button class="btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>วิเคราะห์ใหม่</button>
+          </div>
+        </div>
+
+        <div class="tabs">
+          <div class="tab active">การวิเคราะห์ราคา</div>
+          <div class="tab">ปัจจัยที่เกี่ยวข้อง</div>
+          <div class="tab">โครงการที่ต้องใช้วัสดุนี้</div>
+          <div class="tab">ประวัติการสั่งซื้อ</div>
+        </div>
+
+        <div id="empty-wrapper"></div>
+
+        <div id="content-wrapper" style="display:none;">
+          <div class="recommendation">
+            <div class="rec-label">คำแนะนำจากระบบวิเคราะห์</div>
+            <div class="rec-text" id="rec-text">—</div>
+            <div class="rec-meta">
+              <span>ราคาปัจจุบัน: <strong id="rec-current">—</strong></span>
+              <span>ราคาคาดการณ์ (30 วัน): <strong id="rec-predicted">—</strong></span>
+              <span>แนวโน้ม: <strong id="rec-trend">—</strong></span>
+            </div>
+          </div>
+
+          <div class="grid-2 mb-4">
+            <div class="card">
+              <div class="card-header">
+                <div>
+                  <h3>กราฟราคาย้อนหลัง & คาดการณ์ 30 วัน</h3>
+                  <div class="sub">เส้นทึบ = ราคาจริง · เส้นประ = คาดการณ์จากข้อมูล</div>
+                </div>
+                <div class="legend">
+                  <div class="legend-item"><span class="legend-swatch" style="background:#2563eb"></span>ราคาจริง</div>
+                  <div class="legend-item"><span class="legend-swatch" style="background:#16a34a"></span>คาดการณ์</div>
+                </div>
+              </div>
+              <div class="card-body">
+                <div class="chart-container lg"><canvas id="forecast-chart"></canvas></div>
+              </div>
+            </div>
+
+            <div>
+              <div class="card mb-4">
+                <div class="card-header"><div><h3>ความมั่นใจของโมเดล</h3></div></div>
+                <div class="card-body">
+                  <div style="text-align:center;padding:14px 0;">
+                    <div style="font-size:42px;font-weight:700;color:#16a34a;" id="confidence-num">—</div>
+                    <div style="font-size:13px;color:#64748b;">คะแนนความมั่นใจ</div>
+                  </div>
+                  <div class="confidence-bar">
+                    <div class="track"><div class="fill" id="confidence-bar" style="width:0%"></div></div>
+                  </div>
+                  <div style="margin-top:14px;padding:12px;background:#f8fafc;border-radius:6px;font-size:12.5px;color:#475569;">
+                    <strong>วิธีการประเมิน:</strong> คำนวณจากความแม่นยำของโมเดลในอดีต 90 วัน ความผันผวนของตลาด และคุณภาพข้อมูล
+                  </div>
+                </div>
+              </div>
+
+              <div class="card">
+                <div class="card-header"><div><h3>การตัดสินใจ</h3></div></div>
+                <div class="card-body">
+                  <div style="display:flex;flex-direction:column;gap:8px;">
+                    <button class="btn btn-primary" style="justify-content:center;padding:11px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>อนุมัติสั่งซื้อตามคำแนะนำ</button>
+                    <button class="btn" style="justify-content:center;padding:11px;">ขอให้ทีมตรวจสอบเพิ่มเติม</button>
+                    <button class="btn btn-ghost" style="justify-content:center;padding:11px;color:#dc2626;">ปฏิเสธคำแนะนำ</button>
+                  </div>
+                  <div style="margin-top:14px;font-size:11.5px;color:#94a3b8;text-align:center;">
+                    การตัดสินใจจะถูกบันทึกเพื่อปรับปรุงความแม่นยำของโมเดล
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card mb-4">
+            <div class="card-header">
+              <div>
+                <h3>ปัจจัยที่ใช้ในการวิเคราะห์</h3>
+                <div class="sub">ทั้งปัจจัยภายในและภายนอกที่มีผลต่อราคา</div>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="factor-list" id="factor-list"></div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <h3>คำแนะนำทั้งหมดที่ระบบวิเคราะห์ได้</h3>
+                <div class="sub">เรียงตามความเร่งด่วน</div>
+              </div>
+            </div>
+            <div class="card-body" id="all-recs-container"></div>
+          </div>
+        </div>
+      </main>
+
+      <footer class="app-footer">
+        <span>© 2569 Construction Procurement · เวอร์ชัน 1.0.0</span>
+        <span>ระบบวิเคราะห์: Price Forecast v2.4 · อัปเดตข้อมูล: 20 ก.ค. 2569</span>
+      </footer>
+    </div>
+  </div>
+
+  <script src="js/data.js"></script>
+  <script src="js/demo.js"></script>
+  <script>
+    DemoController.injectToggle('#demo-toggle-mount');
+    DemoController.injectBanner();
+
+    const D = window.SAMPLE_DATA;
+    const on = DemoController.isOn();
+    const empty = document.getElementById('empty-wrapper');
+    const content = document.getElementById('content-wrapper');
+
+    if (!on) {
+      empty.innerHTML = renderEmptyState({
+        title: 'ยังไม่มีข้อมูลการวิเคราะห์ราคา',
+        message: 'เมื่อระบบได้รับข้อมูลราคาย้อนหลังอย่างน้อย 90 วัน ระบบจะเริ่มวิเคราะห์แนวโน้มและแนะนำจังหวะการสั่งซื้อที่เหมาะสมกับงวดงาน'
+      });
+    } else {
+      empty.style.display = 'none';
+      content.style.display = 'block';
+
+      const f = D.priceForecast;
+
+      const isDown = f.change < 0;
+      document.getElementById('rec-text').textContent =
+        isDown
+          ? `แนะนำ: สั่งซื้อทันที — ราคามีแนวโน้มลดลง ${Math.abs(f.change).toFixed(1)}% ในอีก ${f.days} วัน`
+          : `เฝ้าระวัง: รอจังหวะที่เหมาะสม — ราคามีแนวโน้มสูงขึ้น ${f.change.toFixed(1)}%`;
+      document.getElementById('rec-current').textContent = fmt.currency(f.currentPrice);
+      document.getElementById('rec-predicted').textContent = fmt.currency(f.predictedPrice);
+      const trendEl = document.getElementById('rec-trend');
+      trendEl.textContent = isDown ? 'ลดลง' : 'สูงขึ้น';
+      trendEl.style.color = isDown ? '#86efac' : '#fca5a5';
+
+      document.getElementById('confidence-num').textContent = f.confidence + '%';
+      document.getElementById('confidence-bar').style.width = f.confidence + '%';
+
+      new Chart(document.getElementById('forecast-chart'), {
+        type: 'line',
+        data: {
+          labels: f.historical.labels,
+          datasets: [
+            {
+              label: 'ราคาจริง (บาท)',
+              data: f.historical.actual,
+              borderColor: chartPalette.primary,
+              backgroundColor: chartPalette.primaryLight,
+              borderWidth: 2.5,
+              pointRadius: 0,
+              pointHoverRadius: 4,
+              tension: 0.25,
+              fill: true
+            },
+            {
+              label: 'คาดการณ์ (บาท)',
+              data: f.historical.predicted,
+              borderColor: chartPalette.success,
+              backgroundColor: chartPalette.successLight,
+              borderWidth: 2.5,
+              borderDash: [6, 4],
+              pointRadius: 0,
+              pointHoverRadius: 4,
+              tension: 0.3,
+              fill: false
+            }
+          ]
+        },
+        options: {
+          ...defaultChartOptions,
+          scales: {
+            ...defaultChartOptions.scales,
+            y: {
+              ...defaultChartOptions.scales.y,
+              ticks: { ...defaultChartOptions.scales.y.ticks, callback: v => fmt.currency(v) }
+            }
+          }
+        }
+      });
+
+      const impactLabel = { up: 'กระทบบวกต่อราคา', down: 'กระทบลบต่อราคา', neutral: 'เป็นกลาง' };
+      document.getElementById('factor-list').innerHTML = f.factors.map(x => `
+        <div class="factor-item">
+          <div class="factor-label">${x.label}</div>
+          <div class="factor-value">${x.value}</div>
+          <div class="factor-impact ${x.impact}">${impactLabel[x.impact]}</div>
+          <div style="font-size:11.5px;color:#94a3b8;margin-top:4px;">${x.note}</div>
+        </div>
+      `).join('');
+
+      document.getElementById('all-recs-container').innerHTML = D.aiRecommendations.map(r => `
+        <div class="insight-box ${r.type}">
+          <div class="insight-title">${r.title} ${r.project ? `<span style="font-weight:400;font-size:12px;color:#64748b;">— ${r.project}</span>` : ''}</div>
+          <div class="insight-body">
+            ${r.detail}
+            <div style="margin-top:8px;font-size:12.5px;color:#475569;"><strong>ข้อเสนอแนะ:</strong> ${r.action}</div>
+            <div class="confidence-bar">
+              <span style="font-size:12px;color:#64748b">ความมั่นใจ</span>
+              <div class="track"><div class="fill" style="width:${r.confidence}%;background:${r.type==='danger'?'#dc2626':r.type==='warning'?'#d97706':'#16a34a'}"></div></div>
+              <span class="label">${r.confidence}%</span>
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+  </script>
+</body>
+</html>

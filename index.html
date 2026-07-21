@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>เข้าสู่ระบบ — ระบบบริหารจัดการจัดซื้อและคลังสินค้า</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="login-shell">
+    <div class="login-panel-left">
+      <div>
+        <div class="login-brand">PROCUREMENT INTELLIGENCE</div>
+      </div>
+
+      <div>
+        <h1 class="login-headline">ระบบบริหารจัดการจัดซื้อ<br>วัสดุก่อสร้าง</h1>
+        <p class="login-sub">
+          วิเคราะห์ราคา แนะนำจังหวะการสั่งซื้อที่เหมาะสม ประเมินซัพพลายเออร์
+          และแจ้งเตือนความผิดปกติของราคา เพื่อให้ทีมงานบริหารต้นทุนได้อย่างแม่นยำ
+        </p>
+
+        <div class="login-features">
+          <div class="login-feature">
+            <div class="num">1</div>
+            <div>
+              <strong>วิเคราะห์ราคาอัจฉริยะ</strong><br>
+              <span style="color:#94a3b8;font-size:12.5px">คาดการณ์แนวโน้มราคา 30 วันข้างหน้า พร้อมปัจจัยที่เกี่ยวข้อง</span>
+            </div>
+          </div>
+          <div class="login-feature">
+            <div class="num">2</div>
+            <div>
+              <strong>ประเมินซัพพลายเออร์อัตโนมัติ</strong><br>
+              <span style="color:#94a3b8;font-size:12.5px">คะแนนคุณภาพ ความตรงเวลา Lead Time และความเสี่ยง</span>
+            </div>
+          </div>
+          <div class="login-feature">
+            <div class="num">3</div>
+            <div>
+              <strong>แจ้งเตือนความผิดปกติ</strong><br>
+              <span style="color:#94a3b8;font-size:12.5px">ตรวจจับการเปลี่ยนแปลงราคาที่ผิดปกติแบบ Real-time</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="login-meta">© 2569 Procurement Intelligence System · เวอร์ชัน 1.0.0</div>
+    </div>
+
+    <div class="login-panel-right">
+      <form class="login-form" onsubmit="event.preventDefault(); window.location.href='dashboard.html';">
+        <h2>เข้าสู่ระบบ</h2>
+        <p class="sub">กรอกข้อมูลเพื่อเข้าใช้งานระบบ</p>
+
+        <div class="form-group">
+          <label for="username">ชื่อผู้ใช้</label>
+          <input type="text" id="username" class="form-control" placeholder="admin" value="admin">
+        </div>
+
+        <div class="form-group">
+          <label for="password">รหัสผ่าน</label>
+          <input type="password" id="password" class="form-control" placeholder="••••••••" value="123456">
+        </div>
+
+        <button type="submit" class="btn btn-primary">เข้าสู่ระบบ</button>
+
+        <div class="login-hint">
+          <strong>ตัวอย่างต้นแบบ (Prototype)</strong><br>
+          กรอกข้อมูลใดก็ได้เพื่อเข้าดู — ระบบนี้เป็น UI ตัวอย่าง ไม่มีการเชื่อมต่อฐานข้อมูลจริง
+        </div>
+      </form>
+    </div>
+  </div>
+</body>
+</html>
