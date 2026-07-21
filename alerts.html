@@ -3,46 +3,90 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>เปรียบเทียบราคาตาม BOQ — ระบบจัดซื้อวัสดุก่อสร้าง</title>
+  <title>เปรียบเทียบ BOQ กับประวัติการซื้อ — ระบบจัดซื้อวัสดุก่อสร้าง</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <style>
-    .filter-bar {
-      display: flex; gap: 12px; align-items: center;
-      padding: 14px 18px; background: var(--color-surface-alt);
-      border: 1px solid var(--color-border); border-radius: var(--radius-md);
-      margin-bottom: 16px; flex-wrap: wrap;
+    /* Upload area */
+    .upload-card {
+      background: var(--color-surface);
+      border: 2px dashed var(--color-border-strong);
+      border-radius: var(--radius-lg);
+      padding: 56px 24px;
+      text-align: center;
+      transition: all 0.2s;
     }
-    .filter-bar label { font-size: 13px; font-weight: 600; color: var(--color-text-secondary); }
-    .filter-bar select {
-      padding: 7px 12px; font-size: 13px; font-family: inherit;
-      border: 1px solid var(--color-border-strong); border-radius: var(--radius-md);
-      background: var(--color-surface); color: var(--color-text); min-width: 180px; cursor: pointer;
+    .upload-card.dragover {
+      border-color: var(--color-accent);
+      background: var(--color-accent-soft);
     }
-    .filter-bar select:focus { outline: 2px solid var(--color-accent-soft); border-color: var(--color-accent); }
+    .upload-card .upload-icon {
+      width: 72px; height: 72px;
+      margin: 0 auto 16px;
+      background: var(--color-primary-soft);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      color: var(--color-primary);
+    }
+    .upload-card h3 { font-size: 18px; font-weight: 600; margin-bottom: 8px; }
+    .upload-card p { color: var(--color-text-secondary); font-size: 13px; margin-bottom: 18px; }
+    .upload-card .file-types {
+      display: inline-flex; gap: 8px; margin-top: 14px;
+      font-size: 11.5px; color: var(--color-text-muted);
+    }
+    .upload-card .file-types span {
+      padding: 3px 10px; background: var(--color-surface-alt);
+      border: 1px solid var(--color-border); border-radius: 999px;
+    }
+    .upload-card label.btn { cursor: pointer; }
 
-    .price-cell { font-weight: 600; }
-    .price-delta { font-size: 11.5px; padding: 2px 8px; border-radius: 999px; font-weight: 600; display: inline-block; }
-    .price-delta.cheaper { background: var(--color-success-soft); color: var(--color-success); }
-    .price-delta.slightly { background: var(--color-warning-soft); color: var(--color-warning); }
-    .price-delta.much     { background: var(--color-danger-soft);  color: var(--color-danger); }
+    /* File info bar (after upload) */
+    .file-info-bar {
+      display: flex; align-items: center; gap: 14px;
+      padding: 14px 18px;
+      background: var(--color-success-soft);
+      border: 1px solid #86efac;
+      border-radius: var(--radius-md);
+      margin-bottom: 18px;
+    }
+    .file-info-bar .file-icon {
+      width: 40px; height: 40px;
+      background: var(--color-success);
+      border-radius: var(--radius-md);
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; flex-shrink: 0;
+    }
+    .file-info-bar .file-meta { flex: 1; }
+    .file-info-bar .file-meta .name { font-weight: 600; color: #166534; font-size: 14px; }
+    .file-info-bar .file-meta .detail { font-size: 12px; color: #15803d; margin-top: 2px; }
+    .file-info-bar button { white-space: nowrap; }
 
-    .qty-bar {
-      display: flex; align-items: center; gap: 8px; min-width: 140px;
+    /* Comparison table */
+    .compare-price-cell {
+      display: flex; flex-direction: column; gap: 2px;
     }
-    .qty-bar-track {
-      flex: 1; height: 6px; background: var(--color-border);
-      border-radius: 999px; overflow: hidden; position: relative;
+    .compare-price-cell .now { font-weight: 700; font-size: 14px; }
+    .compare-price-cell .hist { font-size: 11.5px; color: var(--color-text-muted); }
+
+    .verdict-pill {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 4px 10px; border-radius: 999px;
+      font-size: 12px; font-weight: 600;
     }
-    .qty-bar-fill {
-      height: 100%; background: var(--color-accent); border-radius: 999px;
+    .verdict-pill.equal    { background: #f1f5f9; color: #475569; }
+    .verdict-pill.cheaper  { background: var(--color-success-soft); color: var(--color-success); }
+    .verdict-pill.expensive{ background: var(--color-danger-soft); color: var(--color-danger); }
+    .verdict-pill.no-data  { background: #f1f5f9; color: #64748b; }
+
+    .price-arrow {
+      display: inline-block; font-weight: 700; font-size: 13px;
     }
-    .qty-bar-fill.done { background: var(--color-success); }
-    .qty-bar-fill.warn { background: var(--color-warning); }
-    .qty-bar-text { font-size: 11.5px; color: var(--color-text-secondary); white-space: nowrap; }
+    .price-arrow.up   { color: var(--color-danger); }
+    .price-arrow.down { color: var(--color-success); }
+    .price-arrow.eq   { color: var(--color-text-muted); }
 
     .history-modal-overlay {
       position: fixed; inset: 0; background: rgba(15, 23, 42, 0.55);
@@ -72,7 +116,7 @@
     .project-chip {
       display: inline-block; padding: 2px 8px; border-radius: 999px;
       background: var(--color-primary-soft); color: var(--color-primary);
-      font-size: 11.5px; font-weight: 600; margin-right: 4px;
+      font-size: 11.5px; font-weight: 600;
     }
     .cheapest-tag {
       display: inline-block; padding: 1px 7px; border-radius: 4px;
@@ -80,16 +124,12 @@
       font-size: 11px; font-weight: 600; margin-left: 6px;
     }
 
-    .recommendation {
-      padding: 10px 14px; border-radius: var(--radius-md); margin-top: 8px;
-      display: flex; gap: 10px; align-items: flex-start;
-      font-size: 13px; line-height: 1.5;
+    /* Demo helper text */
+    .demo-hint {
+      text-align: center; padding: 10px 14px; margin-top: 12px;
+      background: var(--color-info-soft); border-radius: var(--radius-md);
+      color: var(--color-info); font-size: 12px;
     }
-    .recommendation.cheaper { background: var(--color-success-soft); color: #166534; }
-    .recommendation.slightly { background: var(--color-warning-soft); color: #92400e; }
-    .recommendation.much     { background: var(--color-danger-soft);  color: #991b1b; }
-    .recommendation.neutral  { background: var(--color-surface-alt);  color: var(--color-text-secondary); border: 1px solid var(--color-border); }
-    .recommendation svg { flex-shrink: 0; margin-top: 1px; }
   </style>
 </head>
 <body>
@@ -113,7 +153,7 @@
         <ul class="sidebar-nav">
           <li><a href="suppliers.html"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-6 9 6v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg>ผู้ขายวัสดุ/ผู้รับเหมา</a></li>
           <li><a href="site-materials.html"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="M3.27 6.96L12 12.01l8.73-5.05M12 22.08V12"/></svg>วัสดุ ณ ไซต์งาน</a></li>
-          <li><a href="alerts.html" class="active"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 3v18"/></svg>เปรียบเทียบราคาตาม BOQ</a></li>
+          <li><a href="alerts.html" class="active"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>เปรียบเทียบ BOQ</a></li>
         </ul>
       </div>
       <div class="sidebar-section">
@@ -132,8 +172,8 @@
       <div class="topbar">
         <div class="topbar-left">
           <div>
-            <div class="breadcrumb">หน้าหลัก / <strong style="color:#475569">เปรียบเทียบราคาตาม BOQ</strong></div>
-            <div class="page-title">เปรียบเทียบราคากับประวัติการซื้อจริง (ตาม BOQ)</div>
+            <div class="breadcrumb">หน้าหลัก / <strong style="color:#475569">เปรียบเทียบ BOQ</strong></div>
+            <div class="page-title">เปรียบเทียบราคา BOQ กับประวัติการซื้อจริง</div>
           </div>
         </div>
         <div class="topbar-right">
@@ -158,58 +198,22 @@
           <div>
             <h1>เปรียบเทียบราคาตาม BOQ กับประวัติการซื้อจริง</h1>
             <div class="subtitle">
-              เริ่มจาก <strong>BOQ ของโครงการ</strong> (ต้องใช้อะไร จำนวนเท่าไหร่) → เทียบราคาที่จะซื้อกับ<strong>ประวัติการซื้อจริง</strong>ของโครงการก่อนหน้า → ตัดสินใจว่าจะสั่งหรือต่อรอง
+              แนบเอกสาร BOQ เข้าไป ระบบจะดึงรายการวัสดุออกมา แล้วเปรียบเทียบราคาประมาณการกับ<strong>ประวัติการซื้อจริง</strong>ของโครงการก่อนหน้า เพื่อดูว่าราคาใน BOQ <strong>ถูกกว่า / เท่ากัน / แพงกว่า</strong> ประวัติ
             </div>
           </div>
         </div>
 
-        <!-- Filter: เลือกโครงการ + งวด -->
-        <div class="filter-bar" id="filterBar">
-          <label>โครงการ:</label>
-          <select id="filterProject"></select>
-          <label>งวดงาน:</label>
-          <select id="filterPhase">
-            <option value="all">ทุกงวด</option>
-          </select>
-          <div style="margin-left:auto;font-size:12px;color:var(--color-text-muted);">
-            💡 เลือกโครงการ/งวดที่กำลังจะสั่งซื้อ เพื่อดูว่าควรสั่งราคาเท่าไหร่
-          </div>
-        </div>
+        <!-- Upload section (เปลี่ยน state ตามการอัปโหลด) -->
+        <div id="uploadSection"></div>
 
-        <div id="kpi-container"></div>
-
-        <!-- Main: BOQ Comparison Table -->
-        <div class="card mb-4">
-          <div class="card-header">
-            <div>
-              <h3 id="boqTableTitle">BOQ รายการวัสดุ vs ประวัติการซื้อจริง</h3>
-              <div class="sub">แสดงปริมาณที่ต้องใช้ตาม BOQ, เทียบราคาเฉลี่ยจากโครงการก่อนหน้า และแผนการสั่งซื้อปัจจุบัน (ถ้ามี)</div>
-            </div>
-            <div class="legend">
-              <div class="legend-item"><span class="legend-swatch" style="background:var(--color-success)"></span>ถูกกว่าประวัติ</div>
-              <div class="legend-item"><span class="legend-swatch" style="background:var(--color-warning)"></span>แพงกว่าเล็กน้อย (≤10%)</div>
-              <div class="legend-item"><span class="legend-swatch" style="background:var(--color-danger)"></span>แพงกว่ามาก (&gt;10%)</div>
-            </div>
-          </div>
-          <div class="card-body no-pad" id="boq-table-container"></div>
-        </div>
-
-        <!-- Bottom: Purchase Plans for this project/phase -->
-        <div class="card mb-4">
-          <div class="card-header">
-            <div>
-              <h3 id="plansTitle">แผนการสั่งซื้อที่กำลังรออนุมัติ</h3>
-              <div class="sub">รายการที่หัวหน้าไซต์/PM เสนอเข้ามา — ต้องตัดสินใจว่าจะอนุมัติหรือต่อรอง</div>
-            </div>
-          </div>
-          <div class="card-body no-pad" id="plans-table-container"></div>
-        </div>
+        <!-- Comparison table (แสดงหลังอัปโหลด) -->
+        <div id="comparisonSection" style="display:none;"></div>
 
       </main>
 
       <footer class="app-footer">
         <span>© 2569 Construction Procurement · เวอร์ชัน 1.0.0</span>
-        <span>เปรียบเทียบกับ: ประวัติการซื้อจริงของบริษัท (รวมทุกโครงการ)</span>
+        <span>ข้อมูลเปรียบเทียบจาก: ประวัติการซื้อจริงของบริษัท</span>
       </footer>
     </div>
   </div>
@@ -243,10 +247,7 @@
     const on = DemoController.isOn();
 
     /* ---------- State ---------- */
-    const state = {
-      project: 'PRJ-2570-003',  // default: เดอะวัลเลย์ (มี purchase plans เยอะ)
-      phase: 'all'
-    };
+    let uploadedBOQ = null;  // { projectId, projectName, phase, items: [...], fileName }
 
     /* ---------- Helpers ---------- */
     function getHistoryStats(materialName) {
@@ -257,291 +258,287 @@
       const min = Math.min(...prices);
       const max = Math.max(...prices);
       const cheapest = h.records.reduce((a, b) => a.pricePerUnit < b.pricePerUnit ? a : b);
-      return {
-        avg, min, max,
-        cheapestProject: cheapest.project,
-        cheapestPrice: cheapest.pricePerUnit,
-        cheapestDate: cheapest.date,
-        recordCount: h.records.length,
-        unit: h.unit,
-        category: h.category,
-        records: h.records
-      };
+      return { avg, min, max, cheapestProject: cheapest.project, cheapestPrice: cheapest.pricePerUnit, cheapestDate: cheapest.date, recordCount: h.records.length, unit: h.unit, category: h.category, records: h.records };
     }
 
-    function classify(newPrice, stats) {
-      if (!stats) return { level: 'unknown', label: 'ไม่มีประวัติ', deltaPct: 0 };
-      const deltaPct = ((newPrice - stats.avg) / stats.avg) * 100;
-      if (deltaPct <= 0) return { level: 'cheaper',  label: 'ถูกกว่าประวัติ', deltaPct };
-      if (deltaPct <= 10) return { level: 'slightly', label: 'แพงกว่าเล็กน้อย', deltaPct };
-      return { level: 'much', label: 'แพงกว่ามาก', deltaPct };
+    function compareVerdict(estimatedPrice, stats) {
+      if (!stats) return { level: 'no-data', label: 'ไม่มีประวัติ', deltaPct: 0 };
+      if (estimatedPrice === 0) return { level: 'no-data', label: 'ไม่ได้ระบุราคา', deltaPct: 0 };
+      const deltaPct = ((estimatedPrice - stats.avg) / stats.avg) * 100;
+      // ถือว่า ±2% = เท่ากัน (ใกล้เคียง)
+      if (Math.abs(deltaPct) <= 2) return { level: 'equal',    label: 'เท่ากับประวัติ', deltaPct };
+      if (deltaPct < 0)             return { level: 'cheaper',  label: 'ถูกกว่าประวัติ', deltaPct };
+      return                                { level: 'expensive',label: 'แพงกว่าประวัติ', deltaPct };
     }
 
-    /* ---------- Init: Populate filters ---------- */
-    function initFilters() {
-      const projSel = document.getElementById('filterProject');
-      // เอาเฉพาะโครงการที่มี BOQ
-      const projectsWithBOQ = [...new Set(D.boq.map(b => b.project))];
-      projSel.innerHTML = projectsWithBOQ.map(pid => {
-        const proj = D.projects.find(p => p.id === pid);
-        return `<option value="${pid}" ${pid === state.project ? 'selected' : ''}>${proj ? proj.name : pid}</option>`;
-      }).join('');
-      projSel.addEventListener('change', (e) => { state.project = e.target.value; state.phase = 'all'; refreshAll(); });
-      refreshPhaseOptions();
-      document.getElementById('filterPhase').addEventListener('change', (e) => { state.phase = e.target.value; refreshAll(); });
-    }
+    /* ---------- Render Upload Section ---------- */
+    function renderUploadSection() {
+      const c = document.getElementById('uploadSection');
+      if (uploadedBOQ) {
+        // แสดง file info bar + ปุ่มเปลี่ยน
+        c.innerHTML = `
+          <div class="file-info-bar">
+            <div class="file-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg>
+            </div>
+            <div class="file-meta">
+              <div class="name">📄 ${uploadedBOQ.fileName}</div>
+              <div class="detail">
+                โครงการ: <strong>${uploadedBOQ.projectName}</strong>
+                · งวด: <strong>${uploadedBOQ.phase}</strong>
+                · ${uploadedBOQ.items.length} รายการ
+                · ดึงข้อมูลจาก BOQ สำเร็จ
+              </div>
+            </div>
+            <button class="btn" onclick="clearUpload()">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+              เปลี่ยน BOQ
+            </button>
+          </div>
+        `;
+      } else {
+        // แสดง upload card
+        c.innerHTML = `
+          <div class="upload-card" id="uploadCard">
+            <div class="upload-icon">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            </div>
+            <h3>แนบเอกสาร BOQ เพื่อเปรียบเทียบราคา</h3>
+            <p>ลากไฟล์มาวาง หรือคลิกปุ่มด้านล่างเพื่อเลือกไฟล์ BOQ<br>
+               ระบบจะดึงรายการวัสดุจาก BOQ แล้วเปรียบเทียบกับประวัติการซื้อจริง</p>
+            <input type="file" id="boqFileInput" accept=".xlsx,.csv,.xls" style="display:none" onchange="handleFileUpload(event)">
+            <button class="btn" onclick="document.getElementById('boqFileInput').click()">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              เลือกไฟล์ BOQ
+            </button>
+            <div class="file-types">
+              <span>.xlsx</span>
+              <span>.xls</span>
+              <span>.csv</span>
+            </div>
+          </div>
+        `;
 
-    function refreshPhaseOptions() {
-      const phaseSel = document.getElementById('filterPhase');
-      const phases = [...new Set(D.boq.filter(b => b.project === state.project).map(b => b.phase))];
-      phaseSel.innerHTML = '<option value="all">ทุกงวด</option>' +
-        phases.map(p => `<option value="${p}" ${state.phase === p ? 'selected' : ''}>${p}</option>`).join('');
-    }
-
-    /* ---------- KPI ---------- */
-    function renderKPIs() {
-      const c = document.getElementById('kpi-container');
-      if (!on) {
-        c.innerHTML = renderEmptyState({
-          title: 'ยังไม่มีข้อมูล BOQ',
-          message: 'เมื่อมีข้อมูล BOQ ของโครงการ ระบบจะเปรียบเทียบราคากับประวัติการซื้อจริง'
+        // Drag & drop
+        const card = document.getElementById('uploadCard');
+        card.addEventListener('dragover', (e) => { e.preventDefault(); card.classList.add('dragover'); });
+        card.addEventListener('dragleave', () => card.classList.remove('dragover'));
+        card.addEventListener('drop', (e) => {
+          e.preventDefault();
+          card.classList.remove('dragover');
+          if (e.dataTransfer.files.length > 0) simulateUpload(e.dataTransfer.files[0].name);
         });
-        return;
       }
-      c.className = 'kpi-grid';
-
-      const items = getFilteredBOQ();
-      const plans = getFilteredPlans();
-
-      // มูลค่า BOQ รวม (ประมาณจากราคาเฉลี่ย)
-      const totalBOQValue = items.reduce((sum, b) => {
-        const stats = getHistoryStats(b.material);
-        if (!stats) return sum;
-        return sum + (b.totalRequired * stats.avg);
-      }, 0);
-
-      // สั่งแล้ว vs ต้องสั่ง
-      const totalRequired = items.reduce((s, b) => s + b.totalRequired, 0);
-      const totalOrdered = items.reduce((s, b) => s + b.delivered, 0);
-      const totalRemaining = totalRequired - totalOrdered;
-      const progressPct = totalRequired > 0 ? (totalOrdered / totalRequired) * 100 : 0;
-
-      // มูลค่าที่อาจประหยัดได้
-      const totalOverspend = plans.reduce((sum, p) => {
-        const stats = getHistoryStats(p.material);
-        if (!stats) return sum;
-        return sum + Math.max(0, (p.proposedPrice - stats.avg) * p.quantity);
-      }, 0);
-
-      // รายการแพงกว่าประวัติ (นับเฉพาะ plan)
-      const expensiveCount = plans.filter(p => {
-        const stats = getHistoryStats(p.material);
-        return stats && p.proposedPrice > stats.avg * 1.1;
-      }).length;
-
-      const projectName = D.projects.find(p => p.id === state.project)?.name || '';
-
-      c.innerHTML = `
-        <div class="kpi"><div class="accent-bar"></div><div class="label">มูลค่า BOQ รวม (ประมาณ)</div><div class="value">${fmt.currencyShort(totalBOQValue)}</div><div class="delta neutral">${projectName}${state.phase !== 'all' ? ' · ' + state.phase : ''}</div></div>
-        <div class="kpi"><div class="accent-bar"></div><div class="label">ความคืบหน้าการสั่งซื้อ</div><div class="value">${progressPct.toFixed(0)}<span class="unit">%</span></div><div class="delta ${progressPct < 50 ? 'down' : 'up'}">สั่งแล้ว ${fmt.num(totalOrdered)} / ${fmt.num(totalRequired)} หน่วย</div></div>
-        <div class="kpi warning"><div class="accent-bar"></div><div class="label">มูลค่าที่อาจประหยัดได้</div><div class="value">${fmt.currencyShort(totalOverspend)}</div><div class="delta neutral">ถ้าซื้อตามราคาเฉลี่ย</div></div>
-        <div class="kpi danger"><div class="accent-bar"></div><div class="label">แผนที่แพงกว่าประวัติ</div><div class="value">${expensiveCount}<span class="unit">รายการ</span></div><div class="delta down">ต้องต่อรองก่อนอนุมัติ</div></div>
-      `;
     }
 
-    /* ---------- BOQ Table ---------- */
-    function getFilteredBOQ() {
-      return D.boq.filter(b => {
-        if (b.project !== state.project) return false;
-        if (state.phase !== 'all' && b.phase !== state.phase) return false;
-        return true;
+    function handleFileUpload(event) {
+      const file = event.target.files[0];
+      if (file) simulateUpload(file.name);
+    }
+
+    function simulateUpload(fileName) {
+      // ใน prototype: เลือก BOQ แรกจากข้อมูลตัวอย่าง (เดอะวัลเลย์ ฐานราก — มี 5 รายการ)
+      // ในของจริง จะ parse ไฟล์ .xlsx/.csv ที่อัปโหลด
+      const sampleBOQ = D.boq.filter(b => b.projectName === 'เดอะวัลเลย์' && b.phase === 'ฐานราก');
+      const project = D.projects.find(p => p.name === 'เดอะวัลเลย์');
+      uploadedBOQ = {
+        projectId: project.id,
+        projectName: project.name,
+        phase: 'ฐานราก',
+        items: sampleBOQ,
+        fileName: fileName
+      };
+      renderUploadSection();
+      renderComparison();
+    }
+
+    function clearUpload() {
+      uploadedBOQ = null;
+      document.getElementById('comparisonSection').style.display = 'none';
+      renderUploadSection();
+    }
+
+    /* ---------- Render Comparison ---------- */
+    function renderComparison() {
+      if (!uploadedBOQ) return;
+      const sec = document.getElementById('comparisonSection');
+      sec.style.display = 'block';
+
+      const items = uploadedBOQ.items;
+      let totalEstimated = 0, totalHistorical = 0, cheaperCount = 0, equalCount = 0, expensiveCount = 0, noDataCount = 0;
+      const rows = items.map((item, idx) => {
+        const stats = getHistoryStats(item.material);
+        const verdict = compareVerdict(item.estimatedPrice, stats);
+        const estTotal = item.estimatedPrice * item.totalRequired;
+        const histTotal = stats ? stats.avg * item.totalRequired : 0;
+        totalEstimated += estTotal;
+        totalHistorical += histTotal;
+        if (verdict.level === 'cheaper') cheaperCount++;
+        else if (verdict.level === 'equal') equalCount++;
+        else if (verdict.level === 'expensive') expensiveCount++;
+        else noDataCount++;
+
+        return { idx: idx + 1, item, stats, verdict, estTotal, histTotal };
       });
-    }
 
-    function getFilteredPlans() {
-      return D.purchasePlans.filter(p => p.project === D.projects.find(pr => pr.id === state.project)?.name);
-    }
+      const arrow = (level) => level === 'cheaper' ? '<span class="price-arrow down">▼</span>' :
+                              level === 'expensive' ? '<span class="price-arrow up">▲</span>' :
+                              level === 'equal' ? '<span class="price-arrow eq">=</span>' :
+                              '<span class="price-arrow eq">—</span>';
 
-    function renderBOQTable() {
-      const c = document.getElementById('boq-table-container');
-      if (!on) { c.innerHTML = renderEmptyState({ title: 'ยังไม่มี BOQ', message: 'ตารางจะแสดงเมื่อมีข้อมูล BOQ' }); return; }
+      const deltaSign = (n) => n > 0 ? '+' : '';
+      const deltaColor = (level) => level === 'cheaper' ? 'var(--color-success)' : level === 'expensive' ? 'var(--color-danger)' : 'var(--color-text-muted)';
 
-      const items = getFilteredBOQ();
-      const plans = getFilteredPlans();
-      // index plan by material name
-      const planByMaterial = {};
-      plans.forEach(p => { planByMaterial[p.material] = p; });
+      sec.innerHTML = `
+        <div id="kpi-container" class="kpi-grid" style="margin-bottom:18px;">
+          <div class="kpi"><div class="accent-bar"></div><div class="label">รายการใน BOQ</div><div class="value">${items.length}<span class="unit">รายการ</span></div><div class="delta neutral">${uploadedBOQ.projectName} · ${uploadedBOQ.phase}</div></div>
+          <div class="kpi success"><div class="accent-bar"></div><div class="label">ถูกกว่าประวัติ</div><div class="value">${cheaperCount}<span class="unit">รายการ</span></div><div class="delta up">ราคา BOQ ตั้งไว้ดี</div></div>
+          <div class="kpi warning"><div class="accent-bar"></div><div class="label">แพงกว่าประวัติ</div><div class="value">${expensiveCount}<span class="unit">รายการ</span></div><div class="delta down">ควรทบทวนราคา BOQ</div></div>
+          <div class="kpi"><div class="accent-bar"></div><div class="label">ส่วนต่างรวม</div><div class="value">${fmt.currencyShort(totalEstimated - totalHistorical)}</div><div class="delta ${(totalEstimated - totalHistorical) > 0 ? 'down' : 'up'}">${(totalEstimated - totalHistorical) > 0 ? 'BOQ สูงกว่าประวัติ' : 'BOQ ต่ำกว่าประวัติ'}</div></div>
+        </div>
 
-      if (items.length === 0) {
-        c.innerHTML = renderEmptyState({ title: 'ไม่มี BOQ สำหรับตัวกรองนี้', message: 'ลองเลือกโครงการ/งวดอื่น' });
-        return;
-      }
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <h3>เปรียบเทียบรายการใน BOQ กับประวัติการซื้อจริง</h3>
+              <div class="sub">แสดง ${items.length} รายการจาก BOQ · คลิก "ดูประวัติ" เพื่อดูข้อมูลการซื้อย้อนหลัง</div>
+            </div>
+            <div class="legend">
+              <div class="legend-item"><span class="legend-swatch" style="background:var(--color-success)"></span>ถูกกว่า</div>
+              <div class="legend-item"><span class="legend-swatch" style="background:#94a3b8"></span>เท่ากัน (±2%)</div>
+              <div class="legend-item"><span class="legend-swatch" style="background:var(--color-danger)"></span>แพงกว่า</div>
+            </div>
+          </div>
+          <div class="card-body no-pad">
+            <table class="data-table">
+              <thead><tr>
+                <th style="width:50px;">#</th>
+                <th>รายการ (จาก BOQ)</th>
+                <th class="num">จำนวน</th>
+                <th class="num">ราคา BOQ</th>
+                <th class="num">ราคาเฉลี่ย (ประวัติ)</th>
+                <th>เปรียบเทียบ</th>
+                <th>สรุป</th>
+                <th></th>
+              </tr></thead>
+              <tbody>
+              ${rows.map(r => `
+                <tr>
+                  <td style="color:var(--color-text-muted);font-family:monospace;">${String(r.idx).padStart(2, '0')}</td>
+                  <td>
+                    <strong>${r.item.material}</strong>
+                    <div style="font-size:11.5px;color:#94a3b8;">${r.item.unit} · ${r.item.qtyPerUnit} ${r.item.unit}/หลัง</div>
+                  </td>
+                  <td class="num"><strong>${fmt.num(r.item.totalRequired)}</strong></td>
+                  <td class="num">
+                    ${r.item.estimatedPrice > 0 ? `<div class="compare-price-cell">
+                      <span class="now">${fmt.currency(r.item.estimatedPrice)}</span>
+                      <span class="hist">รวม ${fmt.currencyShort(r.estTotal)}</span>
+                    </div>` : '<span style="color:var(--color-text-muted);">ไม่ระบุ</span>'}
+                  </td>
+                  <td class="num">
+                    ${r.stats ? `<div class="compare-price-cell">
+                      <span class="now">${fmt.currency(r.stats.avg)}</span>
+                      <span class="hist">${fmt.currency(r.stats.min)} - ${fmt.currency(r.stats.max)}</span>
+                    </div>` : '<span style="color:var(--color-text-muted);">ไม่มีประวัติ</span>'}
+                  </td>
+                  <td>
+                    ${r.verdict.level === 'no-data' ? '<span style="color:var(--color-text-muted);">—</span>' : `
+                      ${arrow(r.verdict.level)}
+                      <strong style="color:${deltaColor(r.verdict.level)};font-size:13px;">${deltaSign(r.verdict.deltaPct.toFixed(1))}%</strong>
+                    `}
+                  </td>
+                  <td>
+                    <span class="verdict-pill ${r.verdict.level}">${r.verdict.label}</span>
+                    ${r.stats ? `<div style="font-size:11px;color:var(--color-text-muted);margin-top:3px;">ถูกสุด: ${r.stats.cheapestProject}</div>` : ''}
+                  </td>
+                  <td>
+                    ${r.stats ? `<button class="btn btn-sm" onclick="openHistoryModal('${r.item.material.replace(/'/g, "\\'")}', ${r.item.estimatedPrice > 0 ? r.item.estimatedPrice : r.stats.avg})">ดูประวัติ</button>` : '<span style="color:var(--color-text-muted);font-size:12px;">ไม่มีข้อมูล</span>'}
+                  </td>
+                </tr>
+              `).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
 
-      c.innerHTML = `
-        <table class="data-table">
-          <thead><tr>
-            <th>วัสดุ (ตาม BOQ)</th>
-            <th>งวด</th>
-            <th class="num">ต้องใช้ (BOQ)</th>
-            <th>ความคืบหน้า</th>
-            <th class="num">คงเหลือต้องสั่ง</th>
-            <th class="num">ราคาเฉลี่ย (ประวัติ)</th>
-            <th class="num">มูลค่าตามประวัติ</th>
-            <th>แผนสั่งปัจจุบัน</th>
-            <th>สถานะ / คำแนะนำ</th>
-          </tr></thead>
-          <tbody>
-          ${items.map(b => {
-            const stats = getHistoryStats(b.material);
-            const plan = planByMaterial[b.material];
-            const remaining = b.totalRequired - b.delivered;
-            const progress = b.totalRequired > 0 ? (b.delivered / b.totalRequired) * 100 : 0;
-
-            const cellStyle = (cls) => cls === 'much' ? 'var(--color-danger)' : cls === 'slightly' ? 'var(--color-warning)' : cls === 'cheaper' ? 'var(--color-success)' : 'var(--color-text)';
-
-            // Plan comparison
-            let planCell = '<span style="color:var(--color-text-muted);">—</span>';
-            let statusPill = '<span class="pill neutral">ยังไม่มีแผน</span>';
-            let recommendation = '';
-
-            if (remaining === 0) {
-              statusPill = '<span class="pill success">สั่งครบแล้ว</span>';
-              recommendation = '<div class="recommendation neutral"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="M22 4L12 14.01l-3-3"/></svg><div>สั่งครบตาม BOQ แล้ว ไม่ต้องสั่งเพิ่ม</div></div>';
-            } else if (plan) {
-              const cls = classify(plan.proposedPrice, stats);
-              const deltaSign = cls.deltaPct > 0 ? '+' : '';
-              planCell = `
-                <div class="price-cell" style="color:${cellStyle(cls.level)};">
-                  ${fmt.currency(plan.proposedPrice)}/${stats ? stats.unit : ''}
+        ${rows.some(r => r.stats) ? `
+        <div class="card mt-4">
+          <div class="card-header">
+            <div>
+              <h3>สรุปภาพรวม — โครงการ ${uploadedBOQ.projectName} (${uploadedBOQ.phase})</h3>
+              <div class="sub">เปรียบเทียบมูลค่ารวมระหว่างราคา BOQ กับราคาตามประวัติ</div>
+            </div>
+          </div>
+          <div class="card-body">
+            <div style="display:grid;grid-template-columns:repeat(3, 1fr);gap:14px;margin-bottom:18px;">
+              <div style="padding:14px;background:var(--color-surface-alt);border-radius:var(--radius-md);border:1px solid var(--color-border);">
+                <div style="font-size:12px;color:var(--color-text-muted);margin-bottom:4px;">มูลค่าตาม BOQ</div>
+                <div style="font-size:20px;font-weight:700;">${fmt.currencyShort(totalEstimated)}</div>
+                <div style="font-size:11px;color:var(--color-text-secondary);margin-top:2px;">ราคาที่บริษัทประมาณการไว้</div>
+              </div>
+              <div style="padding:14px;background:var(--color-surface-alt);border-radius:var(--radius-md);border:1px solid var(--color-border);">
+                <div style="font-size:12px;color:var(--color-text-muted);margin-bottom:4px;">มูลค่าตามประวัติ</div>
+                <div style="font-size:20px;font-weight:700;color:var(--color-success);">${fmt.currencyShort(totalHistorical)}</div>
+                <div style="font-size:11px;color:var(--color-text-secondary);margin-top:2px;">ถ้าซื้อตามราคาเฉลี่ย</div>
+              </div>
+              <div style="padding:14px;background:var(--color-surface-alt);border-radius:var(--radius-md);border:1px solid var(--color-border);">
+                <div style="font-size:12px;color:var(--color-text-muted);margin-bottom:4px;">ส่วนต่าง</div>
+                <div style="font-size:20px;font-weight:700;color:${(totalEstimated - totalHistorical) > 0 ? 'var(--color-danger)' : 'var(--color-success)'};">
+                  ${(totalEstimated - totalHistorical) > 0 ? '+' : ''}${fmt.currencyShort(totalEstimated - totalHistorical)}
                 </div>
-                <div style="font-size:11px;color:var(--color-text-muted);">
-                  ${fmt.num(plan.quantity)} ${stats ? stats.unit : ''} · ${plan.supplier.split(' ').slice(0, 2).join(' ')}...
+                <div style="font-size:11px;color:var(--color-text-secondary);margin-top:2px;">
+                  ${(totalEstimated - totalHistorical) > 0 ? 'BOQ ตั้งราคาสูงกว่าประวัติ' : 'BOQ ตั้งราคาต่ำกว่าประวัติ'}
                 </div>
-              `;
-              statusPill = `<span class="pill ${cls.level === 'much' ? 'danger' : cls.level === 'slightly' ? 'warning' : 'success'}">${cls.label}</span>`;
+              </div>
+            </div>
+            <div class="chart-container"><canvas id="summaryChart"></canvas></div>
+          </div>
+        </div>
+        ` : ''}
+      `;
 
-              // Recommendation logic
-              const overspend = Math.max(0, (plan.proposedPrice - stats.avg) * plan.quantity);
-              if (cls.level === 'much') {
-                recommendation = `<div class="recommendation much"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><path d="M12 9v4M12 17h.01"/></svg><div>แพงกว่าประวัติ <strong>${cls.deltaPct.toFixed(1)}%</strong> — ต้องต่อรองให้ลดลง หรือเปลี่ยนผู้ขาย${overspend > 0 ? ` (อาจประหยัดได้ ${fmt.currencyShort(overspend)})` : ''}</div></div>`;
-              } else if (cls.level === 'slightly') {
-                recommendation = `<div class="recommendation slightly"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg><div>แพงกว่าประวัติ <strong>${cls.deltaPct.toFixed(1)}%</strong> — อยู่ในช่วงยอมรับได้ แต่ควรลองต่อรองเพื่อให้ใกล้ราคาเฉลี่ย</div></div>`;
-              } else if (cls.level === 'cheaper') {
-                recommendation = `<div class="recommendation cheaper"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="M22 4L12 14.01l-3-3"/></svg><div>ราคาดีกว่าประวัติ <strong>${Math.abs(cls.deltaPct).toFixed(1)}%</strong> — สั่งได้เลย</div></div>`;
+      // Render summary chart
+      if (rows.some(r => r.stats)) {
+        const ctx = document.getElementById('summaryChart').getContext('2d');
+        new Chart(ctx, {
+          type: 'bar',
+          data: {
+            labels: rows.map(r => r.item.material.length > 20 ? r.item.material.substring(0, 18) + '...' : r.item.material),
+            datasets: [
+              {
+                label: 'ราคา BOQ (ประมาณการ)',
+                data: rows.map(r => r.item.estimatedPrice),
+                backgroundColor: rows.map(r => r.verdict.level === 'expensive' ? 'rgba(220, 38, 38, 0.8)' : r.verdict.level === 'cheaper' ? 'rgba(22, 163, 74, 0.8)' : 'rgba(148, 163, 184, 0.8)'),
+                borderRadius: 4,
+                maxBarThickness: 36
+              },
+              {
+                label: 'ราคาเฉลี่ย (ประวัติ)',
+                data: rows.map(r => r.stats ? r.stats.avg : 0),
+                backgroundColor: 'rgba(30, 58, 95, 0.7)',
+                borderRadius: 4,
+                maxBarThickness: 36
               }
-
-              // Check if planned qty covers remaining
-              if (plan.quantity < remaining && remaining > 0) {
-                recommendation += `<div class="recommendation neutral" style="margin-top:6px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg><div>แผนสั่ง <strong>${fmt.num(plan.quantity)}</strong> แต่คงเหลือต้องสั่ง <strong>${fmt.num(remaining)}</strong> → ยังขาดอีก ${fmt.num(remaining - plan.quantity)} ${stats ? stats.unit : ''}</div></div>`;
-              } else if (plan.quantity > remaining && remaining > 0) {
-                recommendation += `<div class="recommendation neutral" style="margin-top:6px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg><div>แผนสั่ง <strong>${fmt.num(plan.quantity)}</strong> มากกว่าความต้องการที่เหลือ <strong>${fmt.num(remaining)}</strong> → ตรวจสอบว่ามีงวดอื่นรอใช้</div></div>`;
-              }
-            } else if (remaining > 0) {
-              statusPill = '<span class="pill warning">ยังไม่มีแผนสั่ง</span>';
-              const estimatedCost = stats ? remaining * stats.avg : 0;
-              recommendation = `<div class="recommendation neutral"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg><div>ยังไม่มีแผนสั่ง แต่คงเหลือต้องสั่งอีก <strong>${fmt.num(remaining)}</strong> ${stats ? stats.unit : ''}${estimatedCost > 0 ? ` (ประมาณ ${fmt.currencyShort(estimatedCost)} ตามราคาเฉลี่ย)` : ''}</div></div>`;
+            ]
+          },
+          options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { position: 'bottom', labels: { font: { family: 'Sarabun', size: 12 } } } },
+            scales: {
+              y: { ticks: { callback: (v) => '฿' + v.toLocaleString(), font: { family: 'Sarabun' } }, title: { display: true, text: 'บาท/หน่วย', font: { family: 'Sarabun' } } },
+              x: { ticks: { font: { family: 'Sarabun', size: 10 } } }
             }
-
-            // Qty progress bar
-            const fillClass = progress >= 100 ? 'done' : progress < 30 ? 'warn' : '';
-
-            return `
-              <tr>
-                <td>
-                  <strong>${b.material}</strong>
-                  <div style="font-size:11.5px;color:#94a3b8;">${stats ? stats.category : ''} · ${b.qtyPerUnit} ${b.unit}/หลัง × ${D.projects.find(p => p.id === b.project)?.totalUnits || ''} หลัง</div>
-                </td>
-                <td><span class="pill neutral">${b.phase}</span></td>
-                <td class="num"><strong>${fmt.num(b.totalRequired)}</strong> ${b.unit}</td>
-                <td>
-                  <div class="qty-bar">
-                    <div class="qty-bar-track"><div class="qty-bar-fill ${fillClass}" style="width:${Math.min(progress, 100)}%;"></div></div>
-                    <span class="qty-bar-text">${fmt.num(b.delivered)}/${fmt.num(b.totalRequired)}</span>
-                  </div>
-                </td>
-                <td class="num"><strong style="color:${remaining > 0 ? 'var(--color-warning)' : 'var(--color-success)'};">${fmt.num(remaining)}</strong> ${b.unit}</td>
-                <td class="num">${stats ? fmt.currency(stats.avg) : '-'}<div style="font-size:11px;color:#94a3b8;">${stats ? `(฿${stats.min}-${stats.max})` : 'ไม่มีประวัติ'}</div></td>
-                <td class="num">${stats ? fmt.currencyShort(b.totalRequired * stats.avg) : '-'}</td>
-                <td>${planCell}</td>
-                <td style="min-width:240px;">
-                  ${statusPill}
-                  ${recommendation}
-                  ${stats ? `<button class="btn btn-sm" style="margin-top:6px;" onclick="openHistoryModal('${b.material.replace(/'/g, "\\'")}', '${b.projectName}', ${plan ? plan.proposedPrice : stats.avg})">ดูประวัติ</button>` : ''}
-                </td>
-              </tr>
-            `;
-          }).join('')}
-          </tbody>
-        </table>
-      `;
-    }
-
-    /* ---------- Plans Table (bottom) ---------- */
-    function renderPlansTable() {
-      const c = document.getElementById('plans-table-container');
-      if (!on) { c.innerHTML = renderEmptyState({ title: 'ยังไม่มีแผนสั่งซื้อ', message: 'รายการจะแสดงเมื่อมีแผนการสั่งซื้อ' }); return; }
-
-      const plans = getFilteredPlans();
-      if (plans.length === 0) {
-        c.innerHTML = renderEmptyState({ title: 'ไม่มีแผนสำหรับโครงการนี้', message: 'ลองเลือกโครงการอื่น' });
-        return;
+          }
+        });
       }
-
-      // Sort: แพงกว่ามากก่อน
-      const plansWithCls = plans.map(p => {
-        const stats = getHistoryStats(p.material);
-        const cls = classify(p.proposedPrice, stats);
-        return { ...p, stats, classification: cls };
-      }).sort((a, b) => {
-        const order = { much: 0, slightly: 1, cheaper: 2, unknown: 3 };
-        return order[a.classification.level] - order[b.classification.level];
-      });
-
-      c.innerHTML = `
-        <table class="data-table">
-          <thead><tr>
-            <th>รหัสแผน</th>
-            <th>วัสดุ</th>
-            <th>งวด</th>
-            <th>ผู้ขายที่เสนอ</th>
-            <th class="num">ราคาที่เสนอ</th>
-            <th class="num">ราคาเฉลี่ย (ประวัติ)</th>
-            <th class="num">ส่วนต่าง</th>
-            <th class="num">มูลค่าส่วนต่าง</th>
-            <th>สถานะ</th>
-            <th>ผู้เสนอ</th>
-          </tr></thead>
-          <tbody>
-          ${plansWithCls.map(p => {
-            const cls = p.classification;
-            const deltaSign = cls.deltaPct > 0 ? '+' : '';
-            const totalOverspend = p.stats ? Math.max(0, (p.proposedPrice - p.stats.avg) * p.quantity) : 0;
-            return `
-              <tr>
-                <td style="font-family:monospace;font-size:12px;color:#64748b;">${p.id}</td>
-                <td><strong>${p.material}</strong></td>
-                <td><span class="pill neutral">${p.forPhase}</span></td>
-                <td style="font-size:12px;">${p.supplier}</td>
-                <td class="num"><strong style="color:${cls.level === 'much' ? 'var(--color-danger)' : cls.level === 'slightly' ? 'var(--color-warning)' : 'var(--color-success)'};">${fmt.currency(p.proposedPrice)}</strong>/${p.stats ? p.stats.unit : ''}<div style="font-size:11px;color:#94a3b8;">× ${fmt.num(p.quantity)} = ${fmt.currencyShort(p.proposedPrice * p.quantity)}</div></td>
-                <td class="num">${p.stats ? fmt.currency(p.stats.avg) : '-'}</td>
-                <td class="num"><span class="price-delta ${cls.level}">${deltaSign}${cls.deltaPct.toFixed(1)}%</span></td>
-                <td class="num"><strong style="color:${totalOverspend > 0 ? 'var(--color-danger)' : 'var(--color-text-muted)'};">${totalOverspend > 0 ? '+' + fmt.currencyShort(totalOverspend) : '—'}</strong></td>
-                <td><span class="pill ${cls.level === 'much' ? 'danger' : cls.level === 'slightly' ? 'warning' : cls.level === 'cheaper' ? 'success' : 'neutral'}">${cls.label}</span></td>
-                <td style="font-size:12px;color:#475569;">${p.requestedBy}</td>
-              </tr>
-            `;
-          }).join('')}
-          </tbody>
-        </table>
-      `;
     }
 
-    /* ---------- Modal ---------- */
+    /* ---------- Modal: ประวัติการซื้อ ---------- */
     let modalChart = null;
-    function openHistoryModal(materialName, projectName, proposedPrice) {
+    function openHistoryModal(materialName, refPrice) {
       const stats = getHistoryStats(materialName);
       if (!stats) { alert('ไม่พบประวัติการซื้อสำหรับวัสดุนี้'); return; }
-      const cls = classify(proposedPrice, stats);
 
       document.getElementById('modalTitle').textContent = materialName;
       document.getElementById('modalSubtitle').innerHTML = `หมวด: <strong>${stats.category}</strong> · หน่วย: <strong>${stats.unit}</strong> · ${stats.recordCount} ครั้งที่เคยซื้อ`;
@@ -564,9 +561,9 @@
             <div class="sub">ในประวัติ</div>
           </div>
           <div class="stat-mini">
-            <div class="lbl">${cls.deltaPct === 0 ? 'ราคาอ้างอิง' : 'ราคาที่เสนอตอนนี้'}</div>
-            <div class="val" style="color:${cls.level === 'much' ? 'var(--color-danger)' : cls.level === 'slightly' ? 'var(--color-warning)' : 'var(--color-success)'};">${fmt.currency(proposedPrice)}</div>
-            <div class="sub">${cls.label}${cls.deltaPct !== 0 ? ' (' + (cls.deltaPct > 0 ? '+' : '') + cls.deltaPct.toFixed(1) + '%)' : ''}</div>
+            <div class="lbl">ราคาอ้างอิง (BOQ)</div>
+            <div class="val" style="color:var(--color-primary);">${fmt.currency(refPrice)}</div>
+            <div class="sub">จากเอกสาร BOQ</div>
           </div>
         </div>
 
@@ -604,7 +601,7 @@
           labels,
           datasets: [
             { label: 'ราคาที่ซื้อจริง', data, borderColor: chartPalette.primary, backgroundColor: 'rgba(30, 58, 95, 0.1)', fill: true, tension: 0.3, pointRadius: 5, pointBackgroundColor: chartPalette.primary, borderWidth: 2 },
-            { label: 'ราคาที่เสนอตอนนี้', data: Array(sortedRecords.length).fill(proposedPrice), borderColor: cls.level === 'much' ? chartPalette.danger : cls.level === 'slightly' ? chartPalette.warning : chartPalette.success, borderDash: [6, 4], borderWidth: 2, pointRadius: 0, fill: false },
+            { label: 'ราคา BOQ (อ้างอิง)', data: Array(sortedRecords.length).fill(refPrice), borderColor: chartPalette.warning, borderDash: [6, 4], borderWidth: 2, pointRadius: 0, fill: false },
             { label: 'ราคาเฉลี่ย', data: Array(sortedRecords.length).fill(stats.avg), borderColor: chartPalette.text, borderDash: [3, 3], borderWidth: 1.5, pointRadius: 0, fill: false }
           ]
         },
@@ -630,19 +627,8 @@
       if (e.target.id === 'historyModal') closeHistoryModal();
     });
 
-    /* ---------- Refresh all ---------- */
-    function refreshAll() {
-      refreshPhaseOptions();
-      renderKPIs();
-      renderBOQTable();
-      renderPlansTable();
-    }
-
     /* ---------- Init ---------- */
-    initFilters();
-    renderKPIs();
-    renderBOQTable();
-    renderPlansTable();
+    renderUploadSection();
   </script>
 </body>
 </html>
