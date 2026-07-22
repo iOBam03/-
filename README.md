@@ -19,7 +19,7 @@ prototype/
 ├── projects.html           → รายชื่อโครงการบ้านจัดสรร + งวดงาน
 ├── ai-analysis.html        → วิเคราะห์แนวโน้มราคาวัสดุ + คาดการณ์
 ├── suppliers.html          → ผู้ขายวัสดุ + ผู้รับเหมา + Risk Analysis + Renewal Clustering
-├── site-materials.html     → วัสดุ ณ ไซต์งาน (แทนคลังสินค้า)
+├── site-materials.html     → วัสดุ & การสั่งซื้อ (Lead Time & Reorder Control)
 ├── alerts.html             → เปรียบเทียบราคาวัสดุ (BOQ vs ประวัติการซื้อจริง)
 ├── reports.html            → รายงาน + Pareto + YoY + Bottleneck Analysis
 ├── css/
@@ -69,11 +69,11 @@ prototype/
 ## หน้าจอที่ออกแบบ
 
 1. **Login** — หน้าเข้าสู่ระบบสไตล์ Enterprise
-2. **Dashboard** — ภาพรวมโครงการ + Spend Risk Optimization + ใบสั่งซื้อ
+2. **Dashboard** — ภาพรวมโครงการ + ใบสั่งซื้อ
 3. **โครงการ** — รายชื่อบ้านจัดสรร 4 โครงการ + งวดก่อสร้าง 7 ขั้น
 4. **วิเคราะห์แนวโน้มราคาวัสดุ** — กราฟคาดการณ์ + ปัจจัย + คำแนะนำ
 5. **ผู้ขายวัสดุ/ผู้รับเหมา** — คะแนน + Risk Analysis + Renewal Clustering
-6. **วัสดุ ณ ไซต์งาน** — สต็อกวัสดุตาม Block/งวด + รายการสั่งด่วน
+6. **วัสดุ & การสั่งซื้อ** — Lead Time & Reorder Control: ระบบเตือนล่วงหน้าให้สั่งของถูกจังหวะ (ต้องสั่งภายใน = วันที่ต้องใช้ − Lead Time − Safety Buffer 3 วัน) + สต็อกวัสดุตาม Block/งวด
 7. **เปรียบเทียบราคาวัสดุ** — แนบ BOQ → เทียบราคากับประวัติการซื้อจริง (ถูกกว่า/เท่ากัน/แพงกว่า)
 8. **รายงาน** — Pareto + YoY + Bottleneck + Top 10 + สรุปผู้บริหาร
 

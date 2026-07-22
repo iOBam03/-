@@ -369,6 +369,35 @@ window.SAMPLE_DATA = {
     { sku: 'TIL-ROOF', name: 'กระเบื้องหลังคาคอนกรีต', project: 'PRJ-2569-001', projectName: 'กรีนวิลล์ 2', location: 'Block C', phase: 'หลังคา', received: 2400, used: 1800, remaining: 600, expectedUse: 800, reorderLevel: 400, unit: 'แผ่น', lastDelivery: '2569-07-14', status: 'normal' }
   ],
 
+  /* ---------- Lead Time & Reorder Alerts ----------
+     ระบบเตือนล่วงหน้าให้สั่งของก่อนวัสดุจะหมด เพื่อไม่ให้งานดีเลย์
+     Logic: orderByDate = needByDate - supplierLeadTime - safetyBuffer
+     Today = 2569-07-22 (อ้างอิงจากปฏิทินข้อมูลตัวอย่าง)
+     daysFromNow = orderByDate - today (ถ้า < 0 = เลยกำหนดสั่ง)
+     urgency: overdue(เลยกำหนด) | urgent(≤3วัน) | prepare(4-7วัน) | safe(>7วัน)
+  */
+  reorderAlerts: [
+    // === 🔴 OVERDUE — เลยกำหนดสั่งแล้ว ===
+    { id: 'RA-001', project: 'กรีนวิลล์ 2',     phase: 'โครงสร้าง', material: 'เหล็กเส้น RB 12mm x 10m',  unit: 'เส้น',  qty: 1500, supplier: 'ห้างหุ้นส่วน เหล็กไทยก้าวหน้า', leadTime: 14, safety: 3, needBy: '2569-07-28', orderBy: '2569-07-11', daysFromNow: -11, urgency: 'overdue', poStatus: 'ยังไม่สั่ง',   onSite: 250,  poRef: null },
+    { id: 'RA-002', project: 'เดอะพาร์ค',      phase: 'ผนัง',     material: 'ท่อ PVC 4 นิ้ว',               unit: 'ท่อน',  qty: 80,   supplier: 'ห้างหุ้นส่วน ไทยพลาสติก',       leadTime: 21, safety: 3, needBy: '2569-07-30', orderBy: '2569-07-06', daysFromNow: -16, urgency: 'overdue', poStatus: 'ล่าช้า',        onSite: 25,   poRef: 'PO-2569-0412' },
+    { id: 'RA-003', project: 'เดอะวัลเลย์',    phase: 'ฐานราก',   material: 'หินคลุก',                       unit: 'คิว',   qty: 150,  supplier: 'บริษัท วัสดุภัณฑ์ก่อสร้าง จำกัด', leadTime: 7,  safety: 3, needBy: '2569-07-27', orderBy: '2569-07-17', daysFromNow: -5,  urgency: 'overdue', poStatus: 'ยังไม่สั่ง',   onSite: 40,   poRef: null },
+    { id: 'RA-004', project: 'กรีนวิลล์ 2',     phase: 'ตกแต่ง',    material: 'กระเบื้องเซรามิก 60x60 ซม.',     unit: 'กล่อง', qty: 350,  supplier: 'บริษัท เซรามิคไทยแลนด์ จำกัด',     leadTime: 12, safety: 3, needBy: '2569-08-05', orderBy: '2569-07-21', daysFromNow: -1,  urgency: 'overdue', poStatus: 'ยังไม่สั่ง',   onSite: 165,  poRef: null },
+
+    // === 🔥 URGENT — ต้องสั่งภายใน 3 วัน ===
+    { id: 'RA-005', project: 'เดอะพาร์ค',      phase: 'ผนัง',     material: 'ปูนซีเมนต์ปอร์ตแลนด์ 50 กก.',   unit: 'ถุง',  qty: 600,  supplier: 'บริษัท ซีเมนต์ไทย จำกัด',         leadTime: 7,  safety: 3, needBy: '2569-08-02', orderBy: '2569-07-23', daysFromNow: 1,  urgency: 'urgent',  poStatus: 'ยังไม่สั่ง',   onSite: 40,   poRef: null },
+    { id: 'RA-006', project: 'เดอะวัลเลย์',    phase: 'ฐานราก',   material: 'ปูนซีเมนต์ปอร์ตแลนด์ 50 กก.',   unit: 'ถุง',  qty: 800,  supplier: 'บริษัท ซีเมนต์ไทย จำกัด',         leadTime: 7,  safety: 3, needBy: '2569-08-01', orderBy: '2569-07-22', daysFromNow: 0,  urgency: 'urgent',  poStatus: 'ยังไม่สั่ง',   onSite: 0,    poRef: null },
+    { id: 'RA-009', project: 'กรีนวิลล์ 2',     phase: 'โครงสร้าง', material: 'ทรายหยาบ',                      unit: 'คิว',   qty: 100,  supplier: 'บริษัท วัสดุภัณฑ์ก่อสร้าง จำกัด', leadTime: 21, safety: 3, needBy: '2569-08-15', orderBy: '2569-07-22', daysFromNow: 0,  urgency: 'urgent',  poStatus: 'สั่งแล้ว',     onSite: 35,   poRef: 'PO-2569-0419' },
+
+    // === 🟡 PREPARE — เริ่มเตรียมการ (4-7 วัน) ===
+    { id: 'RA-007', project: 'เดอะพาร์ค',      phase: 'ผนัง',     material: 'อิฐมอญ ขนาดมาตรฐาน',           unit: 'ก้อน', qty: 8000, supplier: 'บริษัท อิฐไทยอุตสาหกรรม จำกัด', leadTime: 6,  safety: 3, needBy: '2569-08-08', orderBy: '2569-07-30', daysFromNow: 8,  urgency: 'prepare', poStatus: 'ยังไม่สั่ง',   onSite: 1300, poRef: null },
+    { id: 'RA-008', project: 'กรีนวิลล์ 2',     phase: 'โครงสร้าง', material: 'เหล็กแผ่น HR 5mm',               unit: 'แผ่น', qty: 60,   supplier: 'ห้างหุ้นส่วน เหล็กไทยก้าวหน้า',   leadTime: 14, safety: 3, needBy: '2569-08-12', orderBy: '2569-07-26', daysFromNow: 4,  urgency: 'prepare', poStatus: 'ยังไม่สั่ง',   onSite: 47,   poRef: null },
+    { id: 'RA-010', project: 'กรีนวิลล์ 2',     phase: 'ระบบ',      material: 'สายไฟ THW 2.5 sq.mm',            unit: 'ม้วน', qty: 30,   supplier: 'บริษัท สายไฟฟ้าไทย จำกัด',         leadTime: 8,  safety: 3, needBy: '2569-08-10', orderBy: '2569-07-30', daysFromNow: 8,  urgency: 'prepare', poStatus: 'กำลังจัดส่ง', onSite: 22,   poRef: 'PO-2569-0417' },
+
+    // === 🟢 SAFE — ยังมีเวลา (>7 วัน) ===
+    { id: 'RA-011', project: 'กรีนวิลล์ 2',     phase: 'ตกแต่ง',    material: 'สีน้ำอะครีลิก 5 แกลลอน',         unit: 'ถัง',  qty: 25,   supplier: 'บริษัท สีโปรเฟสชั่นนัล จำกัด',     leadTime: 5,  safety: 3, needBy: '2569-08-20', orderBy: '2569-08-12', daysFromNow: 21, urgency: 'safe',    poStatus: 'ยังไม่สั่ง',   onSite: 24,   poRef: null },
+    { id: 'RA-012', project: 'กรีนวิลล์ 2',     phase: 'หลังคา',    material: 'กระเบื้องหลังคาคอนกรีต',       unit: 'แผ่น', qty: 800,  supplier: 'บริษัท อิฐไทยอุตสาหกรรม จำกัด', leadTime: 7,  safety: 3, needBy: '2569-08-25', orderBy: '2569-08-15', daysFromNow: 24, urgency: 'safe',    poStatus: 'ยังไม่สั่ง',   onSite: 600,  poRef: null },
+  ],
+
   /* ---------- BOQ (Bill of Quantities) ---------- */
   // ใช้เป็นจุดตั้งต้นของหน้าเปรียบเทียบราคา: ดูว่าโครงการต้องใช้อะไร → เทียบกับประวัติการซื้อจริง
   // estimatedPrice = ราคาที่บริษัทประมาณการไว้ใน BOQ (ก่อนทำการซื้อจริง)

@@ -32,7 +32,7 @@
         <div class="sidebar-section-title">การจัดการ</div>
         <ul class="sidebar-nav">
           <li><a href="suppliers.html"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-6 9 6v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg>ผู้ขายวัสดุ/ผู้รับเหมา</a></li>
-          <li><a href="site-materials.html"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="M3.27 6.96L12 12.01l8.73-5.05M12 22.08V12"/></svg>วัสดุ ณ ไซต์งาน</a></li>
+          <li><a href="site-materials.html"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>วัสดุ & การสั่งซื้อ</a></li>
           <li><a href="alerts.html"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>เปรียบเทียบราคาวัสดุ</a></li>
         </ul>
       </div>
@@ -95,18 +95,6 @@
 
         <!-- KPI Tiles -->
         <div id="kpi-container"></div>
-
-        <!-- Spend Risk Optimization (ตามหลัก Procurement Optimizer) -->
-        <div class="card mb-4" id="spend-optimization-card">
-          <div class="card-header">
-            <div>
-              <h3>Spend Risk Optimization</h3>
-              <div class="sub">สรุปความเสี่ยงด้านการจัดซื้อตามหลัก Pareto · Risk-balanced · Goldratt's TOC</div>
-            </div>
-            <a href="reports.html" class="btn btn-sm btn-ghost">ดูรายงานเต็ม →</a>
-          </div>
-          <div class="card-body" id="spend-optimization-container"></div>
-        </div>
 
         <!-- Charts -->
         <div class="grid-2 mb-4">
@@ -205,42 +193,6 @@
         <div class="kpi success"><div class="accent-bar"></div><div class="label">${k.unitsInProgress.label}</div><div class="value">${fmt.num(k.unitsInProgress.value)}<span class="unit">หลัง</span></div><div class="delta up">${k.unitsInProgress.delta}</div></div>
         <div class="kpi warning"><div class="accent-bar"></div><div class="label">${k.monthlySpend.label}</div><div class="value">${fmt.currencyShort(k.monthlySpend.value)}<span class="unit">บาท</span></div><div class="delta up">${k.monthlySpend.delta}</div></div>
         <div class="kpi danger"><div class="accent-bar"></div><div class="label">${k.priceAlerts.label}</div><div class="value">${k.priceAlerts.value}<span class="unit">รายการ</span></div><div class="delta down">${k.priceAlerts.delta}</div></div>
-      `;
-    }
-
-    /* Spend Optimization Summary */
-    function renderSpendOptimization() {
-      const c = document.getElementById('spend-optimization-container');
-      if (!on) { c.innerHTML = renderEmptyState({ title: 'ยังไม่มีข้อมูล Spend Optimization', message: 'ระบบจะวิเคราะห์ความเสี่ยงการจัดซื้อตามหลัก Pareto, Tier risk, Goldratt bottleneck เมื่อมีข้อมูลเพียงพอ' }); return; }
-      const opt = D.spendOptimization;
-      const topCategories = D.pareto.ranked.slice(0, 3);
-      c.innerHTML = `
-        <div style="display:grid;grid-template-columns:repeat(4, 1fr);gap:12px;margin-bottom:14px;">
-          <div style="padding:14px;background:${opt.tier1NoBreakGlassCount > 0 ? '#fef2f2' : '#f0fdf4'};border-radius:6px;border-left:3px solid ${opt.tier1NoBreakGlassCount > 0 ? '#dc2626' : '#16a34a'};">
-            <div style="font-size:11.5px;color:#64748b;text-transform:uppercase;letter-spacing:0.4px;">Tier-1 single-source<br>ที่ไม่มี break-glass plan</div>
-            <div style="font-size:28px;font-weight:700;color:${opt.tier1NoBreakGlassCount > 0 ? '#dc2626' : '#16a34a'};margin-top:6px;">${opt.tier1NoBreakGlassCount}</div>
-            <div style="font-size:12px;color:#475569;margin-top:4px;">${opt.tier1NoBreakGlassCount > 0 ? '<strong>DO NOT CONSOLIDATE</strong> — ต้องจัดทำแผน 72 ชม. ก่อน' : 'ทุก tier-1 มีแผนสำรอง'}</div>
-          </div>
-          <div style="padding:14px;background:${opt.renewalClusterAlerts > 0 ? '#fffbeb' : '#f0fdf4'};border-radius:6px;border-left:3px solid ${opt.renewalClusterAlerts > 0 ? '#d97706' : '#16a34a'};">
-            <div style="font-size:11.5px;color:#64748b;text-transform:uppercase;letter-spacing:0.4px;">Renewal Cluster Risk<br>(tier-1 ≥ 3 ฉบับ/เดือน)</div>
-            <div style="font-size:28px;font-weight:700;color:${opt.renewalClusterAlerts > 0 ? '#d97706' : '#16a34a'};margin-top:6px;">${opt.renewalClusterAlerts}</div>
-            <div style="font-size:12px;color:#475569;margin-top:4px;">${opt.renewalClusterAlerts > 0 ? 'ก.ย. 2569: tier-1 หมด 6 ฉบับ' : 'กระจายตัวดี'}</div>
-          </div>
-          <div style="padding:14px;background:#fef2f2;border-radius:6px;border-left:3px solid #dc2626;">
-            <div style="font-size:11.5px;color:#64748b;text-transform:uppercase;letter-spacing:0.4px;">Purchasing Bottlenecks<br>(ใช้เวลา > 2x median)</div>
-            <div style="font-size:28px;font-weight:700;color:#dc2626;margin-top:6px;">${opt.bottleneckCategoryCount}</div>
-            <div style="font-size:12px;color:#475569;margin-top:4px;">หมวด: เหล็ก ปูน วัสดุก่อสร้าง ไฟฟ้า</div>
-          </div>
-          <div style="padding:14px;background:#f8fafc;border-radius:6px;border-left:3px solid #94a3b8;">
-            <div style="font-size:11.5px;color:#64748b;text-transform:uppercase;letter-spacing:0.4px;">Pareto Insight<br>(Top 20% ของหมวด)</div>
-            <div style="font-size:18px;font-weight:700;color:#1e3a5f;margin-top:6px;">${topCategories.length} หมวด = ${D.pareto.ranked.slice(0,3).reduce((s,x)=>s+x.sharePct,0).toFixed(1)}% ของงบ</div>
-            <div style="font-size:12px;color:#475569;margin-top:4px;">${D.pareto.insight}</div>
-          </div>
-        </div>
-        <div style="display:flex;gap:10px;padding:10px 14px;background:#f1f5f9;border-radius:6px;font-size:12.5px;color:#475569;">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;margin-top:1px;"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
-          <div><strong>ข้อแนะนำ:</strong> เร่งจัดทำ break-glass plan สำหรับ ${opt.tier1NoBreakGlassCount} tier-1 single-source ก่อน · กระจายวันต่อสัญญาออกจากเดือน ก.ย. · แก้ที่ Lead Time ของ 4 bottleneck ก่อนจะ optimize หมวดอื่น</div>
-        </div>
       `;
     }
 
@@ -374,7 +326,6 @@
     }
 
     renderKPIs();
-    renderSpendOptimization();
     renderSpendChart();
     renderMaterialChart();
     renderProjects();
