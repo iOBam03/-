@@ -356,6 +356,20 @@
       display: block;
       animation: scanLine 2s linear infinite;
     }
+    .paper-preview.image-mode {
+      padding: 0;
+      background: #1e293b;
+      align-items: center;
+      justify-content: center;
+      display: flex;
+    }
+    .paper-preview.image-mode > * { display: none; }
+    .paper-preview.image-mode img {
+      max-width: 100%;
+      max-height: 380px;
+      object-fit: contain;
+      display: block;
+    }
     @keyframes scanLine {
       0%   { top: -18px; }
       100% { top: 100%; }
@@ -461,6 +475,7 @@
       animation: toastIn 0.2s ease-out;
     }
     .toast.success { background: #166534; }
+    .toast.error { background: #991b1b; }
     .toast .check { width: 18px; height: 18px; flex-shrink: 0; }
     @keyframes toastIn {
       from { opacity: 0; transform: translateX(-50%) translateY(20px); }
@@ -480,6 +495,104 @@
       border-radius: 50%;
       background: var(--color-success);
       display: inline-block;
+    }
+
+    /* ========== API Key bar (Gemini) ========== */
+    .api-key-bar {
+      display: flex; align-items: center; gap: 10px;
+      padding: 9px 12px;
+      background: #fffbeb;
+      border: 1px solid #fde68a;
+      border-radius: 8px;
+      margin-bottom: 8px;
+    }
+    .api-key-bar.connected {
+      background: #f0fdf4;
+      border-color: #bbf7d0;
+    }
+    .api-key-status {
+      display: flex; align-items: center; gap: 6px;
+      flex: 1;
+      font-size: 12px;
+      color: #92400e;
+      font-weight: 500;
+    }
+    .api-key-bar.connected .api-key-status {
+      color: #166534;
+    }
+    .api-key-status .ico {
+      width: 16px; height: 16px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .api-key-input {
+      padding: 10px 12px;
+      background: #f8fafc;
+      border: 1px solid #e3e8ef;
+      border-radius: 8px;
+      margin-bottom: 12px;
+    }
+    .api-key-input input {
+      flex: 1;
+      font-family: 'Courier New', monospace;
+      font-size: 13px;
+    }
+
+    /* Scan trigger button */
+    .scan-trigger-btn {
+      width: 100%;
+      justify-content: center;
+      padding: 10px;
+      margin-bottom: 10px;
+      background: linear-gradient(135deg, #1e3a5f 0%, #2563eb 100%);
+      border: none;
+      color: #fff;
+      font-weight: 600;
+    }
+    .scan-trigger-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    .scan-trigger-btn:not(:disabled):hover {
+      background: linear-gradient(135deg, #163050 0%, #1d4ed8 100%);
+    }
+
+    .source-selector {
+      display: flex; gap: 8px; flex-wrap: wrap;
+      margin: 12px 0 14px;
+    }
+    .source-btn {
+      flex: 1;
+      min-width: 110px;
+      padding: 8px 10px;
+      background: #fff;
+      border: 1.5px solid #e3e8ef;
+      border-radius: 8px;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 12px;
+      color: #475569;
+      display: flex; align-items: center; gap: 8px;
+      transition: all 0.15s;
+    }
+    .source-btn:hover { border-color: #94a3b8; }
+    .source-btn.active {
+      border-color: #2563eb;
+      background: #eff6ff;
+      color: #1e3a5f;
+      font-weight: 600;
+    }
+    .source-btn .ico {
+      width: 22px; height: 22px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      background: #f1f5f9;
+      border-radius: 4px;
+      color: #64748b;
+    }
+    .source-btn.active .ico {
+      background: #2563eb;
+      color: #fff;
     }
   </style>
 </head>
@@ -579,6 +692,45 @@
           ระบบ AI จะอ่านเอกสาร BOQ ที่เป็นกระดาษ/ไฟล์สแกน แล้วแปลงเป็นข้อมูลดิจิทัลโดยอัตโนมัติ
           — ไม่ต้องพิมพ์ข้อมูลวัสดุเอง
         </div>
+
+        <!-- API key status bar -->
+        <div class="api-key-bar" id="api-key-bar">
+          <div class="api-key-status">
+            <span class="ico">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
+            </span>
+            <span id="api-key-status-text">ยังไม่ได้ตั้งค่า Gemini API Key</span>
+          </div>
+          <button class="btn btn-sm" id="api-key-toggle-btn" onclick="toggleApiKeyInput()">ตั้งค่า</button>
+        </div>
+
+        <!-- API key input (collapsible) -->
+        <div class="api-key-input" id="api-key-input" style="display:none;">
+          <div style="font-size:11.5px;color:#64748b;margin-bottom:8px;">
+            รับ API Key ฟรีได้ที่
+            <a href="https://aistudio.google.com/app/apikey" target="_blank" style="color:#2563eb;">Google AI Studio</a>
+            · Key จะถูกเก็บใน <code>localStorage</code> ของเบราว์เซอร์เครื่องนี้เท่านั้น
+          </div>
+          <div style="display:flex;gap:6px;">
+            <input type="password" id="gemini-key-input" class="lookup" placeholder="AIzaSy..." style="flex:1;">
+            <button class="btn btn-primary" onclick="saveApiKey()">บันทึก</button>
+            <button class="btn" onclick="clearApiKey()">ลบ</button>
+          </div>
+        </div>
+
+        <!-- Source selector -->
+        <div style="margin:14px 0 6px;font-size:12px;color:#475569;font-weight:600;">เลือกเอกสาร:</div>
+        <div class="source-selector" id="source-selector">
+          <input type="file" id="boq-image-input" accept="image/*,.pdf" style="display:none" onchange="handlePaperUpload(event)">
+          <button class="source-btn" id="source-upload-btn" onclick="document.getElementById('boq-image-input').click()">
+            <span class="ico">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+            </span>
+            อัปโหลดภาพ/สแกน
+          </button>
+          <div id="source-samples" style="display:contents;"></div>
+        </div>
+
         <div class="scan-stage">
           <!-- ฝั่งซ้าย: เอกสารกระดาษ -->
           <div class="paper-preview" id="paper-preview">
@@ -589,13 +741,17 @@
 
           <!-- ฝั่งขวา: ผลลัพธ์ที่ดึงออกมา -->
           <div class="scan-result">
-            <div class="scan-status processing" id="scan-status">
-              <div class="pulse"></div>
+            <div class="scan-status" id="scan-status">
+              <div class="pulse" id="scan-status-pulse"></div>
               <div>
-                <div class="lbl">กำลังสแกนและอ่านเอกสาร...</div>
-                <div class="sub" id="scan-detail">OCR + NLP กำลังประมวลผล</div>
+                <div class="lbl" id="scan-status-lbl">พร้อมสแกน</div>
+                <div class="sub" id="scan-detail">เลือกเอกสารแล้วกดปุ่ม "สแกนด้วย AI"</div>
               </div>
             </div>
+            <button class="scan-trigger-btn" id="scan-trigger-btn" onclick="runAIScan()" disabled>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+              สแกนด้วย AI
+            </button>
             <div style="font-size:11.5px;color:#64748b;margin-bottom:6px;">ข้อมูลที่ดึงออกมาได้:</div>
             <div class="extracted-list" id="extracted-list">
               <div style="padding:24px;text-align:center;color:#94a3b8;font-size:12px;">
@@ -943,20 +1099,209 @@
       return                                { level: 'expensive',label: 'แพงกว่าประวัติ', deltaPct };
     }
 
-    /* ---------- AI Scan (เอกสารกระดาษ) ---------- */
-    let _aiScanTarget = null;
-    let _aiScanTimers = [];
+    /* ---------- AI Scan (Gemini API — OCR เอกสาร BOQ จากกระดาษ) ---------- */
+    const GEMINI_KEY_STORAGE = 'cp_gemini_api_key';
+    const GEMINI_ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
 
-    function openAIScan(sampleIdx) {
-      const idx = sampleIdx ?? 0;
+    let _aiScanTarget = null;   // { type:'image'|'sample', ...payload }
+
+    function getGeminiKey() {
+      try { return localStorage.getItem(GEMINI_KEY_STORAGE) || ''; }
+      catch { return ''; }
+    }
+    function setGeminiKey(k) {
+      try { localStorage.setItem(GEMINI_KEY_STORAGE, k); } catch {}
+    }
+    function clearGeminiKey() {
+      try { localStorage.removeItem(GEMINI_KEY_STORAGE); } catch {}
+    }
+
+    function updateApiKeyBar() {
+      const hasKey = !!getGeminiKey();
+      const bar = document.getElementById('api-key-bar');
+      const txt = document.getElementById('api-key-status-text');
+      const btn = document.getElementById('api-key-toggle-btn');
+      if (!bar) return;
+      bar.classList.toggle('connected', hasKey);
+      txt.textContent = hasKey
+        ? 'เชื่อมต่อ Gemini API แล้ว · พร้อมสแกนเอกสารจริง'
+        : 'ยังไม่ได้ตั้งค่า Gemini API Key — ตัวอย่างยังใช้ได้';
+      btn.textContent = hasKey ? 'เปลี่ยน Key' : 'ตั้งค่า';
+    }
+
+    function toggleApiKeyInput() {
+      const inp = document.getElementById('api-key-input');
+      const isOpen = inp.style.display !== 'none';
+      inp.style.display = isOpen ? 'none' : 'block';
+      if (!isOpen) {
+        const cur = getGeminiKey();
+        document.getElementById('gemini-key-input').value = cur;
+        document.getElementById('gemini-key-input').focus();
+      }
+    }
+
+    function saveApiKey() {
+      const v = (document.getElementById('gemini-key-input').value || '').trim();
+      if (!v) { showToast('กรุณากรอก API Key', 'error'); return; }
+      if (!v.startsWith('AIza')) {
+        showToast('API Key ไม่ถูกต้อง (ควรขึ้นต้นด้วย AIza)', 'error');
+        return;
+      }
+      setGeminiKey(v);
+      document.getElementById('api-key-input').style.display = 'none';
+      updateApiKeyBar();
+      showToast('บันทึก Gemini API Key เรียบร้อย', 'success');
+    }
+
+    function clearApiKey() {
+      clearGeminiKey();
+      document.getElementById('gemini-key-input').value = '';
+      document.getElementById('api-key-input').style.display = 'none';
+      updateApiKeyBar();
+      showToast('ลบ Gemini API Key แล้ว', 'success');
+    }
+
+    function fileToBase64(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const result = reader.result;
+          const commaIdx = result.indexOf(',');
+          resolve({ base64: result.substring(commaIdx + 1), mime: file.type || 'image/jpeg' });
+        };
+        reader.onerror = () => reject(new Error('อ่านไฟล์ไม่สำเร็จ'));
+        reader.readAsDataURL(file);
+      });
+    }
+
+    async function callGeminiExtract(base64, mime) {
+      const key = getGeminiKey();
+      if (!key) throw new Error('กรุณาตั้งค่า Gemini API Key ก่อนใช้งาน (คลิก "ตั้งค่า" ด้านบน)');
+
+      const prompt = `คุณคือ AI ผู้เชี่ยวชาญในการอ่านเอกสาร Bill of Quantities (BOQ) งานก่อสร้าง
+จากภาพเอกสารนี้ ให้ดึงรายการวัสดุออกมาเป็น JSON array เท่านั้น
+
+รูปแบบ JSON ที่ต้องการ:
+[
+  {
+    "material": "ชื่อวัสดุ (ภาษาไทย เช่น ปูนซีเมนต์ปอร์ตแลนด์ 50 กก.)",
+    "sku": "รหัสสินค้า ถ้ามี (ถ้าไม่มีใส่ null)",
+    "quantity": จำนวน (ตัวเลขทศนิยมได้),
+    "unit": "หน่วย เช่น ตัน, กก., ถุง, ลูก, ตร.ม., ม., แผ่น",
+    "unitPrice": ราคาต่อหน่วย (ตัวเลข, ถ้าไม่มีใส่ 0),
+    "category": "ประเภทวัสดุ เช่น ปูนซีเมนต์, เหล็ก, อิฐ, ทราย, กระเบื้อง, สี"
+  }
+]
+
+ตอบเฉพาะ JSON array เท่านั้น ห้ามมี markdown code block, คำอธิบาย หรือข้อความอื่นใด`;
+
+      const response = await fetch(`${GEMINI_ENDPOINT}?key=${encodeURIComponent(key)}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{
+            parts: [
+              { text: prompt },
+              { inline_data: { mime_type: mime, data: base64 } }
+            ]
+          }],
+          generationConfig: {
+            temperature: 0.1,
+            responseMimeType: 'application/json'
+          }
+        })
+      });
+
+      if (!response.ok) {
+        const errText = await response.text();
+        let msg = `API error ${response.status}`;
+        try {
+          const j = JSON.parse(errText);
+          msg += `: ${j.error?.message || errText.substring(0, 200)}`;
+        } catch {
+          msg += `: ${errText.substring(0, 200)}`;
+        }
+        throw new Error(msg);
+      }
+
+      const data = await response.json();
+      const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (!text) throw new Error('ไม่ได้รับข้อมูลจาก API (response ว่าง)');
+
+      // parse JSON (รองรับกรณี AI ตอบครอบด้วย ```json ... ```)
+      let cleaned = text.trim();
+      if (cleaned.startsWith('```')) {
+        cleaned = cleaned.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/, '');
+      }
+      const parsed = JSON.parse(cleaned);
+      if (!Array.isArray(parsed)) throw new Error('ผลลัพธ์ไม่ใช่ array — โปรดลองภาพที่ชัดกว่านี้');
+      return parsed;
+    }
+
+    function openAIScan() {
+      _aiScanTarget = null;
+
+      // render sample buttons in source-selector
+      const samplesEl = document.getElementById('source-samples');
+      samplesEl.innerHTML = SAMPLE_BOQS.map((s, i) => `
+        <button class="source-btn" data-sample="${i}" onclick="selectSample(${i})">
+          <span class="ico">${SAMPLE_ICONS[s.icon] || SAMPLE_ICONS.structure}</span>
+          ${s.project}
+        </button>
+      `).join('');
+
+      // reset paper-preview to text mode
+      const preview = document.getElementById('paper-preview');
+      preview.classList.remove('image-mode', 'scanning');
+      // remove any leftover <img>
+      const oldImg = preview.querySelector('img');
+      if (oldImg) oldImg.remove();
+      document.getElementById('paper-project').textContent = '— เลือกเอกสารเพื่อเริ่มสแกน —';
+      document.getElementById('paper-rows').innerHTML = '';
+
+      // reset scan state
+      document.getElementById('scan-status').className = 'scan-status';
+      document.getElementById('scan-status-pulse').style.display = '';
+      document.getElementById('scan-status-lbl').textContent = 'พร้อมสแกน';
+      document.getElementById('scan-status-lbl').style.color = '';
+      document.getElementById('scan-detail').textContent = 'เลือกเอกสารแล้วกดปุ่ม "สแกนด้วย AI"';
+      document.getElementById('scan-trigger-btn').disabled = true;
+      document.getElementById('extracted-list').innerHTML = `
+        <div style="padding:24px;text-align:center;color:#94a3b8;font-size:12px;">รอการสแกน...</div>
+      `;
+      document.getElementById('scan-confirm-btn').disabled = true;
+
+      // reset source buttons
+      document.querySelectorAll('.source-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById('source-upload-btn').classList.remove('active');
+
+      updateApiKeyBar();
+      document.getElementById('ai-scan-modal').classList.add('open');
+    }
+
+    function closeAIScan() {
+      document.getElementById('ai-scan-modal').classList.remove('open');
+      _aiScanTarget = null;
+    }
+
+    function selectSample(idx) {
       const sample = SAMPLE_BOQS[idx];
-      _aiScanTarget = { idx, project: sample.project, phase: sample.phase };
+      const sampleItems = D.boq.filter(b => b.projectName === sample.project && b.phase === sample.phase);
+      _aiScanTarget = {
+        type: 'sample',
+        idx,
+        project: sample.project,
+        phase: sample.phase,
+        items: sampleItems
+      };
 
+      // paper preview = text mock
+      const preview = document.getElementById('paper-preview');
+      preview.classList.remove('image-mode', 'scanning');
+      const oldImg = preview.querySelector('img');
+      if (oldImg) oldImg.remove();
       document.getElementById('paper-project').textContent = sample.project + ' · ' + sample.phase;
-
-      // จำลองหน้าเอกสารกระดาษ: เอา BOQ items ของ project+phase มาแสดง
-      const sampleItems = D.boq.filter(b => b.projectName === sample.project && b.phase === sample.phase).slice(0, 6);
-      document.getElementById('paper-rows').innerHTML = sampleItems.map(i => `
+      document.getElementById('paper-rows').innerHTML = sampleItems.slice(0, 8).map(i => `
         <div class="paper-row">
           <div>${i.material}</div>
           <div class="num">${fmt.num(i.totalRequired)}</div>
@@ -965,77 +1310,173 @@
         </div>
       `).join('');
 
-      // reset state
-      const preview = document.getElementById('paper-preview');
-      preview.classList.add('scanning');
-      const status = document.getElementById('scan-status');
-      status.className = 'scan-status processing';
-      status.innerHTML = `
-        <div class="pulse"></div>
-        <div>
-          <div class="lbl">กำลังสแกนและอ่านเอกสาร...</div>
-          <div class="sub" id="scan-detail">OCR + NLP กำลังประมวลผล</div>
-        </div>
-      `;
-      document.getElementById('extracted-list').innerHTML = `
-        <div style="padding:24px;text-align:center;color:#94a3b8;font-size:12px;">รอการสแกน...</div>
-      `;
-      document.getElementById('scan-confirm-btn').disabled = true;
+      // update source buttons
+      document.querySelectorAll('.source-btn').forEach(b => b.classList.remove('active'));
+      const btn = document.querySelector(`.source-btn[data-sample="${idx}"]`);
+      if (btn) btn.classList.add('active');
 
-      document.getElementById('ai-scan-modal').classList.add('open');
-
-      // clear old timers
-      _aiScanTimers.forEach(t => clearTimeout(t));
-      _aiScanTimers = [];
-
-      // simulate scan progress
-      _aiScanTimers.push(setTimeout(() => {
-        document.getElementById('scan-detail').textContent = 'OCR อ่านตารางสำเร็จ — กำลังจับคู่กับสินค้าในระบบ';
-      }, 800));
-      _aiScanTimers.push(setTimeout(() => {
-        document.getElementById('scan-detail').textContent = 'AI กำลังตรวจสอบความถูกต้องและเติมหน่วย...';
-      }, 1600));
-      _aiScanTimers.push(setTimeout(() => {
-        preview.classList.remove('scanning');
-        status.className = 'scan-status done';
-        status.innerHTML = `
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+      // ตัวอย่าง: extract ทันที (ไม่ต้องกด Scan)
+      document.getElementById('scan-status').className = 'scan-status done';
+      document.getElementById('scan-status-pulse').style.display = 'none';
+      document.getElementById('scan-status-lbl').textContent = 'พร้อมนำเข้า (ข้อมูลตัวอย่าง)';
+      document.getElementById('scan-status-lbl').style.color = '#166534';
+      document.getElementById('scan-detail').textContent = `พบ ${sampleItems.length} รายการ — กด "นำเข้าข้อมูล" ได้เลย`;
+      document.getElementById('scan-trigger-btn').disabled = true;
+      document.getElementById('extracted-list').innerHTML = sampleItems.map(i => `
+        <div class="extracted-item">
           <div>
-            <div class="lbl" style="color:#166534;">สแกนสำเร็จ</div>
-            <div class="sub">พบ <strong>${sampleItems.length}</strong> รายการในเอกสาร · พร้อมนำเข้า</div>
+            <div class="name">${i.material}</div>
+            <div class="meta">${i.sku || '—'} · ฿${i.estimatedPrice}/${i.unit}</div>
           </div>
-        `;
-        document.getElementById('extracted-list').innerHTML = sampleItems.map(i => `
-          <div class="extracted-item">
-            <div>
-              <div class="name">${i.material}</div>
-              <div class="meta">${i.sku || '—'} · ฿${i.estimatedPrice}/${i.unit}</div>
-            </div>
-            <div class="qty">${fmt.num(i.totalRequired)} ${i.unit}</div>
-          </div>
-        `).join('');
-        document.getElementById('scan-confirm-btn').disabled = false;
-      }, 2400));
+          <div class="qty">${fmt.num(i.totalRequired)} ${i.unit}</div>
+        </div>
+      `).join('');
+      document.getElementById('scan-confirm-btn').disabled = false;
     }
 
-    function closeAIScan() {
-      document.getElementById('ai-scan-modal').classList.remove('open');
-      _aiScanTarget = null;
-      _aiScanTimers.forEach(t => clearTimeout(t));
-      _aiScanTimers = [];
+    async function handlePaperUpload(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      // paper preview = image
+      const preview = document.getElementById('paper-preview');
+      preview.classList.remove('scanning');
+      preview.classList.add('image-mode');
+      const oldImg = preview.querySelector('img');
+      if (oldImg) oldImg.remove();
+      const img = document.createElement('img');
+      img.src = URL.createObjectURL(file);
+      preview.appendChild(img);
+
+      document.getElementById('paper-project').textContent = file.name;
+
+      try {
+        const { base64, mime } = await fileToBase64(file);
+        _aiScanTarget = { type: 'image', file, fileName: file.name, base64, mime };
+
+        // update source buttons
+        document.querySelectorAll('.source-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById('source-upload-btn').classList.add('active');
+
+        // enable scan trigger
+        document.getElementById('scan-status').className = 'scan-status';
+        document.getElementById('scan-status-pulse').style.display = '';
+        document.getElementById('scan-status-lbl').textContent = 'พร้อมสแกน';
+        document.getElementById('scan-status-lbl').style.color = '';
+        document.getElementById('scan-detail').textContent = 'กดปุ่ม "สแกนด้วย AI" เพื่อเริ่มอ่านเอกสาร';
+        document.getElementById('scan-trigger-btn').disabled = false;
+        document.getElementById('extracted-list').innerHTML = `
+          <div style="padding:24px;text-align:center;color:#94a3b8;font-size:12px;">รอการสแกน...</div>
+        `;
+        document.getElementById('scan-confirm-btn').disabled = true;
+      } catch (e) {
+        showToast('อ่านไฟล์ไม่สำเร็จ: ' + e.message, 'error');
+      }
+    }
+
+    async function runAIScan() {
+      if (!_aiScanTarget || _aiScanTarget.type !== 'image') return;
+
+      const key = getGeminiKey();
+      if (!key) {
+        toggleApiKeyInput();
+        showToast('กรุณาตั้งค่า Gemini API Key ก่อน', 'error');
+        return;
+      }
+
+      const preview = document.getElementById('paper-preview');
+      const status = document.getElementById('scan-status');
+      const lbl = document.getElementById('scan-status-lbl');
+      const sub = document.getElementById('scan-detail');
+      const trigger = document.getElementById('scan-trigger-btn');
+
+      preview.classList.add('scanning');
+      status.className = 'scan-status processing';
+      lbl.textContent = 'กำลังส่งไปยัง Gemini AI...';
+      lbl.style.color = '';
+      sub.textContent = 'gemini-1.5-flash กำลังอ่านเอกสาร';
+      trigger.disabled = true;
+      document.getElementById('scan-confirm-btn').disabled = true;
+
+      try {
+        const t0 = Date.now();
+        const items = await callGeminiExtract(_aiScanTarget.base64, _aiScanTarget.mime);
+        const ms = Date.now() - t0;
+
+        preview.classList.remove('scanning');
+        status.className = 'scan-status done';
+        document.getElementById('scan-status-pulse').style.display = 'none';
+        lbl.textContent = 'สแกนสำเร็จ';
+        lbl.style.color = '#166534';
+        sub.textContent = `พบ ${items.length} รายการ · ใช้เวลา ${(ms/1000).toFixed(1)} วินาที`;
+
+        _aiScanTarget.items = items;
+        _aiScanTarget.project = _aiScanTarget.fileName.replace(/\.[^.]+$/, '') || 'BOQ จากการสแกน';
+        _aiScanTarget.phase = '—';
+
+        document.getElementById('extracted-list').innerHTML = items.length === 0
+          ? `<div style="padding:24px;text-align:center;color:#94a3b8;font-size:12px;">ไม่พบรายการในเอกสาร</div>`
+          : items.map(i => `
+            <div class="extracted-item">
+              <div>
+                <div class="name">${i.material || '—'}</div>
+                <div class="meta">${i.sku || 'ไม่มี SKU'} · ฿${i.unitPrice || 0}/${i.unit || '?'} · ${i.category || ''}</div>
+              </div>
+              <div class="qty">${fmt.num(i.quantity || 0)} ${i.unit || ''}</div>
+            </div>
+          `).join('');
+
+        document.getElementById('scan-confirm-btn').disabled = items.length === 0;
+      } catch (e) {
+        preview.classList.remove('scanning');
+        status.className = 'scan-status';
+        lbl.textContent = 'สแกนไม่สำเร็จ';
+        lbl.style.color = '#dc2626';
+        sub.textContent = e.message;
+        trigger.disabled = false;
+        showToast(e.message, 'error');
+      }
+    }
+
+    function loadExtractedBOQ(items, projectName, phase) {
+      uploadedBOQ = {
+        projectId: 'scanned-' + Date.now(),
+        projectName: projectName,
+        phase: phase,
+        items: items.map((it, idx) => ({
+          sku: it.sku || `SCAN-${String(idx + 1).padStart(3, '0')}`,
+          material: it.material || 'ไม่ระบุชื่อวัสดุ',
+          qtyPerUnit: 1,
+          totalRequired: Number(it.quantity) || 0,
+          unit: it.unit || 'หน่วย',
+          estimatedPrice: Number(it.unitPrice) || 0,
+          category: it.category || ''
+        })),
+        fileName: projectName,
+        isSample: false,
+        scannedByAI: true
+      };
+      renderUploadSection();
+      renderComparison();
+      document.getElementById('comparisonSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
 
     function confirmAIScan() {
       if (!_aiScanTarget) return;
-      const { idx } = _aiScanTarget;
-      closeAIScan();
-      loadSampleBOQ(idx);
-      showToast('นำเข้าข้อมูลจากการสแกนเรียบร้อย', 'success');
+      if (_aiScanTarget.type === 'sample') {
+        closeAIScan();
+        loadSampleBOQ(_aiScanTarget.idx);
+        showToast('นำเข้าข้อมูลตัวอย่างเรียบร้อย', 'success');
+      } else if (_aiScanTarget.type === 'image' && _aiScanTarget.items) {
+        closeAIScan();
+        loadExtractedBOQ(_aiScanTarget.items, _aiScanTarget.project, _aiScanTarget.phase);
+        showToast(`นำเข้าข้อมูลจากการสแกน Gemini (${_aiScanTarget.items.length} รายการ)`, 'success');
+      }
     }
 
     function showToast(message, variant) {
       const t = document.createElement('div');
-      t.className = 'toast' + (variant === 'success' ? ' success' : '');
+      t.className = 'toast' + (variant === 'success' ? ' success' : variant === 'error' ? ' error' : '');
       t.innerHTML = `
         <svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
         <span>${message}</span>`;
@@ -1044,8 +1485,8 @@
         t.style.transition = 'opacity 0.3s, transform 0.3s';
         t.style.opacity = '0';
         t.style.transform = 'translateX(-50%) translateY(10px)';
-      }, 2800);
-      setTimeout(() => t.remove(), 3200);
+      }, 3500);
+      setTimeout(() => t.remove(), 3900);
     }
 
     /* ---------- Render Upload Section ---------- */
@@ -1088,7 +1529,7 @@
                ระบบจะดึงรายการวัสดุจาก BOQ แล้วเปรียบเทียบกับประวัติการซื้อจริง</p>
             <input type="file" id="boqFileInput" accept=".xlsx,.csv,.xls,.pdf,.jpg,.png" style="display:none" onchange="handleFileUpload(event)">
             <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">
-              <button class="btn btn-primary" onclick="openAIScan(0)" style="background:linear-gradient(135deg,#1e3a5f 0%,#2563eb 100%);">
+              <button class="btn btn-primary" onclick="openAIScan()" style="background:linear-gradient(135deg,#1e3a5f 0%,#2563eb 100%);">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
                 AI สแกนเอกสารกระดาษ
               </button>
