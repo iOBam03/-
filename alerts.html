@@ -504,7 +504,7 @@
                               level === 'equal' ? '<span class="price-arrow eq">=</span>' :
                               '<span class="price-arrow eq">—</span>';
 
-      const deltaSign = (n) => n > 0 ? '+' : '';
+      const deltaSign = (n) => (n > 0 ? '+' : '') + Math.abs(n).toFixed(1) + '%';
       const deltaColor = (level) => level === 'cheaper' ? 'var(--color-success)' : level === 'expensive' ? 'var(--color-danger)' : 'var(--color-text-muted)';
 
       sec.innerHTML = `
@@ -563,7 +563,7 @@
                   <td>
                     ${r.verdict.level === 'no-data' ? '<span style="color:var(--color-text-muted);">—</span>' : `
                       ${arrow(r.verdict.level)}
-                      <strong style="color:${deltaColor(r.verdict.level)};font-size:13px;">${deltaSign(r.verdict.deltaPct.toFixed(1))}%</strong>
+                      <strong style="color:${deltaColor(r.verdict.level)};font-size:13px;">${deltaSign(r.verdict.deltaPct)}</strong>
                     `}
                   </td>
                   <td>
