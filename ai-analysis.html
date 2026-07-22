@@ -165,15 +165,6 @@
             </div>
           </div>
 
-          <div class="card">
-            <div class="card-header">
-              <div>
-                <h3>คำแนะนำทั้งหมดที่ระบบวิเคราะห์ได้</h3>
-                <div class="sub">เรียงตามความเร่งด่วน</div>
-              </div>
-            </div>
-            <div class="card-body" id="all-recs-container"></div>
-          </div>
         </div>
       </main>
 
@@ -275,20 +266,6 @@
         </div>
       `).join('');
 
-      document.getElementById('all-recs-container').innerHTML = D.aiRecommendations.map(r => `
-        <div class="insight-box ${r.type}">
-          <div class="insight-title">${r.title} ${r.project ? `<span style="font-weight:400;font-size:12px;color:#64748b;">— ${r.project}</span>` : ''}</div>
-          <div class="insight-body">
-            ${r.detail}
-            <div style="margin-top:8px;font-size:12.5px;color:#475569;"><strong>ข้อเสนอแนะ:</strong> ${r.action}</div>
-            <div class="confidence-bar">
-              <span style="font-size:12px;color:#64748b">ความมั่นใจ</span>
-              <div class="track"><div class="fill" style="width:${r.confidence}%;background:${r.type==='danger'?'#dc2626':r.type==='warning'?'#d97706':'#16a34a'}"></div></div>
-              <span class="label">${r.confidence}%</span>
-            </div>
-          </div>
-        </div>
-      `).join('');
     }
   </script>
 </body>
