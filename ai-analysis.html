@@ -207,10 +207,13 @@
       const f = D.priceForecast;
 
       const isDown = f.change < 0;
-      document.getElementById('rec-text').textContent =
-        isDown
-          ? `แนะนำ: สั่งซื้อทันที — ราคามีแนวโน้มลดลง ${Math.abs(f.change).toFixed(1)}% ในอีก ${f.days} วัน`
-          : `เฝ้าระวัง: รอจังหวะที่เหมาะสม — ราคามีแนวโน้มสูงขึ้น ${f.change.toFixed(1)}%`;
+      const diff = Math.abs(f.currentPrice - f.predictedPrice);
+      // Logic ที่ถูกต้อง:
+      //   ราคามีแนวโน้มลดลง → รอจังหวะ (ยังไม่รีบซื้อ รอให้ราคาลดก่อน)
+      //   ราคามีแนวโน้มสูงขึ้น → สั่งทันที (จัดซื้อก่อนราคาจะแพงขึ้น)
+      document.getElementById('rec-text').textContent = isDown
+        ? `คำแนะนำ: รอจังหวะสั่งซื้อ — ราคามีแนวโน้มลดลง ${Math.abs(f.change).toFixed(1)}% ในอีก ${f.days} วัน (ประหยัดได้ ~${fmt.currency(diff)}/หน่วย)`
+        : `คำแนะนำ: สั่งซื้อทันที — ราคามีแนวโน้มสูงขึ้น ${f.change.toFixed(1)}% ในอีก ${f.days} วัน (รออีกจะแพงขึ้น ~${fmt.currency(diff)}/หน่วย)`;
       document.getElementById('rec-current').textContent = fmt.currency(f.currentPrice);
       document.getElementById('rec-predicted').textContent = fmt.currency(f.predictedPrice);
       const trendEl = document.getElementById('rec-trend');
