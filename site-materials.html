@@ -167,6 +167,74 @@
       vertical-align: middle;
       margin-right: 5px;
     }
+
+    /* ========== Modal lookup ========== */
+    .modal-overlay {
+      position: fixed; inset: 0;
+      background: rgba(15, 23, 42, 0.5);
+      display: none;
+      align-items: flex-start; justify-content: center;
+      z-index: 100;
+      padding-top: 10vh;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal-card {
+      background: #fff; border-radius: 12px;
+      width: 560px; max-width: 90vw;
+      max-height: 75vh; overflow: hidden;
+      display: flex; flex-direction: column;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+    }
+    .modal-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid #e3e8ef;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .modal-header h3 { margin: 0; font-size: 15px; color: #0f172a; }
+    .modal-close {
+      background: none; border: 0; font-size: 22px;
+      cursor: pointer; color: #94a3b8;
+      padding: 0 4px; line-height: 1;
+    }
+    .modal-close:hover { color: #0f172a; }
+    .modal-body { padding: 16px 20px; overflow-y: auto; flex: 1; }
+    .modal-body input.lookup {
+      width: 100%; padding: 11px 14px;
+      border: 1px solid #cbd5e1; border-radius: 8px;
+      font-size: 14px; font-family: inherit;
+      outline: none; color: #0f172a;
+    }
+    .modal-body input.lookup:focus {
+      border-color: #1e3a5f;
+      box-shadow: 0 0 0 3px rgba(30,58,95,0.12);
+    }
+    .modal-empty {
+      padding: 24px 12px; text-align: center;
+      color: #94a3b8; font-size: 13px;
+    }
+    .modal-empty small {
+      display: block; margin-top: 6px;
+      font-size: 11px; color: #cbd5e1;
+    }
+    .lookup-item {
+      margin-top: 10px;
+      padding: 14px 16px;
+      background: #fff;
+      border: 1px solid #e3e8ef;
+      border-left-width: 3px;
+      border-radius: 6px;
+    }
+    .lookup-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid #f1f5f9;
+    }
+    .lookup-grid > div { font-size: 11.5px; }
+    .lookup-grid-label { color: #94a3b8; margin-bottom: 3px; }
+    .lookup-grid-value { color: #0f172a; font-weight: 600; font-size: 12.5px; }
   </style>
 </head>
 <body>
@@ -237,6 +305,7 @@
           </div>
           <div style="display:flex;gap:8px;">
             <button class="btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>ส่งออก</button>
+            <button class="btn" onclick="openProductLookup()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>เพิ่มรายการสินค้า</button>
             <button class="btn btn-primary"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>สร้างใบสั่งซื้อ</button>
           </div>
         </div>
@@ -358,6 +427,25 @@
         <span>© 2569 Construction Procurement · เวอร์ชัน 1.0.0</span>
         <span>ข้อมูล ณ ไซต์อัปเดต: 22 ก.ค. 2569 · 10:30 น.</span>
       </footer>
+    </div>
+  </div>
+
+  <!-- ========== Modal: Smart Lookup ========== -->
+  <div class="modal-overlay" id="lookup-modal" onclick="if(event.target===this) closeProductLookup()">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>ค้นหาระยะเวลาต้องสั่งวัสดุ</h3>
+        <button class="modal-close" onclick="closeProductLookup()" type="button">&times;</button>
+      </div>
+      <div class="modal-body">
+        <input type="text" id="lookup-input" class="lookup" placeholder="พิมพ์ชื่อวัสดุ เช่น เหล็ก, ปูน, ท่อ, กระเบื้อง, อิฐ, ทราย...">
+        <div id="lookup-results">
+          <div class="modal-empty">
+            พิมพ์ชื่อวัสดุเพื่อดูว่าต้องสั่งเมื่อไหร่
+            <small>ตัวอย่าง: เหล็ก, ปูน, ท่อ, กระเบื้อง, อิฐ, ทราย, หิน, สี, สายไฟ</small>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -725,6 +813,118 @@
     renderUsageChart();
     renderLeadTimeChart();
     renderSiteTable();
+
+    /* ===== Smart Lookup: ค้นหาวัสดุ + แสดงเวลาต้องสั่ง ===== */
+    const URGENCY_COLOR = {
+      overdue: '#dc2626',
+      urgent:  '#ea580c',
+      prepare: '#d97706',
+      safe:    '#16a34a'
+    };
+
+    function openProductLookup() {
+      document.getElementById('lookup-modal').classList.add('open');
+      document.getElementById('lookup-input').value = '';
+      document.getElementById('lookup-results').innerHTML = `
+        <div class="modal-empty">
+          พิมพ์ชื่อวัสดุเพื่อดูว่าต้องสั่งเมื่อไหร่
+          <small>ตัวอย่าง: เหล็ก, ปูน, ท่อ, กระเบื้อง, อิฐ, ทราย, หิน, สี, สายไฟ</small>
+        </div>`;
+      setTimeout(() => document.getElementById('lookup-input').focus(), 60);
+    }
+
+    function closeProductLookup() {
+      document.getElementById('lookup-modal').classList.remove('open');
+    }
+
+    function renderLookupResults(query) {
+      const results = document.getElementById('lookup-results');
+      if (!query) {
+        results.innerHTML = `
+          <div class="modal-empty">
+            พิมพ์ชื่อวัสดุเพื่อดูว่าต้องสั่งเมื่อไหร่
+            <small>ตัวอย่าง: เหล็ก, ปูน, ท่อ, กระเบื้อง, อิฐ, ทราย, หิน, สี, สายไฟ</small>
+          </div>`;
+        return;
+      }
+
+      const q = query.toLowerCase().trim();
+      const matches = D.reorderAlerts.filter(x =>
+        x.material.toLowerCase().includes(q) ||
+        x.project.toLowerCase().includes(q) ||
+        x.supplier.toLowerCase().includes(q)
+      );
+
+      if (!matches.length) {
+        results.innerHTML = `
+          <div class="modal-empty">
+            ไม่พบวัสดุ "<strong>${query}</strong>" ในระบบ
+            <small>ลองพิมพ์คำอื่น เช่น เหล็ก, ปูน, ท่อ</small>
+          </div>`;
+        return;
+      }
+
+      // sort: most urgent first
+      matches.sort((a, b) => a.daysFromNow - b.daysFromNow);
+
+      results.innerHTML = `
+        <div style="padding:10px 2px 8px;font-size:11.5px;color:#64748b;">
+          พบ <strong>${matches.length}</strong> รายการที่ตรงกับ "<strong>${query}</strong>" — เรียงจากด่วนที่สุด
+        </div>
+        ${matches.map(item => {
+          const color = URGENCY_COLOR[item.urgency];
+          return `
+            <div class="lookup-item" style="border-left-color:${color};">
+              <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
+                <div style="flex:1;min-width:0;">
+                  <div style="font-weight:600;font-size:13.5px;color:#0f172a;">${item.material}</div>
+                  <div style="font-size:11.5px;color:#64748b;margin-top:2px;">
+                    <strong style="color:#475569;">${item.project}</strong> · ${item.phase}
+                  </div>
+                  <div style="font-size:11.5px;color:#64748b;margin-top:2px;">
+                    สั่งที่: ${item.supplier}
+                  </div>
+                </div>
+                <span class="due-badge ${item.urgency}">${dueLabel(item.daysFromNow)}</span>
+              </div>
+              <div class="lookup-grid">
+                <div>
+                  <div class="lookup-grid-label">ต้องใช้วันที่</div>
+                  <div class="lookup-grid-value">${fmt.date(item.needBy)}</div>
+                </div>
+                <div>
+                  <div class="lookup-grid-label">ต้องสั่งภายใน</div>
+                  <div class="lookup-grid-value" style="color:${color};">${fmt.date(item.orderBy)}</div>
+                </div>
+                <div>
+                  <div class="lookup-grid-label">ปริมาณสั่ง</div>
+                  <div class="lookup-grid-value">${fmt.num(item.qty)} ${item.unit}</div>
+                </div>
+                <div>
+                  <div class="lookup-grid-label">Lead Time / Buffer</div>
+                  <div class="lookup-grid-value">${item.leadTime} / ${item.safety} วัน</div>
+                </div>
+              </div>
+              ${item.poStatus === 'ยังไม่สั่ง'
+                ? `<div style="margin-top:10px;text-align:right;">
+                     <button class="btn btn-sm btn-primary" onclick="closeProductLookup()">สั่งเลย</button>
+                   </div>`
+                : `<div style="margin-top:10px;font-size:11.5px;color:#64748b;text-align:right;">
+                     สถานะ PO: <strong style="color:#475569;">${item.poStatus}</strong>${item.poRef ? ` · ${item.poRef}` : ''}
+                   </div>`}
+            </div>
+          `;
+        }).join('')}
+      `;
+    }
+
+    document.getElementById('lookup-input').addEventListener('input', function () {
+      renderLookupResults(this.value);
+    });
+
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') closeProductLookup();
+    });
   </script>
 </body>
 </html>
