@@ -16,6 +16,9 @@ desktop.ini
 .env
 .env.local
 
+# Local prototype config (contains API keys from .env)
+config.local.js
+
 # Node / build artifacts (ไม่ใช้ในโปรเจคนี้ แต่กันไว้)
 node_modules/
 dist/

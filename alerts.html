@@ -789,6 +789,7 @@
     </div>
   </div>
 
+  <script src="config.local.js"></script>
   <script src="js/data.js"></script>
   <script src="js/demo.js"></script>
   <script>
@@ -1143,8 +1144,8 @@
     function saveApiKey() {
       const v = (document.getElementById('gemini-key-input').value || '').trim();
       if (!v) { showToast('กรุณากรอก API Key', 'error'); return; }
-      if (!v.startsWith('AIza')) {
-        showToast('API Key ไม่ถูกต้อง (ควรขึ้นต้นด้วย AIza)', 'error');
+      if (v.length < 20) {
+        showToast('API Key สั้นเกินไป', 'error');
         return;
       }
       setGeminiKey(v);
