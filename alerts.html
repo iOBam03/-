@@ -922,26 +922,28 @@
               <tbody>
               ${rows.map(r => {
                 // === Match indicator chip ===
+                // ถ้า exact match → chip เดียวพอ (ไม่ต้องบอกชื่อที่จับคู่ เพราะซ้ำกับชื่อ BOQ)
+                // ถ้า fuzzy/manual → chip + ชื่อที่จับคู่จริง + ปุ่มเปลี่ยน
                 const matchChip = r.stats ? (
                   r.stats.matchType === 'exact'
-                    ? `<span class="match-chip exact" title="จับคู่ตรงกับชื่อในประวัติ">✓ ตรง</span>`
+                    ? `<span class="match-chip exact" title="ชื่อใน BOQ ตรงกับชื่อในประวัติเป๊ะ">✓ ตรง</span>`
                     : r.stats.matchType === 'fuzzy'
                     ? `<span class="match-chip fuzzy" title="จับคู่อัตโนมัติกับ '${r.stats.matchedKey}' (ความเที่ยง ${(r.stats.matchScore * 100).toFixed(0)}%)">~ ${(r.stats.matchScore * 100).toFixed(0)}%</span>`
                     : `<span class="match-chip manual" title="จับคู่ด้วยตัวเองกับ '${r.stats.matchedKey}'">✋ กำหนดเอง</span>`
                 ) : '';
 
-                // === Unit warning/conversion notice ===
+                // === Unit warning/conversion notice (สำคัญ ต้องเก็บไว้) ===
                 const unitNotice = r.stats && r.stats.unitMismatch
-                  ? `<div class="unit-warn" title="หน่วย BOQ (${r.item.unit}) ต่างจากประวัติ (${r.stats.originalUnit}) และแปลงไม่ได้">⚠️ หน่วยต่างกัน (BOQ: ${r.item.unit} ≠ ประวัติ: ${r.stats.originalUnit})</div>`
+                  ? `<div class="unit-warn" title="หน่วย BOQ (${r.item.unit}) ต่างจากประวัติ (${r.stats.originalUnit}) และแปลงไม่ได้">⚠️ หน่วยไม่ตรง (${r.item.unit} ≠ ${r.stats.originalUnit})</div>`
                   : r.stats && r.stats.unitConverted
-                  ? `<div class="match-info-row" style="color:var(--color-success);">🔄 แปลงราคา: ${r.stats.originalUnit} → ${r.stats.unit} อัตโนมัติ</div>`
+                  ? `<div class="unit-warn" style="background:var(--color-success-soft);color:var(--color-success);" title="แปลงราคาจาก ${r.stats.originalUnit} เป็น ${r.stats.unit} อัตโนมัติ">🔄 แปลง ${r.stats.originalUnit} → ${r.stats.unit}</div>`
                   : '';
 
-                // === Manual map button (เมื่อ fuzzy match ไม่แน่ใจ) ===
-                const manualMapBtn = r.stats && (r.stats.matchType === 'fuzzy' || r.stats.matchType === 'manual')
-                  ? `<button class="manual-map-btn" onclick="openManualMapModal('${r.item.material.replace(/'/g, "\\'")}')">เปลี่ยนการจับคู่</button>`
+                // === Match key text (เฉพาะ fuzzy/manual เท่านั้น — exact ไม่ต้องบอกเพราะซ้ำ) ===
+                const matchKeyText = r.stats && r.stats.matchType !== 'exact'
+                  ? `<div class="match-info-row">→ จับคู่กับ: <strong>${r.stats.matchedKey}</strong> <button class="manual-map-btn" onclick="openManualMapModal('${r.item.material.replace(/'/g, "\\'")}')">เปลี่ยน</button></div>`
                   : r.stats && r.stats.matchType === 'exact'
-                  ? `<button class="manual-map-btn" onclick="openManualMapModal('${r.item.material.replace(/'/g, "\\'")}')">จับคู่เอง</button>`
+                  ? `<div class="match-info-row"><button class="manual-map-btn" onclick="openManualMapModal('${r.item.material.replace(/'/g, "\\'")}')">เปลี่ยนการจับคู่</button></div>`
                   : '';
 
                 return `
@@ -951,7 +953,7 @@
                     <strong>${r.item.material}${matchChip}</strong>
                     <div style="font-size:11.5px;color:#94a3b8;margin-top:2px;">${r.item.unit} · ${r.item.qtyPerUnit} ${r.item.unit}/หลัง</div>
                     ${unitNotice}
-                    ${r.stats ? `<div class="match-info-row">จับคู่กับ: <strong>${r.stats.matchedKey}</strong> ${manualMapBtn}</div>` : ''}
+                    ${matchKeyText}
                   </td>
                   <td class="num"><strong>${fmt.num(r.item.totalRequired)}</strong></td>
                   <td class="num">
@@ -975,7 +977,6 @@
                   <td>
                     <span class="verdict-pill ${r.verdict.level}">${r.verdict.label}</span>
                     ${r.stats ? `<div style="font-size:11px;color:var(--color-text-muted);margin-top:3px;">ถูกสุด: ${r.stats.cheapestProject}</div>` : ''}
-                    ${r.factors ? `<div class="factor-stack">${r.factors.volume}${r.factors.freight}${r.factors.credit}${r.factors.trend}</div>` : ''}
                   </td>
                   <td>
                     ${r.stats ? `<button class="btn btn-sm" onclick="openHistoryModal('${r.item.material.replace(/'/g, "\\'")}', ${r.item.estimatedPrice > 0 ? r.item.estimatedPrice : r.stats.avg}, '${r.item.unit}')">ดูประวัติ</button>` : '<span style="color:var(--color-text-muted);font-size:12px;">ไม่มีข้อมูล</span>'}
