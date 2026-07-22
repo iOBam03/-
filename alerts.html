@@ -910,8 +910,8 @@
           <div class="card-body no-pad">
             <table class="data-table">
               <thead><tr>
-                <th style="width:50px;">#</th>
-                <th>รายการ (จาก BOQ)</th>
+                <th style="width:90px;">รหัสสินค้า</th>
+                <th>รายการ ประวัติซื้อ</th>
                 <th class="num">จำนวน</th>
                 <th class="num">ราคา BOQ</th>
                 <th class="num">ราคาเฉลี่ย (ประวัติ)</th>
@@ -948,7 +948,7 @@
 
                 return `
                 <tr>
-                  <td style="color:var(--color-text-muted);font-family:monospace;">${String(r.idx).padStart(2, '0')}</td>
+                  <td style="font-family:monospace;font-weight:600;color:var(--color-primary);font-size:12px;">${r.item.sku || '-'}</td>
                   <td>
                     <strong>${r.item.material}${matchChip}</strong>
                     <div style="font-size:11.5px;color:#94a3b8;margin-top:2px;">${r.item.unit} · ${r.item.qtyPerUnit} ${r.item.unit}/หลัง</div>
