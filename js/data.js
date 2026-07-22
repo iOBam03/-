@@ -159,69 +159,84 @@ window.SAMPLE_DATA = {
   /* ---------- ประวัติการซื้อจริง (ย้อนหลัง) — ใช้เปรียบเทียบกับการซื้อใหม่ ---------- */
   // แต่ละ record = การซื้อจริง 1 ครั้ง จากโครงการหนึ่ง
   // ระบบจะคำนวณ avg/min/max อัตโนมัติ เพื่อเทียบกับราคาที่เสนอใหม่
+  // aliases = ชื่อเรียกอื่นๆ ที่อาจปรากฏใน BOQ โครงการใหม่ (ใช้กับ Fuzzy Matching)
+  // unitConversions = ตารางแปลงหน่วย (1 sourceUnit = factor targetUnit) — ใช้เมื่อ BOQ ใช้หน่วยต่างจากประวัติ
+  // records[i].freight = ค่าขนส่งรวมของ order นี้ (บาท)
+  // records[i].creditDays = เครดิตที่ได้ (วัน)
   purchaseHistory: {
     'ปูนซีเมนต์ปอร์ตแลนด์ 50 กก.': {
       material: 'ปูนซีเมนต์ปอร์ตแลนด์ 50 กก.',
+      aliases: ['ปูนปอร์ตแลนด์ ตราช้าง 50 กก.', 'ปูนซีเมนต์ 50kg', 'Portland Cement 50kg', 'ปูนถุง 50 กก.', 'ปูนตราช้าง 50กก'],
       category: 'ปูนซีเมนต์',
       unit: 'ถุง',
       records: [
-        { project: 'โครงการดิออเนอร์', date: '2567-03-15', supplier: 'บริษัท ซีเมนต์ไทย จำกัด',     pricePerUnit: 165, quantity: 2400 },
-        { project: 'โครงการดิออเนอร์', date: '2567-08-22', supplier: 'บริษัท ซีเมนต์ไทย จำกัด',     pricePerUnit: 168, quantity: 1800 },
-        { project: 'บ้านริมธาร',       date: '2568-02-10', supplier: 'บริษัท ซีเมนต์ไทย จำกัด',     pricePerUnit: 167, quantity: 1500 },
-        { project: 'กรีนวิลล์ 2',       date: '2569-02-08', supplier: 'บริษัท ซีเมนต์ไทย จำกัด',     pricePerUnit: 165, quantity: 1850 },
-        { project: 'เดอะพาร์ค',         date: '2569-04-18', supplier: 'บริษัท ซีเมนต์ไทย จำกัด',     pricePerUnit: 170, quantity: 1500 },
+        { project: 'โครงการดิออเนอร์', date: '2567-03-15', supplier: 'บริษัท ซีเมนต์ไทย จำกัด',     pricePerUnit: 165, quantity: 2400, freight: 3500, creditDays: 60 },
+        { project: 'โครงการดิออเนอร์', date: '2567-08-22', supplier: 'บริษัท ซีเมนต์ไทย จำกัด',     pricePerUnit: 168, quantity: 1800, freight: 2800, creditDays: 60 },
+        { project: 'บ้านริมธาร',       date: '2568-02-10', supplier: 'บริษัท ซีเมนต์ไทย จำกัด',     pricePerUnit: 167, quantity: 1500, freight: 2400, creditDays: 60 },
+        { project: 'กรีนวิลล์ 2',       date: '2569-02-08', supplier: 'บริษัท ซีเมนต์ไทย จำกัด',     pricePerUnit: 165, quantity: 1850, freight: 2900, creditDays: 60 },
+        { project: 'เดอะพาร์ค',         date: '2569-04-18', supplier: 'บริษัท ซีเมนต์ไทย จำกัด',     pricePerUnit: 170, quantity: 1500, freight: 2400, creditDays: 60 },
       ]
     },
     'เหล็กเส้น RB 12mm x 10m': {
       material: 'เหล็กเส้น RB 12mm x 10m',
+      aliases: ['เหล็กข้ออ้อย RB 12mm', 'RB 12 มม. x 10ม.', 'เหล็กเส้นกลม 12mm', 'เหล็ก DB12 10ม.', 'เหล็กข้ออ้อย 12 มิล'],
       category: 'เหล็กและโลหะ',
       unit: 'เส้น',
+      // 1 เส้น (~19 กก.) = X หน่วยเป้าหมาย — ใช้แปลงราคาเมื่อ BOQ ใช้หน่วยต่าง
+      unitConversions: {
+        'ตัน':         52.63,    // 1 ตัน = 52.63 เส้น → ราคา/ตัน = ราคา/เส้น × 52.63
+        'กิโลกรัม':    0.0526,   // 1 กก. = 0.0526 เส้น
+      },
       records: [
-        { project: 'โครงการดิออเนอร์', date: '2567-04-02', supplier: 'ห้างหุ้นส่วน เหล็กไทยก้าวหน้า', pricePerUnit: 258, quantity: 800 },
-        { project: 'บ้านริมธาร',       date: '2568-03-15', supplier: 'ห้างหุ้นส่วน เหล็กไทยก้าวหน้า', pricePerUnit: 245, quantity: 1200 },
-        { project: 'กรีนวิลล์ 2',       date: '2569-01-25', supplier: 'ห้างหุ้นส่วน เหล็กไทยก้าวหน้า', pricePerUnit: 250, quantity: 2400 },
-        { project: 'เดอะพาร์ค',         date: '2569-05-12', supplier: 'ห้างหุ้นส่วน เหล็กไทยก้าวหน้า', pricePerUnit: 240, quantity: 1800 },
+        { project: 'โครงการดิออเนอร์', date: '2567-04-02', supplier: 'ห้างหุ้นส่วน เหล็กไทยก้าวหน้า', pricePerUnit: 258, quantity: 800,  freight: 4800, creditDays: 45 },
+        { project: 'บ้านริมธาร',       date: '2568-03-15', supplier: 'ห้างหุ้นส่วน เหล็กไทยก้าวหน้า', pricePerUnit: 245, quantity: 1200, freight: 6200, creditDays: 45 },
+        { project: 'กรีนวิลล์ 2',       date: '2569-01-25', supplier: 'ห้างหุ้นส่วน เหล็กไทยก้าวหน้า', pricePerUnit: 250, quantity: 2400, freight: 9800, creditDays: 45 },
+        { project: 'เดอะพาร์ค',         date: '2569-05-12', supplier: 'ห้างหุ้นส่วน เหล็กไทยก้าวหน้า', pricePerUnit: 240, quantity: 1800, freight: 8400, creditDays: 45 },
       ]
     },
     'กระเบื้องเซรามิก 60x60 ซม.': {
       material: 'กระเบื้องเซรามิก 60x60 ซม.',
+      aliases: ['กระเบื้อง 60x60', 'กระเบื้องพื้น 60x60', 'เซรามิก 60x60 ซม.', 'Ceramic Tile 60x60'],
       category: 'กระเบื้อง/พื้น',
       unit: 'กล่อง',
       records: [
-        { project: 'โครงการดิออเนอร์', date: '2567-05-20', supplier: 'บริษัท เซรามิคไทยแลนด์ จำกัด', pricePerUnit: 295, quantity: 600 },
-        { project: 'บ้านริมธาร',       date: '2568-06-05', supplier: 'บริษัท เซรามิคไทยแลนด์ จำกัด', pricePerUnit: 290, quantity: 800 },
-        { project: 'เดอะพาร์ค',         date: '2569-03-15', supplier: 'บริษัท เซรามิคไทยแลนด์ จำกัด', pricePerUnit: 280, quantity: 500 },
+        { project: 'โครงการดิออเนอร์', date: '2567-05-20', supplier: 'บริษัท เซรามิคไทยแลนด์ จำกัด', pricePerUnit: 295, quantity: 600, freight: 2400, creditDays: 30 },
+        { project: 'บ้านริมธาร',       date: '2568-06-05', supplier: 'บริษัท เซรามิคไทยแลนด์ จำกัด', pricePerUnit: 290, quantity: 800, freight: 2900, creditDays: 30 },
+        { project: 'เดอะพาร์ค',         date: '2569-03-15', supplier: 'บริษัท เซรามิคไทยแลนด์ จำกัด', pricePerUnit: 280, quantity: 500, freight: 2100, creditDays: 30 },
       ]
     },
     'ทรายหยาบ (คิวบิกเมตร)': {
       material: 'ทรายหยาบ (คิวบิกเมตร)',
+      aliases: ['ทรายหยาบ', 'ทรายก่อสร้าง', 'ทราย คิว', 'ทราย 1 คิว'],
       category: 'วัสดุก่อสร้าง',
       unit: 'คิว',
       records: [
-        { project: 'โครงการดิออเนอร์', date: '2567-04-12', supplier: 'บริษัท วัสดุภัณฑ์ก่อสร้าง จำกัด', pricePerUnit: 820, quantity: 200 },
-        { project: 'บ้านริมธาร',       date: '2568-04-22', supplier: 'บริษัท วัสดุภัณฑ์ก่อสร้าง จำกัด', pricePerUnit: 850, quantity: 150 },
-        { project: 'กรีนวิลล์ 2',       date: '2569-02-15', supplier: 'บริษัท วัสดุภัณฑ์ก่อสร้าง จำกัด', pricePerUnit: 870, quantity: 180 },
-        { project: 'เดอะพาร์ค',         date: '2569-05-08', supplier: 'บริษัท วัสดุภัณฑ์ก่อสร้าง จำกัด', pricePerUnit: 890, quantity: 120 },
+        { project: 'โครงการดิออเนอร์', date: '2567-04-12', supplier: 'บริษัท วัสดุภัณฑ์ก่อสร้าง จำกัด', pricePerUnit: 820, quantity: 200, freight: 4200, creditDays: 30 },
+        { project: 'บ้านริมธาร',       date: '2568-04-22', supplier: 'บริษัท วัสดุภัณฑ์ก่อสร้าง จำกัด', pricePerUnit: 850, quantity: 150, freight: 3500, creditDays: 30 },
+        { project: 'กรีนวิลล์ 2',       date: '2569-02-15', supplier: 'บริษัท วัสดุภัณฑ์ก่อสร้าง จำกัด', pricePerUnit: 870, quantity: 180, freight: 3900, creditDays: 30 },
+        { project: 'เดอะพาร์ค',         date: '2569-05-08', supplier: 'บริษัท วัสดุภัณฑ์ก่อสร้าง จำกัด', pricePerUnit: 890, quantity: 120, freight: 3100, creditDays: 30 },
       ]
     },
     'เหล็กแผ่น HR 5mm': {
       material: 'เหล็กแผ่น HR 5mm',
+      aliases: ['เหล็กแผ่นดำ 5mm', 'HR Plate 5mm', 'เหล็กแผ่นรีดร้อน 5 มิล', 'แผ่นเหล็ก 5mm'],
       category: 'เหล็กและโลหะ',
       unit: 'แผ่น',
       records: [
-        { project: 'โครงการดิออเนอร์', date: '2567-06-08', supplier: 'ห้างหุ้นส่วน เหล็กไทยก้าวหน้า', pricePerUnit: 1620, quantity: 80 },
-        { project: 'กรีนวิลล์ 2',       date: '2569-03-20', supplier: 'ห้างหุ้นส่วน เหล็กไทยก้าวหน้า', pricePerUnit: 1680, quantity: 145 },
+        { project: 'โครงการดิออเนอร์', date: '2567-06-08', supplier: 'ห้างหุ้นส่วน เหล็กไทยก้าวหน้า', pricePerUnit: 1620, quantity: 80,  freight: 2800, creditDays: 45 },
+        { project: 'กรีนวิลล์ 2',       date: '2569-03-20', supplier: 'ห้างหุ้นส่วน เหล็กไทยก้าวหน้า', pricePerUnit: 1680, quantity: 145, freight: 4200, creditDays: 45 },
       ]
     },
     'อิฐมอญ ขนาดมาตรฐาน': {
       material: 'อิฐมอญ ขนาดมาตรฐาน',
+      aliases: ['อิฐแดง', 'อิฐก่อผนัง', 'อิฐมอญ', 'Brick มอญ'],
       category: 'วัสดุก่อสร้าง',
       unit: 'ก้อน',
       records: [
-        { project: 'โครงการดิออเนอร์', date: '2567-05-15', supplier: 'บริษัท อิฐไทยอุตสาหกรรม จำกัด', pricePerUnit: 9.0, quantity: 30000 },
-        { project: 'บ้านริมธาร',       date: '2568-07-20', supplier: 'บริษัท อิฐไทยอุตสาหกรรม จำกัด', pricePerUnit: 9.2, quantity: 25000 },
-        { project: 'กรีนวิลล์ 2',       date: '2569-02-25', supplier: 'บริษัท อิฐไทยอุตสาหกรรม จำกัด', pricePerUnit: 9.3, quantity: 28000 },
-        { project: 'เดอะพาร์ค',         date: '2569-05-18', supplier: 'บริษัท อิฐไทยอุตสาหกรรม จำกัด', pricePerUnit: 9.5, quantity: 22000 },
+        { project: 'โครงการดิออเนอร์', date: '2567-05-15', supplier: 'บริษัท อิฐไทยอุตสาหกรรม จำกัด', pricePerUnit: 9.0, quantity: 30000, freight: 6500, creditDays: 30 },
+        { project: 'บ้านริมธาร',       date: '2568-07-20', supplier: 'บริษัท อิฐไทยอุตสาหกรรม จำกัด', pricePerUnit: 9.2, quantity: 25000, freight: 5800, creditDays: 30 },
+        { project: 'กรีนวิลล์ 2',       date: '2569-02-25', supplier: 'บริษัท อิฐไทยอุตสาหกรรม จำกัด', pricePerUnit: 9.3, quantity: 28000, freight: 6200, creditDays: 30 },
+        { project: 'เดอะพาร์ค',         date: '2569-05-18', supplier: 'บริษัท อิฐไทยอุตสาหกรรม จำกัด', pricePerUnit: 9.5, quantity: 22000, freight: 5400, creditDays: 30 },
       ]
     },
   },
@@ -408,6 +423,10 @@ window.SAMPLE_DATA = {
     { project: 'PRJ-2570-003', projectName: 'เดอะวัลเลย์', phase: 'ฐานราก', material: 'ทรายหยาบ (คิวบิกเมตร)',       qtyPerUnit: 8,   totalRequired: 480,  ordered: 100,  delivered: 0,    unit: 'คิว',  estimatedPrice: 900 },
     { project: 'PRJ-2570-003', projectName: 'เดอะวัลเลย์', phase: 'ฐานราก', material: 'หินคลุก',                        qtyPerUnit: 8,   totalRequired: 480,  ordered: 480,  delivered: 320,  unit: 'คิว',  estimatedPrice: 0 },  // ไม่มีประวัติ
     { project: 'PRJ-2570-003', projectName: 'เดอะวัลเลย์', phase: 'ฐานราก', material: 'เหล็กแผ่น HR 5mm',              qtyPerUnit: 2,   totalRequired: 120,  ordered: 40,   delivered: 0,    unit: 'แผ่น', estimatedPrice: 1750 },
+    // === Fuzzy Name + Unit Mismatch demo ===
+    // BOQ โครงการใหม่เขียนชื่อเป็น "เหล็กข้ออ้อย DB 12mm (10m)" (alias ของ RB 12mm) และใช้หน่วยเป็น "ตัน"
+    // ระบบต้องจับคู่กับประวัติ "เหล็กเส้น RB 12mm x 10m" (เส้น) + แปลงหน่วยอัตโนมัติ
+    { project: 'PRJ-2570-003', projectName: 'เดอะวัลเลย์', phase: 'ฐานราก', material: 'เหล็กข้ออ้อย DB 12mm (10m)',   qtyPerUnit: 0.024, totalRequired: 1.44, ordered: 0, delivered: 0, unit: 'ตัน', estimatedPrice: 13500 },
 
     // === หมู่บ้านกรีนวิลล์ 2 ===
     { project: 'PRJ-2569-001', projectName: 'กรีนวิลล์ 2', phase: 'โครงสร้าง', material: 'ปูนซีเมนต์ปอร์ตแลนด์ 50 กก.',     qtyPerUnit: 50,  totalRequired: 6000,  ordered: 5800, delivered: 5600, unit: 'ถุง',  estimatedPrice: 165 },

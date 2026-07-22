@@ -201,6 +201,122 @@
       background: var(--color-info-soft); border-radius: var(--radius-md);
       color: var(--color-info); font-size: 12px;
     }
+
+    /* === Match indicator chip (item name matching) === */
+    .match-chip {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 11px; font-weight: 600;
+      margin-left: 6px;
+      vertical-align: middle;
+      cursor: help;
+    }
+    .match-chip.exact   { background: #f1f5f9; color: #475569; }
+    .match-chip.fuzzy   { background: #fef3c7; color: #92400e; }
+    .match-chip.manual  { background: #dbeafe; color: #1e40af; }
+
+    /* === Unit mismatch warning === */
+    .unit-warn {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 2px 8px;
+      border-radius: 4px;
+      background: var(--color-warning-soft);
+      color: var(--color-warning);
+      font-size: 11px; font-weight: 600;
+      margin-top: 4px;
+    }
+
+    /* === Factor chips (4 key factors) === */
+    .factor-stack {
+      display: flex; flex-wrap: wrap; gap: 4px;
+      margin-top: 6px;
+    }
+    .factor-chip {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 2px 7px;
+      border-radius: 4px;
+      background: var(--color-surface-alt);
+      border: 1px solid var(--color-border);
+      font-size: 10.5px;
+      color: var(--color-text-secondary);
+      white-space: nowrap;
+    }
+    .factor-chip .ico { font-size: 11px; line-height: 1; }
+    .factor-chip.warn {
+      background: var(--color-warning-soft);
+      border-color: #fde68a;
+      color: #92400e;
+    }
+    .factor-chip.good {
+      background: var(--color-success-soft);
+      border-color: #bbf7d0;
+      color: #166534;
+    }
+    .factor-chip .name { font-weight: 600; }
+
+    /* Manual map button */
+    .manual-map-btn {
+      background: none; border: 1px dashed var(--color-border-strong);
+      color: var(--color-text-secondary);
+      padding: 3px 10px;
+      border-radius: 4px;
+      font-size: 11px;
+      cursor: pointer;
+      margin-left: 6px;
+      font-family: inherit;
+    }
+    .manual-map-btn:hover {
+      border-color: var(--color-accent);
+      color: var(--color-accent);
+      background: var(--color-accent-soft);
+    }
+
+    /* Match info row (under material name) */
+    .match-info-row {
+      font-size: 11px;
+      color: var(--color-text-muted);
+      margin-top: 4px;
+      display: flex; align-items: center; gap: 4px; flex-wrap: wrap;
+    }
+
+    /* Mapping modal (picker) */
+    .mapping-list {
+      display: flex; flex-direction: column; gap: 6px;
+      max-height: 360px; overflow-y: auto;
+    }
+    .mapping-item {
+      padding: 10px 12px;
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .mapping-item:hover {
+      border-color: var(--color-accent);
+      background: var(--color-accent-soft);
+    }
+    .mapping-item.selected {
+      border-color: var(--color-accent);
+      background: var(--color-accent-soft);
+      box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+    }
+    .mapping-item .name {
+      font-weight: 600; font-size: 13px; margin-bottom: 3px;
+    }
+    .mapping-item .meta {
+      font-size: 11.5px; color: var(--color-text-secondary);
+    }
+    .mapping-item .score {
+      display: inline-block;
+      padding: 1px 8px;
+      border-radius: 999px;
+      background: var(--color-primary-soft);
+      color: var(--color-primary);
+      font-size: 11px;
+      font-weight: 700;
+      margin-left: 6px;
+    }
   </style>
 </head>
 <body>
@@ -318,10 +434,13 @@
 
     /* ---------- State ---------- */
     let uploadedBOQ = null;  // { projectId, projectName, phase, items: [...], fileName, isSample }
+    // manualMappings: จับคู่ชื่อสินค้าใน BOQ กับ key ใน purchaseHistory ด้วยตัวเอง
+    // ใช้เมื่อ fuzzy matching เลือก key ผิด หรือต้องการ override
+    let manualMappings = {};  // { 'BOQ material name': 'history key' }
 
     /* ---------- Sample BOQs สำหรับ demo ---------- */
     const SAMPLE_BOQS = [
-      { project: 'เดอะวัลเลย์',     phase: 'ฐานราก',  icon: 'foundation', fileName: 'BOQ_วัลเลย์_ฐานราก.xlsx',  desc: '5 รายการ' },
+      { project: 'เดอะวัลเลย์',     phase: 'ฐานราก',  icon: 'foundation', fileName: 'BOQ_วัลเลย์_ฐานราก.xlsx',  desc: '6 รายการ' },
       { project: 'กรีนวิลล์ 2',      phase: 'โครงสร้าง', icon: 'structure', fileName: 'BOQ_กรีนวิลล์2_โครงสร้าง.xlsx', desc: '3 รายการ' },
       { project: 'กรีนวิลล์ 2',      phase: 'ผนัง',    icon: 'walls',    fileName: 'BOQ_กรีนวิลล์2_ผนัง.xlsx', desc: '2 รายการ' },
       { project: 'เดอะพาร์ค',       phase: 'ผนัง',    icon: 'walls',    fileName: 'BOQ_เดอะพาร์ค_ผนัง.xlsx', desc: '3 รายการ' },
@@ -334,15 +453,274 @@
     };
 
     /* ---------- Helpers ---------- */
-    function getHistoryStats(materialName) {
-      const h = D.purchaseHistory[materialName];
+
+    /* --- Fuzzy Matching helpers (token Jaccard + char n-gram) --- */
+    function normalize(s) {
+      return String(s || '').toLowerCase()
+        .replace(/[()\[\].,/]/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+    }
+    function tokenize(s) {
+      return new Set(normalize(s).split(' ').filter(t => t.length > 0));
+    }
+    function jaccard(a, b) {
+      const ta = tokenize(a), tb = tokenize(b);
+      if (!ta.size || !tb.size) return 0;
+      const inter = [...ta].filter(t => tb.has(t)).length;
+      const union = new Set([...ta, ...tb]).size;
+      return inter / union;
+    }
+    function charNgrams(s, n = 2) {
+      const t = normalize(s).replace(/\s/g, '');
+      const grams = new Set();
+      for (let i = 0; i <= t.length - n; i++) grams.add(t.substring(i, i + n));
+      return grams;
+    }
+    function ngramSim(a, b) {
+      const ga = charNgrams(a), gb = charNgrams(b);
+      if (!ga.size || !gb.size) return 0;
+      const inter = [...ga].filter(g => gb.has(g)).length;
+      const union = new Set([...ga, ...gb]).size;
+      return inter / union;
+    }
+    function fuzzyScore(a, b) {
+      return 0.6 * jaccard(a, b) + 0.4 * ngramSim(a, b);
+    }
+
+    /**
+     * หา candidates ที่ใกล้เคียงที่สุด (topN) สำหรับ materialName
+     * คะแนนคำนวณจาก: ชื่อ key + aliases (เพื่อจับ alias ที่อยู่ใน BOQ)
+     */
+    function findFuzzyMatches(materialName, topN = 5) {
+      const results = Object.keys(D.purchaseHistory).map(key => {
+        const entry = D.purchaseHistory[key];
+        const haystack = [key, ...(entry.aliases || [])].join(' | ');
+        return { key, score: fuzzyScore(materialName, haystack) };
+      });
+      results.sort((a, b) => b.score - a.score);
+      return results.slice(0, topN);
+    }
+
+    /**
+     * getHistoryStats — รองรับ Manual Map + Exact + Fuzzy + Unit Conversion
+     * @param {string} materialName - ชื่อจาก BOQ
+     * @param {string} [targetUnit] - หน่วยจาก BOQ (ใช้แปลงราคาเพื่อเทียบ)
+     * @returns {object|null}
+     */
+    function getHistoryStats(materialName, targetUnit) {
+      // 1. Manual mapping มี priority สูงสุด
+      let key = manualMappings[materialName];
+      let matchType = 'manual';
+      let matchScore = 1;
+
+      // 2. Exact match
+      if (!key && D.purchaseHistory[materialName]) {
+        key = materialName;
+        matchType = 'exact';
+        matchScore = 1;
+      }
+
+      // 3. Fuzzy match (>= 0.35 = น่าจะใช่ตัวเดียวกัน)
+      if (!key) {
+        const top = findFuzzyMatches(materialName, 1)[0];
+        if (top && top.score >= 0.35) {
+          key = top.key;
+          matchType = 'fuzzy';
+          matchScore = top.score;
+        }
+      }
+
+      if (!key) return null;
+      const h = D.purchaseHistory[key];
       if (!h || h.records.length === 0) return null;
+
       const prices = h.records.map(r => r.pricePerUnit);
-      const avg = prices.reduce((a, b) => a + b, 0) / prices.length;
-      const min = Math.min(...prices);
-      const max = Math.max(...prices);
+      let avg = prices.reduce((a, b) => a + b, 0) / prices.length;
+      let min = Math.min(...prices);
+      let max = Math.max(...prices);
       const cheapest = h.records.reduce((a, b) => a.pricePerUnit < b.pricePerUnit ? a : b);
-      return { avg, min, max, cheapestProject: cheapest.project, cheapestPrice: cheapest.pricePerUnit, cheapestDate: cheapest.date, recordCount: h.records.length, unit: h.unit, category: h.category, records: h.records };
+
+      // หา top fuzzy alternatives (สำหรับ manual map picker) — ยกเว้นตัวที่จับได้แล้ว
+      const allCandidates = findFuzzyMatches(materialName, 6)
+        .filter(c => c.key !== key)
+        .slice(0, 5);
+
+      // === Unit Conversion: ถ้า BOQ ใช้หน่วยต่างจากประวัติ ===
+      let unitMismatch = false;
+      let unitConverted = false;
+      let displayUnit = h.unit;
+      const convs = h.unitConversions || {};
+
+      if (targetUnit && targetUnit !== h.unit) {
+        if (convs[targetUnit]) {
+          // แปลงราคาได้ — multiply เพื่อเปลี่ยนฐานหน่วย (เช่น ฿/เส้น → ฿/ตัน คูณ 52.63)
+          const factor = convs[targetUnit];
+          avg = avg * factor;
+          min = min * factor;
+          max = max * factor;
+          displayUnit = targetUnit;
+          unitConverted = true;
+        } else {
+          // แปลงไม่ได้ — ตีเป็น mismatch warning
+          unitMismatch = true;
+        }
+      }
+
+      return {
+        avg, min, max,
+        cheapestProject: cheapest.project,
+        cheapestPrice: cheapest.pricePerUnit,
+        cheapestDate: cheapest.date,
+        recordCount: h.records.length,
+        unit: displayUnit,            // หน่วยที่ใช้แสดงผล (อาจถูกแปลงแล้ว)
+        originalUnit: h.unit,         // หน่วยดั้งเดิมในประวัติ
+        category: h.category,
+        records: h.records,
+        matchedKey: key,              // key ใน purchaseHistory ที่จับได้
+        matchType,                    // 'exact' | 'fuzzy' | 'manual'
+        matchScore,                   // ความมั่นใจ (0-1)
+        alternatives: allCandidates,  // top fuzzy candidates (สำหรับ manual map picker)
+        unitMismatch,                 // true = หน่วยต่างกัน และแปลงไม่ได้
+        unitConverted,                // true = หน่วยต่างกัน แต่แปลงได้
+      };
+    }
+
+    /* --- Factor helpers: ปริมาณ / ค่าขนส่ง / เครดิต / แนวโน้มราคา --- */
+
+    // ปริมาณเฉลี่ยต่อครั้ง (records ไหน quantity สูงสุด = bulk lot จะได้ส่วนลด)
+    function avgLotSize(records) {
+      if (!records || !records.length) return 0;
+      const total = records.reduce((s, r) => s + r.quantity, 0);
+      return total / records.length;
+    }
+    // ค่าขนส่งเฉลี่ยต่อ order
+    function avgFreight(records) {
+      if (!records || !records.length) return 0;
+      const total = records.reduce((s, r) => s + (r.freight || 0), 0);
+      return total / records.length;
+    }
+    // ค่าขนส่งเฉลี่ยต่อหน่วย
+    function avgFreightPerUnit(records) {
+      const totalFreight = records.reduce((s, r) => s + (r.freight || 0), 0);
+      const totalQty = records.reduce((s, r) => s + r.quantity, 0);
+      return totalQty > 0 ? totalFreight / totalQty : 0;
+    }
+    // เครดิตเฉลี่ย (วัน)
+    function avgCredit(records) {
+      if (!records || !records.length) return 0;
+      return records.reduce((s, r) => s + (r.creditDays || 0), 0) / records.length;
+    }
+
+    // แนวโน้มราคา YoY (annualized % change) จากราคาแรกสุด → ล่าสุด
+    function priceTrend(records) {
+      if (!records || records.length < 2) return { pct: 0, dir: 'neutral', years: 0 };
+      const sorted = [...records].sort((a, b) => new Date(a.date) - new Date(b.date));
+      const first = sorted[0];
+      const last = sorted[sorted.length - 1];
+      const t1 = new Date(first.date).getTime();
+      const t2 = new Date(last.date).getTime();
+      const years = (t2 - t1) / (1000 * 60 * 60 * 24 * 365);
+      if (years <= 0) return { pct: 0, dir: 'neutral', years: 0 };
+      const totalPct = ((last.pricePerUnit - first.pricePerUnit) / first.pricePerUnit) * 100;
+      const annualized = totalPct / years;
+      return {
+        pct: annualized,
+        totalPct,
+        dir: annualized > 2 ? 'up' : annualized < -2 ? 'down' : 'neutral',
+        years,
+        firstDate: first.date,
+        firstPrice: first.pricePerUnit,
+        lastDate: last.date,
+        lastPrice: last.pricePerUnit,
+      };
+    }
+
+    function trendChip(trend) {
+      if (!trend || !trend.years) return '';
+      const arrow = trend.dir === 'up' ? '↑' : trend.dir === 'down' ? '↓' : '→';
+      const cls = trend.dir === 'up' ? 'warn' : trend.dir === 'down' ? 'good' : '';
+      const sign = trend.pct > 0 ? '+' : '';
+      return `<span class="factor-chip ${cls}" title="${trend.firstDate} ฿${trend.firstPrice} → ${trend.lastDate} ฿${trend.lastPrice}"><span class="ico">📈</span><span class="name">แนวโน้ม:</span> ${arrow} ${sign}${trend.pct.toFixed(1)}%/ปี</span>`;
+    }
+    function volumeChip(boqQty, histAvg) {
+      if (!boqQty || !histAvg) return '';
+      const ratio = boqQty / histAvg;
+      const cls = ratio >= 1.2 ? 'good' : ratio <= 0.5 ? 'warn' : '';
+      // ถ้า BOQ สั่งมากกว่าปกติ → อาจได้ส่วนลด (bulk)
+      // ถ้า BOQ สั่งน้อยกว่าปกติ → ราคาต่อหน่วยอาจสูงกว่า
+      const note = ratio >= 1.5 ? ' (bulk — อาจได้ส่วนลด)' :
+                   ratio <= 0.5 ? ' (น้อยกว่าปกติ)' : '';
+      return `<span class="factor-chip ${cls}" title="ปริมาณ BOQ ${fmt.num(Math.round(boqQty))} vs เฉลี่ยเคยซื้อ ${fmt.num(Math.round(histAvg))}/ครั้ง"><span class="ico">📦</span><span class="name">ปริมาณ:</span> ${ratio.toFixed(1)}×${note}</span>`;
+    }
+    function freightChip(stats, boqQty) {
+      if (!stats || !stats.records) return '';
+      const perUnit = avgFreightPerUnit(stats.records);
+      if (!perUnit) return '';
+      // ถ้าสั่งเยอะ ค่าขนส่งต่อหน่วยจะถูกลง
+      const totalEstFreight = perUnit * boqQty;
+      return `<span class="factor-chip" title="ค่าขนส่งเฉลี่ยต่อหน่วย ฿${perUnit.toFixed(2)} (จาก ${stats.recordCount} ครั้ง)"><span class="ico">🚚</span><span class="name">ขนส่ง:</span> ~฿${fmt.num(Math.round(totalEstFreight))} รวม</span>`;
+    }
+    function creditChip(stats) {
+      if (!stats || !stats.records) return '';
+      const avg = avgCredit(stats.records);
+      if (!avg) return '';
+      const cls = avg >= 45 ? 'good' : avg <= 14 ? 'warn' : '';
+      return `<span class="factor-chip ${cls}" title="เครดิตเฉลี่ย ${avg.toFixed(0)} วัน (จาก ${stats.recordCount} ครั้ง)"><span class="ico">💳</span><span class="name">เครดิต:</span> ${avg.toFixed(0)} วัน</span>`;
+    }
+
+    /**
+     * คำนวณ factor ทั้ง 4 ตัวสำหรับ row
+     */
+    function getFactors(item, stats) {
+      if (!stats) return null;
+      const histAvgQty = avgLotSize(stats.records);
+      return {
+        volume: volumeChip(item.totalRequired, histAvgQty),
+        freight: freightChip(stats, item.totalRequired),
+        credit: creditChip(stats),
+        trend: trendChip(priceTrend(stats.records)),
+      };
+    }
+
+    /* === Manual Map Picker === */
+    function openManualMapModal(boqMaterial) {
+      const candidates = findFuzzyMatches(boqMaterial, 8);
+      const html = `
+        <div style="font-size:13px;color:var(--color-text-secondary);margin-bottom:12px;">
+          เลือกรายการในประวัติการซื้อที่ตรงกับ <strong>"${boqMaterial}"</strong>
+        </div>
+        <div class="mapping-list">
+          ${candidates.length === 0 ? '<div style="color:var(--color-text-muted);font-size:12px;">ไม่พบรายการใกล้เคียง</div>' :
+            candidates.map((c, idx) => {
+              const entry = D.purchaseHistory[c.key];
+              const isSelected = manualMappings[boqMaterial] === c.key;
+              return `
+                <div class="mapping-item ${isSelected ? 'selected' : ''}" onclick="confirmManualMap('${boqMaterial.replace(/'/g, "\\'")}', '${c.key.replace(/'/g, "\\'")}')">
+                  <div class="name">${c.key}<span class="score">${(c.score * 100).toFixed(0)}%</span></div>
+                  <div class="meta">
+                    หมวด: ${entry.category} · หน่วย: ${entry.unit} · ${entry.records.length} ครั้ง
+                    ${(entry.aliases || []).length ? ` · aliases: ${entry.aliases.slice(0, 3).join(', ')}` : ''}
+                  </div>
+                </div>
+              `;
+            }).join('')}
+        </div>
+      `;
+      document.getElementById('modalTitle').textContent = 'จับคู่รายการด้วยตัวเอง (Manual Map)';
+      document.getElementById('modalSubtitle').textContent = `สำหรับ: ${boqMaterial}`;
+      document.getElementById('modalBody').innerHTML = html;
+      document.getElementById('historyModal').classList.add('open');
+    }
+
+    function confirmManualMap(boqMaterial, historyKey) {
+      if (historyKey === '__reset__') {
+        delete manualMappings[boqMaterial];
+      } else {
+        manualMappings[boqMaterial] = historyKey;
+      }
+      closeHistoryModal();
+      renderComparison();
     }
 
     function compareVerdict(estimatedPrice, stats) {
@@ -485,7 +863,8 @@
       const items = uploadedBOQ.items;
       let totalEstimated = 0, totalHistorical = 0, cheaperCount = 0, equalCount = 0, expensiveCount = 0, noDataCount = 0;
       const rows = items.map((item, idx) => {
-        const stats = getHistoryStats(item.material);
+        // ส่งหน่วยของ BOQ เข้าไปด้วย เพื่อให้ระบบแปลงราคาประวัติให้ตรงกัน (unit conversion)
+        const stats = getHistoryStats(item.material, item.unit);
         const verdict = compareVerdict(item.estimatedPrice, stats);
         const estTotal = item.estimatedPrice * item.totalRequired;
         const histTotal = stats ? stats.avg * item.totalRequired : 0;
@@ -496,7 +875,8 @@
         else if (verdict.level === 'expensive') expensiveCount++;
         else noDataCount++;
 
-        return { idx: idx + 1, item, stats, verdict, estTotal, histTotal };
+        const factors = getFactors(item, stats);
+        return { idx: idx + 1, item, stats, verdict, estTotal, histTotal, factors };
       });
 
       const arrow = (level) => level === 'cheaper' ? '<span class="price-arrow down">▼</span>' :
@@ -540,12 +920,38 @@
                 <th></th>
               </tr></thead>
               <tbody>
-              ${rows.map(r => `
+              ${rows.map(r => {
+                // === Match indicator chip ===
+                const matchChip = r.stats ? (
+                  r.stats.matchType === 'exact'
+                    ? `<span class="match-chip exact" title="จับคู่ตรงกับชื่อในประวัติ">✓ ตรง</span>`
+                    : r.stats.matchType === 'fuzzy'
+                    ? `<span class="match-chip fuzzy" title="จับคู่อัตโนมัติกับ '${r.stats.matchedKey}' (ความเที่ยง ${(r.stats.matchScore * 100).toFixed(0)}%)">~ ${(r.stats.matchScore * 100).toFixed(0)}%</span>`
+                    : `<span class="match-chip manual" title="จับคู่ด้วยตัวเองกับ '${r.stats.matchedKey}'">✋ กำหนดเอง</span>`
+                ) : '';
+
+                // === Unit warning/conversion notice ===
+                const unitNotice = r.stats && r.stats.unitMismatch
+                  ? `<div class="unit-warn" title="หน่วย BOQ (${r.item.unit}) ต่างจากประวัติ (${r.stats.originalUnit}) และแปลงไม่ได้">⚠️ หน่วยต่างกัน (BOQ: ${r.item.unit} ≠ ประวัติ: ${r.stats.originalUnit})</div>`
+                  : r.stats && r.stats.unitConverted
+                  ? `<div class="match-info-row" style="color:var(--color-success);">🔄 แปลงราคา: ${r.stats.originalUnit} → ${r.stats.unit} อัตโนมัติ</div>`
+                  : '';
+
+                // === Manual map button (เมื่อ fuzzy match ไม่แน่ใจ) ===
+                const manualMapBtn = r.stats && (r.stats.matchType === 'fuzzy' || r.stats.matchType === 'manual')
+                  ? `<button class="manual-map-btn" onclick="openManualMapModal('${r.item.material.replace(/'/g, "\\'")}')">เปลี่ยนการจับคู่</button>`
+                  : r.stats && r.stats.matchType === 'exact'
+                  ? `<button class="manual-map-btn" onclick="openManualMapModal('${r.item.material.replace(/'/g, "\\'")}')">จับคู่เอง</button>`
+                  : '';
+
+                return `
                 <tr>
                   <td style="color:var(--color-text-muted);font-family:monospace;">${String(r.idx).padStart(2, '0')}</td>
                   <td>
-                    <strong>${r.item.material}</strong>
-                    <div style="font-size:11.5px;color:#94a3b8;">${r.item.unit} · ${r.item.qtyPerUnit} ${r.item.unit}/หลัง</div>
+                    <strong>${r.item.material}${matchChip}</strong>
+                    <div style="font-size:11.5px;color:#94a3b8;margin-top:2px;">${r.item.unit} · ${r.item.qtyPerUnit} ${r.item.unit}/หลัง</div>
+                    ${unitNotice}
+                    ${r.stats ? `<div class="match-info-row">จับคู่กับ: <strong>${r.stats.matchedKey}</strong> ${manualMapBtn}</div>` : ''}
                   </td>
                   <td class="num"><strong>${fmt.num(r.item.totalRequired)}</strong></td>
                   <td class="num">
@@ -556,7 +962,7 @@
                   </td>
                   <td class="num">
                     ${r.stats ? `<div class="compare-price-cell">
-                      <span class="now">${fmt.currency(r.stats.avg)}</span>
+                      <span class="now">${fmt.currency(r.stats.avg)}<span style="font-size:10px;color:var(--color-text-muted);font-weight:500;">/${r.stats.unit}</span></span>
                       <span class="hist">${fmt.currency(r.stats.min)} - ${fmt.currency(r.stats.max)}</span>
                     </div>` : '<span style="color:var(--color-text-muted);">ไม่มีประวัติ</span>'}
                   </td>
@@ -569,12 +975,13 @@
                   <td>
                     <span class="verdict-pill ${r.verdict.level}">${r.verdict.label}</span>
                     ${r.stats ? `<div style="font-size:11px;color:var(--color-text-muted);margin-top:3px;">ถูกสุด: ${r.stats.cheapestProject}</div>` : ''}
+                    ${r.factors ? `<div class="factor-stack">${r.factors.volume}${r.factors.freight}${r.factors.credit}${r.factors.trend}</div>` : ''}
                   </td>
                   <td>
-                    ${r.stats ? `<button class="btn btn-sm" onclick="openHistoryModal('${r.item.material.replace(/'/g, "\\'")}', ${r.item.estimatedPrice > 0 ? r.item.estimatedPrice : r.stats.avg})">ดูประวัติ</button>` : '<span style="color:var(--color-text-muted);font-size:12px;">ไม่มีข้อมูล</span>'}
+                    ${r.stats ? `<button class="btn btn-sm" onclick="openHistoryModal('${r.item.material.replace(/'/g, "\\'")}', ${r.item.estimatedPrice > 0 ? r.item.estimatedPrice : r.stats.avg}, '${r.item.unit}')">ดูประวัติ</button>` : '<span style="color:var(--color-text-muted);font-size:12px;">ไม่มีข้อมูล</span>'}
                   </td>
                 </tr>
-              `).join('')}
+              `;}).join('')}
               </tbody>
             </table>
           </div>
@@ -654,19 +1061,34 @@
 
     /* ---------- Modal: ประวัติการซื้อ ---------- */
     let modalChart = null;
-    function openHistoryModal(materialName, refPrice) {
-      const stats = getHistoryStats(materialName);
+    function openHistoryModal(materialName, refPrice, boqUnit) {
+      const stats = getHistoryStats(materialName, boqUnit);
       if (!stats) { alert('ไม่พบประวัติการซื้อสำหรับวัสดุนี้'); return; }
 
       document.getElementById('modalTitle').textContent = materialName;
-      document.getElementById('modalSubtitle').innerHTML = `หมวด: <strong>${stats.category}</strong> · หน่วย: <strong>${stats.unit}</strong> · ${stats.recordCount} ครั้งที่เคยซื้อ`;
+      const matchLabel = stats.matchType === 'exact' ? '✓ จับคู่ตรง' :
+                         stats.matchType === 'fuzzy' ? `~ Fuzzy ${(stats.matchScore * 100).toFixed(0)}%` :
+                         `✋ กำหนดเอง`;
+      const unitLabel = stats.unitConverted
+        ? `🔄 แปลง ${stats.originalUnit} → ${stats.unit}`
+        : stats.unitMismatch
+        ? `⚠️ หน่วยไม่ตรง (ประวัติ: ${stats.originalUnit})`
+        : `หน่วย: ${stats.unit}`;
+      document.getElementById('modalSubtitle').innerHTML = `หมวด: <strong>${stats.category}</strong> · ${unitLabel} · <span class="match-chip ${stats.matchType}" style="margin-left:4px;">${matchLabel}</span> · จับคู่กับ: <strong>${stats.matchedKey}</strong>`;
+
+      // === Factor breakdown สำหรับ modal ===
+      const trend = priceTrend(stats.records);
+      const avgLot = avgLotSize(stats.records);
+      const avgFr = avgFreight(stats.records);
+      const avgFrPerUnit = avgFreightPerUnit(stats.records);
+      const avgCr = avgCredit(stats.records);
 
       document.getElementById('modalBody').innerHTML = `
         <div class="stat-mini-grid">
           <div class="stat-mini">
             <div class="lbl">ราคาเฉลี่ย (ประวัติ)</div>
             <div class="val">${fmt.currency(stats.avg)}</div>
-            <div class="sub">จาก ${stats.recordCount} ครั้ง</div>
+            <div class="sub">ต่อ ${stats.unit}${stats.unitConverted ? ` (แปลงจาก ${stats.originalUnit})` : ''} · จาก ${stats.recordCount} ครั้ง</div>
           </div>
           <div class="stat-mini">
             <div class="lbl">ราคาถูกสุด</div>
@@ -681,16 +1103,42 @@
           <div class="stat-mini">
             <div class="lbl">ราคาอ้างอิง (BOQ)</div>
             <div class="val" style="color:var(--color-primary);">${fmt.currency(refPrice)}</div>
-            <div class="sub">จากเอกสาร BOQ</div>
+            <div class="sub">ต่อ ${boqUnit || 'หน่วย'} · จากเอกสาร BOQ</div>
+          </div>
+        </div>
+
+        <h4 style="font-size:14px;font-weight:600;margin-bottom:10px;">ปัจจัยที่มีผลต่อราคา (4 ปัจจัยหลัก)</h4>
+        <div style="display:grid;grid-template-columns:repeat(2, 1fr);gap:10px;margin-bottom:18px;">
+          <div style="padding:12px;background:var(--color-surface-alt);border-radius:var(--radius-md);border:1px solid var(--color-border);">
+            <div style="font-size:11.5px;color:var(--color-text-muted);margin-bottom:4px;">📦 ปริมาณการสั่งซื้อ (Volume)</div>
+            <div style="font-size:14px;font-weight:700;">เฉลี่ย ${fmt.num(Math.round(avgLot))} ${stats.originalUnit}/ครั้ง</div>
+            <div style="font-size:11px;color:var(--color-text-secondary);margin-top:3px;">ถ้า BOQ สั่งมากกว่านี้ อาจได้ส่วนลด bulk</div>
+          </div>
+          <div style="padding:12px;background:var(--color-surface-alt);border-radius:var(--radius-md);border:1px solid var(--color-border);">
+            <div style="font-size:11.5px;color:var(--color-text-muted);margin-bottom:4px;">🚚 ค่าขนส่ง (Freight)</div>
+            <div style="font-size:14px;font-weight:700;">เฉลี่ย ฿${fmt.num(Math.round(avgFr))}/order</div>
+            <div style="font-size:11px;color:var(--color-text-secondary);margin-top:3px;">≈ ฿${avgFrPerUnit.toFixed(2)}/${stats.originalUnit} · รวมโดยประมาณของ BOQ ให้คำนวณตามปริมาณ</div>
+          </div>
+          <div style="padding:12px;background:var(--color-surface-alt);border-radius:var(--radius-md);border:1px solid var(--color-border);">
+            <div style="font-size:11.5px;color:var(--color-text-muted);margin-bottom:4px;">💳 เงื่อนไขชำระเงิน (Credit Term)</div>
+            <div style="font-size:14px;font-weight:700;">เฉลี่ย ${avgCr.toFixed(0)} วัน</div>
+            <div style="font-size:11px;color:var(--color-text-secondary);margin-top:3px;">${avgCr >= 45 ? '✓ ดีต่อ Cash Flow' : avgCr <= 14 ? '⚠️ สั้น — กระทบเงินหมุนเวียน' : 'ปกติ'}</div>
+          </div>
+          <div style="padding:12px;background:var(--color-surface-alt);border-radius:var(--radius-md);border:1px solid var(--color-border);">
+            <div style="font-size:11.5px;color:var(--color-text-muted);margin-bottom:4px;">📈 แนวโน้มราคา (Price Trend)</div>
+            <div style="font-size:14px;font-weight:700;color:${trend.dir === 'up' ? 'var(--color-danger)' : trend.dir === 'down' ? 'var(--color-success)' : 'var(--color-text)'};">
+              ${trend.dir === 'up' ? '↑' : trend.dir === 'down' ? '↓' : '→'} ${trend.pct > 0 ? '+' : ''}${trend.pct.toFixed(1)}%/ปี
+            </div>
+            <div style="font-size:11px;color:var(--color-text-secondary);margin-top:3px;">${trend.firstDate} ฿${trend.firstPrice} → ${trend.lastDate} ฿${trend.lastPrice}</div>
           </div>
         </div>
 
         <h4 style="font-size:14px;font-weight:600;margin-bottom:10px;">กราฟราคาตามช่วงเวลา</h4>
         <div class="chart-container sm" style="margin-bottom:18px;"><canvas id="historyChart"></canvas></div>
 
-        <h4 style="font-size:14px;font-weight:600;margin-bottom:10px;">ประวัติการซื้อทั้งหมด</h4>
+        <h4 style="font-size:14px;font-weight:600;margin-bottom:10px;">ประวัติการซื้อทั้งหมด (${stats.records.length} ครั้ง)</h4>
         <table class="data-table">
-          <thead><tr><th>โครงการ</th><th>วันที่ซื้อ</th><th>ผู้ขาย</th><th class="num">จำนวน</th><th class="num">ราคา/หน่วย</th><th class="num">รวม</th></tr></thead>
+          <thead><tr><th>โครงการ</th><th>วันที่ซื้อ</th><th>ผู้ขาย</th><th class="num">จำนวน</th><th class="num">ราคา/หน่วย</th><th class="num">ค่าขนส่ง</th><th class="num">เครดิต</th><th class="num">รวม</th></tr></thead>
           <tbody>
           ${[...stats.records].sort((a, b) => new Date(a.date) - new Date(b.date)).map(r => {
             const isCheapest = r.pricePerUnit === stats.min;
@@ -700,11 +1148,18 @@
               <td style="font-size:12px;">${r.supplier}</td>
               <td class="num">${fmt.num(r.quantity)}</td>
               <td class="num"><strong>${fmt.currency(r.pricePerUnit)}</strong></td>
+              <td class="num">฿${fmt.num(r.freight || 0)}</td>
+              <td class="num">${r.creditDays || 0} วัน</td>
               <td class="num">${fmt.currency(r.pricePerUnit * r.quantity)}</td>
             </tr>`;
           }).join('')}
           </tbody>
         </table>
+
+        <div style="margin-top:14px;display:flex;gap:8px;">
+          <button class="btn btn-sm" onclick="openManualMapModal('${materialName.replace(/'/g, "\\'")}')">⚙️ เปลี่ยนการจับคู่</button>
+          ${manualMappings[materialName] ? `<button class="btn btn-sm" onclick="confirmManualMap('${materialName.replace(/'/g, "\\'")}', '__reset__')">↩️ คืนค่าเป็น Auto</button>` : ''}
+        </div>
       `;
 
       const sortedRecords = [...stats.records].sort((a, b) => new Date(a.date) - new Date(b.date));
@@ -718,9 +1173,9 @@
         data: {
           labels,
           datasets: [
-            { label: 'ราคาที่ซื้อจริง', data, borderColor: chartPalette.primary, backgroundColor: 'rgba(30, 58, 95, 0.1)', fill: true, tension: 0.3, pointRadius: 5, pointBackgroundColor: chartPalette.primary, borderWidth: 2 },
+            { label: 'ราคาที่ซื้อจริง (ต่อ ' + stats.originalUnit + ')', data, borderColor: chartPalette.primary, backgroundColor: 'rgba(30, 58, 95, 0.1)', fill: true, tension: 0.3, pointRadius: 5, pointBackgroundColor: chartPalette.primary, borderWidth: 2 },
             { label: 'ราคา BOQ (อ้างอิง)', data: Array(sortedRecords.length).fill(refPrice), borderColor: chartPalette.warning, borderDash: [6, 4], borderWidth: 2, pointRadius: 0, fill: false },
-            { label: 'ราคาเฉลี่ย', data: Array(sortedRecords.length).fill(stats.avg), borderColor: chartPalette.text, borderDash: [3, 3], borderWidth: 1.5, pointRadius: 0, fill: false }
+            { label: 'ราคาเฉลี่ย', data: Array(sortedRecords.length).fill(stats.avg / (stats.unitConversions && boqUnit && stats.unitConversions[boqUnit] ? stats.unitConversions[boqUnit] : 1)), borderColor: chartPalette.text, borderDash: [3, 3], borderWidth: 1.5, pointRadius: 0, fill: false }
           ]
         },
         options: {
