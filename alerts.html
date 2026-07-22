@@ -317,6 +317,170 @@
       font-weight: 700;
       margin-left: 6px;
     }
+
+    /* ========== AI Scan Modal ========== */
+    .ai-scan-modal { width: 880px; }
+    .ai-scan-body { padding: 16px 20px 20px; }
+
+    .scan-stage {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 14px;
+    }
+    @media (max-width: 800px) { .scan-stage { grid-template-columns: 1fr; } }
+
+    .paper-preview {
+      padding: 18px;
+      background: #f8f9fa;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      min-height: 380px;
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+      color: #1e293b;
+      position: relative;
+      overflow: hidden;
+    }
+    .paper-preview::before {
+      content: '';
+      position: absolute;
+      left: 0; right: 0;
+      height: 18px;
+      background: linear-gradient(180deg,
+        rgba(22, 163, 74, 0) 0%,
+        rgba(22, 163, 74, 0.55) 50%,
+        rgba(22, 163, 74, 0) 100%);
+      box-shadow: 0 0 14px rgba(22, 163, 74, 0.6);
+      pointer-events: none;
+      display: none;
+    }
+    .paper-preview.scanning::before {
+      display: block;
+      animation: scanLine 2s linear infinite;
+    }
+    @keyframes scanLine {
+      0%   { top: -18px; }
+      100% { top: 100%; }
+    }
+    .paper-title {
+      font-weight: 700; text-align: center; font-size: 13px;
+      border-bottom: 1px dashed #94a3b8;
+      padding-bottom: 8px; margin-bottom: 10px;
+      line-height: 1.5;
+    }
+    .paper-row {
+      display: grid; grid-template-columns: 1.6fr 0.5fr 0.6fr 0.8fr;
+      gap: 6px; padding: 3px 0;
+      border-bottom: 1px dotted #cbd5e1;
+    }
+    .paper-row.header {
+      font-weight: 700; background: #e2e8f0;
+      padding: 4px 6px; margin: 0 -6px 4px;
+    }
+    .paper-row:last-child { border-bottom: 0; }
+    .paper-row .num { text-align: right; }
+
+    .scan-result {
+      padding: 16px;
+      background: #fff;
+      border: 1px solid #e3e8ef;
+      border-radius: 8px;
+      min-height: 380px;
+      display: flex; flex-direction: column;
+    }
+    .scan-status {
+      display: flex; align-items: center; gap: 10px;
+      padding: 12px;
+      background: #f0f9ff;
+      border-radius: 8px;
+      margin-bottom: 12px;
+    }
+    .scan-status .pulse {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      background: #16a34a;
+      flex-shrink: 0;
+      animation: pulseDot 1.2s infinite;
+    }
+    @keyframes pulseDot {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(1.4); }
+    }
+    .scan-status.processing { background: #fef3c7; }
+    .scan-status.processing .pulse { background: #d97706; }
+    .scan-status.done {
+      background: #dcfce7;
+      color: #166534;
+    }
+    .scan-status.done svg { flex-shrink: 0; }
+    .scan-status .lbl { font-weight: 600; font-size: 13px; }
+    .scan-status .sub { font-size: 11px; color: #64748b; margin-top: 2px; }
+
+    .extracted-list {
+      flex: 1;
+      max-height: 220px;
+      overflow-y: auto;
+      margin-top: 6px;
+    }
+    .extracted-item {
+      padding: 8px 10px;
+      border-bottom: 1px solid #f1f5f9;
+      font-size: 12px;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+      align-items: center;
+    }
+    .extracted-item:last-child { border-bottom: 0; }
+    .extracted-item .name { color: #0f172a; font-weight: 500; }
+    .extracted-item .meta {
+      color: #64748b; font-size: 11px; margin-top: 2px;
+      font-family: 'Courier New', monospace;
+    }
+    .extracted-item .qty {
+      font-weight: 700; color: #1e3a5f;
+      white-space: nowrap;
+    }
+
+    .scan-actions {
+      display: flex; gap: 8px; justify-content: flex-end;
+      margin-top: 14px; padding-top: 14px;
+      border-top: 1px solid #e3e8ef;
+    }
+
+    /* Toast */
+    .toast {
+      position: fixed; bottom: 24px; left: 50%;
+      transform: translateX(-50%);
+      background: #0f172a; color: #fff;
+      padding: 12px 20px; border-radius: 8px;
+      font-size: 13.5px; font-weight: 500;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+      z-index: 200;
+      display: flex; align-items: center; gap: 10px;
+      font-family: inherit;
+      max-width: 90vw;
+      animation: toastIn 0.2s ease-out;
+    }
+    .toast.success { background: #166534; }
+    .toast .check { width: 18px; height: 18px; flex-shrink: 0; }
+    @keyframes toastIn {
+      from { opacity: 0; transform: translateX(-50%) translateY(20px); }
+      to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+    }
+
+    /* Cheapest date row (ใต้ชื่อโครงการ) */
+    .cheapest-date-row {
+      font-size: 11px;
+      color: var(--color-success);
+      margin-top: 2px;
+      display: flex; align-items: center; gap: 4px;
+      font-weight: 600;
+    }
+    .cheapest-date-row .dot {
+      width: 4px; height: 4px;
+      border-radius: 50%;
+      background: var(--color-success);
+      display: inline-block;
+    }
   </style>
 </head>
 <body>
@@ -337,8 +501,7 @@
       <div class="sidebar-section">
         <div class="sidebar-section-title">การจัดการ</div>
         <ul class="sidebar-nav">
-          <li><a href="suppliers.html"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-6 9 6v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg>ผู้ขายวัสดุ/ผู้รับเหมา</a></li>
-          <li><a href="site-materials.html"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>วัสดุ & การสั่งซื้อ</a></li>
+                    <li><a href="site-materials.html"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>วัสดุ & การสั่งซื้อ</a></li>
           <li><a href="alerts.html" class="active"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>เปรียบเทียบราคาวัสดุ</a></li>
         </ul>
       </div>
@@ -401,6 +564,53 @@
         <span>© 2569 Construction Procurement · เวอร์ชัน 1.0.0</span>
         <span>ข้อมูลเปรียบเทียบจาก: ประวัติการซื้อจริงของบริษัท</span>
       </footer>
+    </div>
+  </div>
+
+  <!-- ========== Modal: AI Scan ========== -->
+  <div class="modal-overlay" id="ai-scan-modal" onclick="if(event.target===this) closeAIScan()">
+    <div class="modal-card ai-scan-modal">
+      <div class="modal-header">
+        <h3>AI สแกนเอกสาร BOQ จากกระดาษ</h3>
+        <button class="modal-close" onclick="closeAIScan()" type="button">&times;</button>
+      </div>
+      <div class="ai-scan-body">
+        <div style="font-size:12.5px;color:#64748b;margin-bottom:12px;">
+          ระบบ AI จะอ่านเอกสาร BOQ ที่เป็นกระดาษ/ไฟล์สแกน แล้วแปลงเป็นข้อมูลดิจิทัลโดยอัตโนมัติ
+          — ไม่ต้องพิมพ์ข้อมูลวัสดุเอง
+        </div>
+        <div class="scan-stage">
+          <!-- ฝั่งซ้าย: เอกสารกระดาษ -->
+          <div class="paper-preview" id="paper-preview">
+            <div class="paper-title">บิลล์ออฟควอนทิตี้ (BOQ)<br><span id="paper-project">—</span></div>
+            <div class="paper-row header"><div>รายการ</div><div class="num">จำนวน</div><div class="num">หน่วย</div><div class="num">ราคา</div></div>
+            <div id="paper-rows"></div>
+          </div>
+
+          <!-- ฝั่งขวา: ผลลัพธ์ที่ดึงออกมา -->
+          <div class="scan-result">
+            <div class="scan-status processing" id="scan-status">
+              <div class="pulse"></div>
+              <div>
+                <div class="lbl">กำลังสแกนและอ่านเอกสาร...</div>
+                <div class="sub" id="scan-detail">OCR + NLP กำลังประมวลผล</div>
+              </div>
+            </div>
+            <div style="font-size:11.5px;color:#64748b;margin-bottom:6px;">ข้อมูลที่ดึงออกมาได้:</div>
+            <div class="extracted-list" id="extracted-list">
+              <div style="padding:24px;text-align:center;color:#94a3b8;font-size:12px;">
+                รอการสแกน...
+              </div>
+            </div>
+            <div class="scan-actions">
+              <button class="btn" onclick="closeAIScan()">ยกเลิก</button>
+              <button class="btn btn-primary" id="scan-confirm-btn" disabled onclick="confirmAIScan()">
+                นำเข้าข้อมูล
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -733,6 +943,111 @@
       return                                { level: 'expensive',label: 'แพงกว่าประวัติ', deltaPct };
     }
 
+    /* ---------- AI Scan (เอกสารกระดาษ) ---------- */
+    let _aiScanTarget = null;
+    let _aiScanTimers = [];
+
+    function openAIScan(sampleIdx) {
+      const idx = sampleIdx ?? 0;
+      const sample = SAMPLE_BOQS[idx];
+      _aiScanTarget = { idx, project: sample.project, phase: sample.phase };
+
+      document.getElementById('paper-project').textContent = sample.project + ' · ' + sample.phase;
+
+      // จำลองหน้าเอกสารกระดาษ: เอา BOQ items ของ project+phase มาแสดง
+      const sampleItems = D.boq.filter(b => b.projectName === sample.project && b.phase === sample.phase).slice(0, 6);
+      document.getElementById('paper-rows').innerHTML = sampleItems.map(i => `
+        <div class="paper-row">
+          <div>${i.material}</div>
+          <div class="num">${fmt.num(i.totalRequired)}</div>
+          <div class="num">${i.unit}</div>
+          <div class="num">${fmt.currency(i.estimatedPrice)}</div>
+        </div>
+      `).join('');
+
+      // reset state
+      const preview = document.getElementById('paper-preview');
+      preview.classList.add('scanning');
+      const status = document.getElementById('scan-status');
+      status.className = 'scan-status processing';
+      status.innerHTML = `
+        <div class="pulse"></div>
+        <div>
+          <div class="lbl">กำลังสแกนและอ่านเอกสาร...</div>
+          <div class="sub" id="scan-detail">OCR + NLP กำลังประมวลผล</div>
+        </div>
+      `;
+      document.getElementById('extracted-list').innerHTML = `
+        <div style="padding:24px;text-align:center;color:#94a3b8;font-size:12px;">รอการสแกน...</div>
+      `;
+      document.getElementById('scan-confirm-btn').disabled = true;
+
+      document.getElementById('ai-scan-modal').classList.add('open');
+
+      // clear old timers
+      _aiScanTimers.forEach(t => clearTimeout(t));
+      _aiScanTimers = [];
+
+      // simulate scan progress
+      _aiScanTimers.push(setTimeout(() => {
+        document.getElementById('scan-detail').textContent = 'OCR อ่านตารางสำเร็จ — กำลังจับคู่กับสินค้าในระบบ';
+      }, 800));
+      _aiScanTimers.push(setTimeout(() => {
+        document.getElementById('scan-detail').textContent = 'AI กำลังตรวจสอบความถูกต้องและเติมหน่วย...';
+      }, 1600));
+      _aiScanTimers.push(setTimeout(() => {
+        preview.classList.remove('scanning');
+        status.className = 'scan-status done';
+        status.innerHTML = `
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+          <div>
+            <div class="lbl" style="color:#166534;">สแกนสำเร็จ</div>
+            <div class="sub">พบ <strong>${sampleItems.length}</strong> รายการในเอกสาร · พร้อมนำเข้า</div>
+          </div>
+        `;
+        document.getElementById('extracted-list').innerHTML = sampleItems.map(i => `
+          <div class="extracted-item">
+            <div>
+              <div class="name">${i.material}</div>
+              <div class="meta">${i.sku || '—'} · ฿${i.estimatedPrice}/${i.unit}</div>
+            </div>
+            <div class="qty">${fmt.num(i.totalRequired)} ${i.unit}</div>
+          </div>
+        `).join('');
+        document.getElementById('scan-confirm-btn').disabled = false;
+      }, 2400));
+    }
+
+    function closeAIScan() {
+      document.getElementById('ai-scan-modal').classList.remove('open');
+      _aiScanTarget = null;
+      _aiScanTimers.forEach(t => clearTimeout(t));
+      _aiScanTimers = [];
+    }
+
+    function confirmAIScan() {
+      if (!_aiScanTarget) return;
+      const { idx } = _aiScanTarget;
+      closeAIScan();
+      loadSampleBOQ(idx);
+      showToast('นำเข้าข้อมูลจากการสแกนเรียบร้อย', 'success');
+    }
+
+    function showToast(message, variant) {
+      const t = document.createElement('div');
+      t.className = 'toast' + (variant === 'success' ? ' success' : '');
+      t.innerHTML = `
+        <svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+        <span>${message}</span>`;
+      document.body.appendChild(t);
+      setTimeout(() => {
+        t.style.transition = 'opacity 0.3s, transform 0.3s';
+        t.style.opacity = '0';
+        t.style.transform = 'translateX(-50%) translateY(10px)';
+      }, 2800);
+      setTimeout(() => t.remove(), 3200);
+    }
+
     /* ---------- Render Upload Section ---------- */
     function renderUploadSection() {
       const c = document.getElementById('uploadSection');
@@ -771,15 +1086,23 @@
             <h3>แนบเอกสาร BOQ เพื่อเปรียบเทียบราคา</h3>
             <p>ลากไฟล์มาวาง หรือคลิกปุ่มด้านล่างเพื่อเลือกไฟล์ BOQ<br>
                ระบบจะดึงรายการวัสดุจาก BOQ แล้วเปรียบเทียบกับประวัติการซื้อจริง</p>
-            <input type="file" id="boqFileInput" accept=".xlsx,.csv,.xls" style="display:none" onchange="handleFileUpload(event)">
-            <button class="btn" onclick="document.getElementById('boqFileInput').click()">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-              เลือกไฟล์ BOQ
-            </button>
+            <input type="file" id="boqFileInput" accept=".xlsx,.csv,.xls,.pdf,.jpg,.png" style="display:none" onchange="handleFileUpload(event)">
+            <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">
+              <button class="btn btn-primary" onclick="openAIScan(0)" style="background:linear-gradient(135deg,#1e3a5f 0%,#2563eb 100%);">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                AI สแกนเอกสารกระดาษ
+              </button>
+              <button class="btn" onclick="document.getElementById('boqFileInput').click()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                อัปโหลดไฟล์
+              </button>
+            </div>
             <div class="file-types">
               <span>.xlsx</span>
               <span>.xls</span>
               <span>.csv</span>
+              <span>.pdf</span>
+              <span>.jpg/.png</span>
             </div>
 
             <div class="divider-with-text">
@@ -976,7 +1299,10 @@
                   </td>
                   <td>
                     <span class="verdict-pill ${r.verdict.level}">${r.verdict.label}</span>
-                    ${r.stats ? `<div style="font-size:11px;color:var(--color-text-muted);margin-top:3px;">ถูกสุด: ${r.stats.cheapestProject}</div>` : ''}
+                    ${r.stats ? `
+                      <div style="font-size:11px;color:var(--color-text-muted);margin-top:3px;">ถูกสุด: ${r.stats.cheapestProject}</div>
+                      <div class="cheapest-date-row"><span class="dot"></span>${fmt.date(r.stats.cheapestDate)}</div>
+                    ` : ''}
                   </td>
                   <td>
                     ${r.stats ? `<button class="btn btn-sm" onclick="openHistoryModal('${r.item.material.replace(/'/g, "\\'")}', ${r.item.estimatedPrice > 0 ? r.item.estimatedPrice : r.stats.avg}, '${r.item.unit}')">ดูประวัติ</button>` : '<span style="color:var(--color-text-muted);font-size:12px;">ไม่มีข้อมูล</span>'}

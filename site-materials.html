@@ -235,6 +235,132 @@
     .lookup-grid > div { font-size: 11.5px; }
     .lookup-grid-label { color: #94a3b8; margin-bottom: 3px; }
     .lookup-grid-value { color: #0f172a; font-weight: 600; font-size: 12.5px; }
+
+    /* ========== Supplier Pick Modal ========== */
+    .supplier-pick-modal { width: 760px; }
+    .supplier-pick-body { padding: 16px 20px 18px; }
+
+    .supplier-pick-context {
+      padding: 12px 16px;
+      background: #f8fafc;
+      border: 1px solid #e3e8ef;
+      border-radius: 8px;
+      margin-bottom: 14px;
+    }
+    .supplier-pick-context .ctx-eyebrow {
+      font-size: 10.5px; color: #94a3b8;
+      text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;
+    }
+    .supplier-pick-context .ctx-name {
+      font-weight: 700; font-size: 15px; color: #0f172a;
+      margin-top: 2px;
+    }
+    .supplier-pick-context .ctx-meta {
+      font-size: 12px; color: #475569; margin-top: 4px;
+    }
+
+    .supplier-pick-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+    }
+    @media (max-width: 700px) { .supplier-pick-grid { grid-template-columns: 1fr; } }
+
+    .supplier-card {
+      padding: 16px;
+      background: #fff;
+      border: 1.5px solid #e3e8ef;
+      border-radius: 10px;
+      display: flex; flex-direction: column; gap: 10px;
+      transition: all 0.15s;
+    }
+    .supplier-card:hover { border-color: #94a3b8; }
+    .supplier-card.recommended {
+      border-color: #16a34a;
+      box-shadow: 0 4px 14px rgba(22, 163, 74, 0.15);
+      background: linear-gradient(180deg, #f0fdf4 0%, #fff 30%);
+    }
+    .supplier-card-head {
+      display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;
+    }
+    .supplier-card-name {
+      font-weight: 700; font-size: 14px; color: #0f172a;
+      line-height: 1.3;
+    }
+    .supplier-tag {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 10.5px; font-weight: 600;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .supplier-tag.recommended { background: #dcfce7; color: #166534; }
+    .supplier-tag.alt { background: #fef3c7; color: #92400e; }
+
+    .supplier-card-stats {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 6px 10px;
+      padding: 10px 12px;
+      background: #f8fafc;
+      border-radius: 8px;
+    }
+    .supplier-stat-label {
+      font-size: 10.5px; color: #94a3b8;
+      text-transform: uppercase; letter-spacing: 0.3px; font-weight: 600;
+    }
+    .supplier-stat-value {
+      font-size: 13.5px; font-weight: 700; color: #0f172a;
+      margin-top: 2px;
+    }
+    .supplier-stat-value .unit {
+      font-size: 11px; font-weight: 500; color: #64748b; margin-left: 2px;
+    }
+
+    .supplier-card-note {
+      font-size: 11.5px; color: #475569;
+      padding: 8px 10px;
+      background: #fffbeb;
+      border-left: 3px solid #f59e0b;
+      border-radius: 4px;
+      line-height: 1.55;
+    }
+    .supplier-card.recommended .supplier-card-note {
+      background: #f0fdf4;
+      border-left-color: #16a34a;
+    }
+
+    .supplier-card-action { margin-top: auto; }
+    .supplier-card-action .btn { width: 100%; justify-content: center; }
+
+    .supplier-pick-hint {
+      margin-top: 14px;
+      padding: 10px 12px;
+      background: #fef3c7;
+      border: 1px dashed #d69e2e;
+      border-radius: 8px;
+      font-size: 11.5px;
+      color: #92400e;
+      line-height: 1.55;
+    }
+
+    /* ========== Toast ========== */
+    .toast {
+      position: fixed; bottom: 24px; left: 50%;
+      transform: translateX(-50%);
+      background: #0f172a; color: #fff;
+      padding: 12px 20px; border-radius: 8px;
+      font-size: 13.5px; font-weight: 500;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+      z-index: 200;
+      display: flex; align-items: center; gap: 10px;
+      font-family: inherit;
+      max-width: 90vw;
+      animation: toastIn 0.2s ease-out;
+    }
+    .toast.success { background: #166534; }
+    .toast .check { width: 18px; height: 18px; flex-shrink: 0; }
+    @keyframes toastIn {
+      from { opacity: 0; transform: translateX(-50%) translateY(20px); }
+      to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+    }
   </style>
 </head>
 <body>
@@ -255,8 +381,7 @@
       <div class="sidebar-section">
         <div class="sidebar-section-title">การจัดการ</div>
         <ul class="sidebar-nav">
-          <li><a href="suppliers.html"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-6 9 6v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg>ผู้ขายวัสดุ/ผู้รับเหมา</a></li>
-          <li><a href="site-materials.html" class="active"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/><path d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/><path d="M12 3v3M12 18v3"/></svg>วัสดุ & การสั่งซื้อ</a></li>
+                    <li><a href="site-materials.html" class="active"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/><path d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/><path d="M12 3v3M12 18v3"/></svg>วัสดุ & การสั่งซื้อ</a></li>
           <li><a href="alerts.html"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>เปรียบเทียบราคาวัสดุ</a></li>
         </ul>
       </div>
@@ -448,6 +573,17 @@
     </div>
   </div>
 
+  <!-- ========== Modal: Supplier Pick ========== -->
+  <div class="modal-overlay" id="supplier-pick-modal" onclick="if(event.target===this) closeSupplierPick()">
+    <div class="modal-card supplier-pick-modal">
+      <div class="modal-header">
+        <h3>เลือก Supplier สำหรับสั่งซื้อ</h3>
+        <button class="modal-close" onclick="closeSupplierPick()" type="button">&times;</button>
+      </div>
+      <div class="supplier-pick-body" id="supplier-pick-body"></div>
+    </div>
+  </div>
+
   <script src="js/data.js"></script>
   <script src="js/demo.js"></script>
   <script>
@@ -457,6 +593,9 @@
     const D = window.SAMPLE_DATA;
     const on = DemoController.isOn();
     const TODAY = '2569-07-22';
+
+    /* ===== Item id (สำหรับอ้างอิง row เวลาเรียก supplier pick) ===== */
+    D.reorderAlerts.forEach((item, idx) => { item._id = 'item_' + idx; });
 
     /* ===== Helpers ===== */
     const URGENCY_LABEL = {
@@ -509,7 +648,7 @@
           </div>
           <div class="rr-action">
             ${isUnordered
-              ? `<button class="btn btn-sm btn-primary" style="white-space:nowrap;">สั่งเลย</button>`
+              ? `<button class="btn btn-sm btn-primary" style="white-space:nowrap;" onclick="openSupplierPick('${item._id}')">สั่งเลย</button>`
               : `${fmt.statusPill(statusPillMap[item.poStatus])}
                  ${item.poRef ? `<div style="font-size:11px;color:#64748b;font-family:monospace;margin-top:3px;">${item.poRef}</div>` : ''}`}
           </div>
@@ -678,7 +817,7 @@
                   </td>
                   <td>
                     ${i.poStatus === 'ยังไม่สั่ง'
-                      ? `<button class="btn btn-sm btn-primary">สั่งเลย</button>`
+                      ? `<button class="btn btn-sm btn-primary" onclick="openSupplierPick('${i._id}')">สั่งเลย</button>`
                       : `<button class="btn btn-sm btn-ghost">ติดตาม</button>`}
                   </td>
                 </tr>
@@ -813,6 +952,177 @@
     renderLeadTimeChart();
     renderSiteTable();
 
+    /* ===== Supplier Pick: เลือกจาก 2 supplier (เจ้าประจำ vs ราคาถูกกว่า) ===== */
+    const SUPPLIER_POOL = {
+      cement: [
+        { name: 'บริษัท ปูนซีเมนต์ไทย จำกัด (SCG)', leadMin: 3, leadMax: 5, rating: 4.8, freight: 650, creditDays: 30 },
+        { name: 'หจก. ปูนทองคำก่อสร้าง', leadMin: 5, leadMax: 7, rating: 4.4, freight: 480, creditDays: 45 },
+        { name: 'ร้านวัสดุก่อสร้าง 999', leadMin: 1, leadMax: 2, rating: 4.1, freight: 350, creditDays: 0 }
+      ],
+      steel: [
+        { name: 'บริษัท เหล็กไทยอุตสาหกรรม จำกัด', leadMin: 4, leadMax: 7, rating: 4.7, freight: 850, creditDays: 30 },
+        { name: 'หจก. สยามเหล็กกล้า 1995', leadMin: 6, leadMax: 9, rating: 4.4, freight: 1100, creditDays: 60 },
+        { name: 'บริษัท เมทัลเซ็นเตอร์ จำกัด', leadMin: 5, leadMax: 8, rating: 4.2, freight: 950, creditDays: 45 }
+      ],
+      brick: [
+        { name: 'โรงอิฐมอญ พ.ศ. 2525', leadMin: 2, leadMax: 4, rating: 4.6, freight: 1200, creditDays: 0 },
+        { name: 'หจก. อิฐไทยก่อสร้าง', leadMin: 4, leadMax: 6, rating: 4.2, freight: 980, creditDays: 15 },
+        { name: 'บริษัท บล็อกไทยวัสดุ จำกัด', leadMin: 3, leadMax: 5, rating: 4.5, freight: 1100, creditDays: 30 }
+      ],
+      aggregate: [
+        { name: 'หจก. ทรายทองก่อสร้าง', leadMin: 2, leadMax: 4, rating: 4.5, freight: 2200, creditDays: 7 },
+        { name: 'บริษัท หินไทยวัสดุ จำกัด', leadMin: 3, leadMax: 5, rating: 4.3, freight: 1800, creditDays: 14 }
+      ],
+      tile: [
+        { name: 'บริษัท กระเบื้องไทย จำกัด', leadMin: 5, leadMax: 8, rating: 4.6, freight: 650, creditDays: 30 },
+        { name: 'หจก. เซรามิคพลัส', leadMin: 7, leadMax: 10, rating: 4.3, freight: 800, creditDays: 45 }
+      ],
+      default: [
+        { name: 'บริษัท วัสดุก่อสร้างไทย จำกัด', leadMin: 4, leadMax: 7, rating: 4.6, freight: 750, creditDays: 30 },
+        { name: 'หจก. ร้านค้าวัสดุรวมใจ', leadMin: 6, leadMax: 9, rating: 4.3, freight: 900, creditDays: 45 }
+      ]
+    };
+
+    function getSupplierPoolKey(material) {
+      const m = (material || '').toLowerCase();
+      if (m.includes('ปูน') || m.includes('cement')) return 'cement';
+      if (m.includes('เหล็ก') || m.includes('rb') || m.includes('hr') || m.includes('db')) return 'steel';
+      if (m.includes('อิฐ') || m.includes('บล็อก')) return 'brick';
+      if (m.includes('ทราย') || m.includes('หิน') || m.includes('ดิน')) return 'aggregate';
+      if (m.includes('กระเบื้อง') || m.includes('tile') || m.includes('roof')) return 'tile';
+      return 'default';
+    }
+
+    // deterministic hash so order-count / on-time % are stable per supplier
+    function hashCode(str) {
+      let h = 0;
+      for (let i = 0; i < str.length; i++) h = ((h << 5) - h) + str.charCodeAt(i);
+      return h;
+    }
+
+    function getSupplierOptions(item) {
+      const poolKey = getSupplierPoolKey(item.material);
+      const pool = SUPPLIER_POOL[poolKey];
+      const baseH = hashCode(item.supplier);
+
+      return [
+        {
+          name: item.supplier,
+          leadMin: item.leadTime,
+          leadMax: item.leadTime + 3,
+          rating: 4.5 + ((Math.abs(baseH) % 5) / 10),  // 4.5–4.9
+          freight: pool[0].freight,
+          creditDays: pool[0].creditDays,
+          recommended: true,
+          tag: 'เจ้าประจำ',
+          note: `เคยสั่ง ${3 + (Math.abs(baseH) % 8)} ครั้ง · ส่งตรงเวลา ${88 + (Math.abs(baseH >> 3) % 12)}%`
+        },
+        {
+          name: pool[1].name,
+          leadMin: pool[1].leadMin,
+          leadMax: pool[1].leadMax,
+          rating: pool[1].rating,
+          freight: pool[1].freight,
+          creditDays: pool[1].creditDays,
+          recommended: false,
+          tag: 'ทางเลือกอื่น',
+          note: `เคยสั่ง 1 ครั้ง · เครดิตยาวกว่า · ส่งช้ากว่า ${pool[1].leadMin - item.leadTime} วัน`
+        }
+      ];
+    }
+
+    let _currentSupplierPickItemId = null;
+
+    function openSupplierPick(itemId) {
+      const item = D.reorderAlerts.find(x => x._id === itemId);
+      if (!item) return;
+      _currentSupplierPickItemId = itemId;
+      const options = getSupplierOptions(item);
+
+      document.getElementById('supplier-pick-body').innerHTML = `
+        <div class="supplier-pick-context">
+          <div class="ctx-eyebrow">กำลังจะสั่งซื้อ</div>
+          <div class="ctx-name">${item.material}</div>
+          <div class="ctx-meta">
+            <strong>${item.project}</strong> · ${item.phase} · ${fmt.num(item.qty)} ${item.unit}
+            · ต้องใช้วันที่ <strong>${fmt.date(item.needBy)}</strong>
+          </div>
+        </div>
+
+        <div class="supplier-pick-grid">
+          ${options.map((s, idx) => `
+            <div class="supplier-card ${s.recommended ? 'recommended' : ''}">
+              <div class="supplier-card-head">
+                <div class="supplier-card-name">${s.name}</div>
+                <span class="supplier-tag ${s.recommended ? 'recommended' : 'alt'}">${s.tag}</span>
+              </div>
+              <div class="supplier-card-stats">
+                <div>
+                  <div class="supplier-stat-label">ระยะเวลาส่ง</div>
+                  <div class="supplier-stat-value">${s.leadMin}-${s.leadMax}<span class="unit">วัน</span></div>
+                </div>
+                <div>
+                  <div class="supplier-stat-label">คะแนน</div>
+                  <div class="supplier-stat-value">${s.rating.toFixed(1)}<span class="unit">/ 5</span></div>
+                </div>
+                <div>
+                  <div class="supplier-stat-label">ค่าขนส่ง</div>
+                  <div class="supplier-stat-value">${fmt.currency(s.freight)}</div>
+                </div>
+                <div>
+                  <div class="supplier-stat-label">เครดิต</div>
+                  <div class="supplier-stat-value">${s.creditDays}<span class="unit">วัน</span></div>
+                </div>
+              </div>
+              <div class="supplier-card-note">${s.note}</div>
+              <div class="supplier-card-action">
+                <button class="btn ${s.recommended ? 'btn-primary' : ''}" onclick="confirmSupplierPick(${idx})">
+                  ${s.recommended ? 'เลือก (แนะนำ)' : 'เลือกเจ้านี้'}
+                </button>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+
+        <div class="supplier-pick-hint">
+          💡 ระบบจะสร้าง PO (ใบสั่งซื้อ) อัตโนมัติ และคำนวณ "ต้องสั่งวันนี้" ใหม่ตาม Lead Time ของ supplier ที่เลือก
+        </div>
+      `;
+      document.getElementById('supplier-pick-modal').classList.add('open');
+    }
+
+    function closeSupplierPick() {
+      document.getElementById('supplier-pick-modal').classList.remove('open');
+      _currentSupplierPickItemId = null;
+    }
+
+    function confirmSupplierPick(supplierIdx) {
+      const item = D.reorderAlerts.find(x => x._id === _currentSupplierPickItemId);
+      if (!item) return;
+      const options = getSupplierOptions(item);
+      const s = options[supplierIdx];
+      closeSupplierPick();
+      showToast(
+        `สร้าง PO ให้ "${s.name}" เรียบร้อย · จัดส่งใน ${s.leadMin}-${s.leadMax} วัน`,
+        'success'
+      );
+    }
+
+    function showToast(message, variant) {
+      const t = document.createElement('div');
+      t.className = 'toast' + (variant === 'success' ? ' success' : '');
+      t.innerHTML = `
+        <svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+        <span>${message}</span>`;
+      document.body.appendChild(t);
+      setTimeout(() => {
+        t.style.transition = 'opacity 0.3s, transform 0.3s';
+        t.style.opacity = '0';
+        t.style.transform = 'translateX(-50%) translateY(10px)';
+      }, 2800);
+      setTimeout(() => t.remove(), 3200);
+    }
+
     /* ===== Smart Lookup: ค้นหาวัสดุ + แสดงเวลาต้องสั่ง ===== */
     const URGENCY_COLOR = {
       overdue: '#dc2626',
@@ -906,7 +1216,7 @@
               </div>
               ${item.poStatus === 'ยังไม่สั่ง'
                 ? `<div style="margin-top:10px;text-align:right;">
-                     <button class="btn btn-sm btn-primary" onclick="closeProductLookup()">สั่งเลย</button>
+                     <button class="btn btn-sm btn-primary" onclick="closeProductLookup(); openSupplierPick('${item._id}');">สั่งเลย</button>
                    </div>`
                 : `<div style="margin-top:10px;font-size:11.5px;color:#64748b;text-align:right;">
                      สถานะ PO: <strong style="color:#475569;">${item.poStatus}</strong>${item.poRef ? ` · ${item.poRef}` : ''}
@@ -922,7 +1232,10 @@
     });
 
     document.addEventListener('keydown', function (e) {
-      if (e.key === 'Escape') closeProductLookup();
+      if (e.key === 'Escape') {
+        closeProductLookup();
+        closeSupplierPick();
+      }
     });
   </script>
 </body>

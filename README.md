@@ -17,7 +17,6 @@ prototype/
 ├── index.html              → หน้า Login
 ├── dashboard.html          → ภาพรวมโครงการ + ใบสั่งซื้อ
 ├── ai-analysis.html        → วิเคราะห์แนวโน้มราคาวัสดุ + คาดการณ์
-├── suppliers.html          → ผู้ขายวัสดุ + ผู้รับเหมา + Risk Analysis + Renewal Clustering
 ├── site-materials.html     → วัสดุ & การสั่งซื้อ (Lead Time & Reorder Control)
 ├── alerts.html             → เปรียบเทียบราคาวัสดุ (BOQ vs ประวัติการซื้อจริง)
 ├── reports.html            → รายงาน + Pareto + YoY + Bottleneck Analysis
@@ -70,10 +69,9 @@ prototype/
 1. **Login** — หน้าเข้าสู่ระบบสไตล์ Enterprise
 2. **Dashboard** — ภาพรวมโครงการ + ใบสั่งซื้อ
 3. **วิเคราะห์แนวโน้มราคาวัสดุ** — กราฟคาดการณ์ + ปัจจัย + คำแนะนำ
-4. **ผู้ขายวัสดุ/ผู้รับเหมา** — คะแนน + Risk Analysis + Renewal Clustering
-5. **วัสดุ & การสั่งซื้อ** — Lead Time & Reorder Control: ระบบเตือนล่วงหน้าให้สั่งของถูกจังหวะ (ต้องสั่งภายใน = วันที่ต้องใช้ − Lead Time − Safety Buffer 3 วัน) + สต็อกวัสดุตาม Block/งวด
-6. **เปรียบเทียบราคาวัสดุ** — แนบ BOQ → เทียบราคากับประวัติการซื้อจริง (ถูกกว่า/เท่ากัน/แพงกว่า)
-7. **รายงาน** — Pareto + YoY + Bottleneck + Top 10 + สรุปผู้บริหาร
+4. **วัสดุ & การสั่งซื้อ** — Lead Time & Reorder Control: ระบบเตือนล่วงหน้าให้สั่งของถูกจังหวะ (ต้องสั่งภายใน = วันที่ต้องใช้ − Lead Time − Safety Buffer 3 วัน) + สต็อกวัสดุตาม Block/งวด + เลือก Supplier เปรียบเทียบ 2 เจ้า
+5. **เปรียบเทียบราคาวัสดุ** — แนบ BOQ → AI สแกนเอกสารกระดาษ → เทียบราคากับประวัติการซื้อจริง (ถูกกว่า/เท่ากัน/แพงกว่า) + Fuzzy Match + Unit Conversion
+6. **รายงาน** — Pareto + YoY + Bottleneck + Top 10 + สรุปผู้บริหาร
 
 ## หมายเหตุ
 

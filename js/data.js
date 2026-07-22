@@ -483,12 +483,11 @@ window.SAMPLE_DATA = {
       predicted: [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 204, 201, 198]
     },
     factors: [
-      { label: 'ราคาตลาดโลก', value: '-8%', impact: 'down', note: 'ราคาปูนในตลาดอาเซียนปรับลดลง' },
-      { label: 'ราคาน้ำมันเชื้อเพลิง', value: '+4%', impact: 'up', note: 'กระทบต้นทุนขนส่ง' },
-      { label: 'ความต้องการในฤดูก่อสร้าง', value: 'สูง', impact: 'up', note: 'เข้าฤดูก่อสร้าง มีความต้องการมาก' },
-      { label: 'สต็อกโรงงาน', value: 'ปกติ', impact: 'neutral', note: 'โรงงานผลิตได้ตามปกติ' },
-      { label: 'ดอกเบี้ยเงินกู้', value: '3.50%', impact: 'neutral', note: 'ควรกักตุนไม่เกิน 60 วัน' },
-      { label: 'Lead Time ซัพพลายเออร์หลัก', value: '7 วัน', impact: 'neutral', note: 'อยู่ในเกณฑ์ปกติ' }
+      { label: 'ราคาทองคำ (โลก)', value: '+0.5%', impact: 'neutral', note: 'ทองคำตลาด COMEX ปรับขึ้นเล็กน้อย สะท้อนความเชื่อมั่นทางเศรษฐกิจ' },
+      { label: 'ราคาแร่มีค่า', value: '-2%', impact: 'down', note: 'แร่เหล็ก/นิกเกิลในตลาด LME ปรับลดลง ลดต้นทุนวัตถุดิบ' },
+      { label: 'ราคาตลาดโลก', value: '-8%', impact: 'down', note: 'ราคาปูนในตลาดอาเซียนปรับลดลงต่อเนื่อง' },
+      { label: 'ราคาน้ำมัน (Brent)', value: '+4%', impact: 'up', note: 'น้ำมันดิบ Brent ปรับขึ้น กระทบต้นทุนขนส่ง' },
+      { label: 'อัตราดอกเบี้ย MLR — ธนาคารกรุงเทพ (BBL)', value: '3.50%', impact: 'neutral', note: 'อ้างอิง MLR ธนาคารกรุงเทพ · แนะนำกักตุนไม่เกิน 60 วัน' }
     ]
   },
 
