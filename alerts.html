@@ -1102,7 +1102,7 @@
 
     /* ---------- AI Scan (Gemini API — OCR เอกสาร BOQ จากกระดาษ) ---------- */
     const GEMINI_KEY_STORAGE = 'cp_gemini_api_key';
-    const GEMINI_ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
+    const GEMINI_ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
 
     let _aiScanTarget = null;   // { type:'image'|'sample', ...payload }
 
@@ -1395,7 +1395,7 @@
       status.className = 'scan-status processing';
       lbl.textContent = 'กำลังส่งไปยัง Gemini AI...';
       lbl.style.color = '';
-      sub.textContent = 'gemini-1.5-flash กำลังอ่านเอกสาร';
+      sub.textContent = 'gemini-2.5-flash กำลังอ่านเอกสาร';
       trigger.disabled = true;
       document.getElementById('scan-confirm-btn').disabled = true;
 
