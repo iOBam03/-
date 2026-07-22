@@ -6,150 +6,152 @@
   <title>เข้าสู่ระบบ — Construction Procurement</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700;800&family=Cormorant+Garamond:wght@500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
   <style>
-    /* === Hero panel ซ้าย — Photo collage ของโครงการบ้านแนวราบจริง === */
+    /* =====================================================
+       Login page — สไตล์ THE HONOR: full-bleed luxury hero
+       ===================================================== */
     .login-shell { min-height: 100vh; display: grid; grid-template-columns: 1.3fr 1fr; }
 
     .login-panel-left {
       position: relative;
       color: #fff;
       overflow: hidden;
-      padding: 40px 48px;
+      padding: 36px 56px 28px;
       display: flex; flex-direction: column;
-      background: #1e3a5f;
+      /* ภาพหลัก — บ้านหรู modern luxury ตอน blue hour */
+      background:
+        linear-gradient(180deg,
+          rgba(15, 23, 42, 0.55) 0%,
+          rgba(15, 23, 42, 0.15) 25%,
+          rgba(15, 23, 42, 0.10) 55%,
+          rgba(15, 23, 42, 0.55) 85%,
+          rgba(15, 23, 42, 0.85) 100%),
+        url('https://images.unsplash.com/photo-1600585154340-be6161a56a0c?ixlib=rb-4.0.3&w=2000&q=85&auto=format&fit=crop') center/cover no-repeat;
+      background-color: #1e3a5f;
     }
 
-    /* ===== Photo Collage (ทั้งหมดเป็นภาพจริงจาก Unsplash) ===== */
-    .hero-photo-grid {
-      position: absolute; inset: 0;
-      display: grid;
-      grid-template-columns: 1.6fr 1fr;
-      grid-template-rows: 1.4fr 1fr;
-      gap: 6px;
-      z-index: 0;
-    }
-    .hero-photo {
-      background-size: cover;
-      background-position: center;
-      position: relative;
-    }
-    .hero-photo::after {
-      content: ''; position: absolute; inset: 0;
-      background: linear-gradient(135deg, rgba(15, 23, 42, 0.55) 0%, rgba(15, 23, 42, 0.25) 50%, rgba(237, 137, 54, 0.3) 100%);
-    }
-    /* รูปหลัก ใหญ่ที่สุด — บ้านเดี่ยวสไตล์โมเดิร์นตอนพระอาทิตย์ตก */
-    .hero-photo.main {
-      grid-row: 1 / 3;
-      background-image: url('https://images.unsplash.com/photo-1564013799919-ab600027ffc6?ixlib=rb-4.0.3&w=1400&q=80&auto=format&fit=crop');
-    }
-    /* รูปบนขวา — ทาวน์เฮ้าส์/บ้านแถว */
-    .hero-photo.townhouse {
-      background-image: url('https://images.unsplash.com/photo-1572120360610-d971b9d7767c?ixlib=rb-4.0.3&w=800&q=80&auto=format&fit=crop');
-    }
-    /* รูปล่างขวา — ไซต์ก่อสร้าง / โครงสร้าง */
-    .hero-photo.construction {
-      background-image: url('https://images.unsplash.com/photo-1503387762-592deb58ef4e?ixlib=rb-4.0.3&w=800&q=80&auto=format&fit=crop');
-    }
+    .login-content { position: relative; z-index: 2; display: flex; flex-direction: column; height: 100%; gap: 0; }
 
-    /* Soft top overlay — ให้ brand + nav อ่านง่าย */
-    .login-panel-left::before {
-      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 220px;
-      background: linear-gradient(180deg, rgba(15, 23, 42, 0.55), transparent);
-      z-index: 1; pointer-events: none;
-    }
-    /* Soft bottom overlay — ให้ stat cards + footer อ่านง่าย */
-    .login-panel-left::after {
-      content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 320px;
-      background: linear-gradient(0deg, rgba(15, 23, 42, 0.7), transparent);
-      z-index: 1; pointer-events: none;
-    }
-
-    .login-content { position: relative; z-index: 2; display: flex; flex-direction: column; height: 100%; }
-
-    /* Brand */
+    /* ===== Brand bar (top center) ===== */
     .login-brand {
-      display: flex; align-items: center; gap: 12px;
-      font-size: 18px; font-weight: 700; letter-spacing: 0.4px;
+      display: flex; flex-direction: column; align-items: center; gap: 6px;
+      padding: 6px 0 0;
     }
     .login-brand .logo-mark {
-      width: 42px; height: 42px;
-      background: linear-gradient(135deg, #ed8936, #f6ad55);
-      color: #fff;
-      border-radius: 10px;
+      width: 48px; height: 48px;
+      background: linear-gradient(135deg, #d69e2e 0%, #f6ad55 50%, #d69e2e 100%);
+      color: #1e3a5f;
+      border-radius: 12px;
       display: flex; align-items: center; justify-content: center;
-      font-weight: 800; font-size: 16px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      font-weight: 800; font-size: 18px; letter-spacing: -0.5px;
+      box-shadow: 0 6px 20px rgba(214, 158, 46, 0.4), inset 0 1px 0 rgba(255,255,255,0.3);
+    }
+    .login-brand .brand-text {
+      font-family: 'Cormorant Garamond', 'Sarabun', serif;
+      font-size: 22px; font-weight: 700; letter-spacing: 4px;
+      color: #f6e05e;
+      text-shadow: 0 2px 8px rgba(0,0,0,0.5);
+      margin-top: 4px;
+    }
+    .login-brand .brand-sub {
+      font-size: 10px; font-weight: 600; letter-spacing: 3px;
+      color: rgba(255, 255, 255, 0.7);
+      text-transform: uppercase;
     }
 
-    /* Hero text */
-    .login-headline {
-      font-size: 38px; font-weight: 700; line-height: 1.2;
-      margin-top: 80px; max-width: 540px;
-      text-shadow: 0 2px 12px rgba(0,0,0,0.5);
+    /* ===== Hero content (bottom) ===== */
+    .login-hero {
+      margin-top: auto;
+      padding-top: 60px;
+      max-width: 620px;
     }
-    .login-headline .accent { color: #fbd38d; }
+    .login-eyebrow {
+      display: inline-block;
+      padding: 5px 12px;
+      background: rgba(214, 158, 46, 0.25);
+      border: 1px solid rgba(246, 224, 94, 0.5);
+      border-radius: 999px;
+      font-size: 11px; font-weight: 600; letter-spacing: 1.5px;
+      color: #f6e05e;
+      text-transform: uppercase;
+      margin-bottom: 18px;
+      backdrop-filter: blur(6px);
+    }
+    .login-headline {
+      font-family: 'Cormorant Garamond', 'Sarabun', serif;
+      font-size: 52px; font-weight: 600; line-height: 1.05;
+      margin: 0;
+      color: #fff;
+      text-shadow: 0 4px 16px rgba(0,0,0,0.6);
+      letter-spacing: -0.5px;
+    }
+    .login-headline .accent {
+      color: #f6e05e;
+      font-style: italic;
+    }
     .login-sub {
       font-size: 15px; color: #fef3c7;
-      margin-top: 16px; max-width: 480px; line-height: 1.7;
-      text-shadow: 0 1px 4px rgba(0,0,0,0.5);
+      margin-top: 18px; max-width: 540px; line-height: 1.75;
+      text-shadow: 0 1px 6px rgba(0,0,0,0.6);
     }
 
-    /* Feature pills — glassmorphism */
+    /* ===== Feature pills — glassmorphism ===== */
     .login-features {
-      margin-top: 28px;
-      display: flex; flex-wrap: wrap; gap: 10px;
-      max-width: 540px;
+      margin-top: 24px;
+      display: flex; flex-wrap: wrap; gap: 8px;
     }
     .login-feature {
-      display: inline-flex; align-items: center; gap: 8px;
-      padding: 8px 14px;
-      background: rgba(255, 255, 255, 0.18);
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 7px 13px;
+      background: rgba(255, 255, 255, 0.14);
       backdrop-filter: blur(10px);
       -webkit-backdrop-filter: blur(10px);
-      border: 1px solid rgba(255, 255, 255, 0.3);
+      border: 1px solid rgba(255, 255, 255, 0.22);
       border-radius: 999px;
-      font-size: 13px; font-weight: 500;
+      font-size: 12.5px; font-weight: 500;
       color: #fff;
     }
     .login-feature .ico {
-      width: 20px; height: 20px;
+      width: 18px; height: 18px;
       display: flex; align-items: center; justify-content: center;
-      background: rgba(255,255,255,0.28);
+      background: rgba(246, 224, 94, 0.25);
+      border: 1px solid rgba(246, 224, 94, 0.4);
       border-radius: 50%;
       flex-shrink: 0;
+      color: #f6e05e;
     }
 
-    /* Stat cards */
+    /* ===== Stat cards ===== */
     .hero-stats {
       display: grid; grid-template-columns: repeat(3, 1fr);
       gap: 12px;
       max-width: 540px;
-      margin-top: auto; padding-top: 40px;
+      margin-top: 28px;
     }
     .hero-stat {
-      padding: 16px 18px;
-      background: rgba(255, 255, 255, 0.14);
+      padding: 14px 16px;
+      background: rgba(255, 255, 255, 0.12);
       backdrop-filter: blur(14px);
       -webkit-backdrop-filter: blur(14px);
-      border: 1px solid rgba(255, 255, 255, 0.25);
-      border-radius: 14px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 12px;
     }
     .hero-stat .num {
-      font-size: 26px; font-weight: 800;
-      color: #fff;
+      font-family: 'Cormorant Garamond', 'Sarabun', serif;
+      font-size: 28px; font-weight: 700;
+      color: #f6e05e;
       display: flex; align-items: baseline; gap: 4px;
       line-height: 1.1;
-      text-shadow: 0 2px 6px rgba(0,0,0,0.3);
+      text-shadow: 0 2px 8px rgba(0,0,0,0.5);
     }
-    .hero-stat .num .unit { font-size: 14px; font-weight: 500; opacity: 0.9; }
-    .hero-stat .lbl { font-size: 12px; color: #fbd38d; margin-top: 4px; font-weight: 500; }
+    .hero-stat .num .unit { font-size: 14px; font-weight: 500; color: #fff; opacity: 0.85; }
+    .hero-stat .lbl { font-size: 11.5px; color: rgba(255,255,255,0.85); margin-top: 3px; font-weight: 500; }
 
     .login-meta {
-      position: relative; z-index: 2;
-      font-size: 12px; color: rgba(255, 255, 255, 0.75);
-      margin-top: 14px;
+      font-size: 11.5px; color: rgba(255, 255, 255, 0.6);
+      margin-top: 18px; letter-spacing: 0.3px;
     }
 
     /* ===== Right panel — Login form ===== */
@@ -163,7 +165,7 @@
       content: ''; position: absolute;
       top: -100px; right: -100px;
       width: 300px; height: 300px;
-      background: radial-gradient(circle, rgba(245, 158, 11, 0.12), transparent 70%);
+      background: radial-gradient(circle, rgba(214, 158, 46, 0.12), transparent 70%);
       border-radius: 50%;
     }
     .login-panel-right::after {
@@ -184,11 +186,11 @@
     }
     .login-form-brand .mark {
       width: 38px; height: 38px;
-      background: linear-gradient(135deg, #ed8936, #f6ad55);
+      background: linear-gradient(135deg, #d69e2e, #f6ad55);
       border-radius: 10px;
       display: flex; align-items: center; justify-content: center;
-      color: #fff; font-weight: 800; font-size: 15px;
-      box-shadow: 0 4px 12px rgba(237, 137, 54, 0.35);
+      color: #1e3a5f; font-weight: 800; font-size: 15px;
+      box-shadow: 0 4px 12px rgba(214, 158, 46, 0.4);
     }
     .login-form-brand .name {
       font-size: 14px; font-weight: 700; color: var(--color-text);
@@ -208,14 +210,15 @@
     .login-form .btn-primary {
       width: 100%; justify-content: center;
       padding: 12px; margin-top: 10px;
-      background: linear-gradient(135deg, #ed8936 0%, #dd6b20 100%);
+      background: linear-gradient(135deg, #d69e2e 0%, #b7791f 100%);
       border: none;
-      box-shadow: 0 4px 14px rgba(237, 137, 54, 0.35);
+      box-shadow: 0 4px 14px rgba(214, 158, 46, 0.4);
       font-size: 14.5px; font-weight: 600;
+      color: #fff;
     }
     .login-form .btn-primary:hover {
-      background: linear-gradient(135deg, #dd6b20 0%, #c05621 100%);
-      box-shadow: 0 6px 18px rgba(237, 137, 54, 0.45);
+      background: linear-gradient(135deg, #b7791f 0%, #975a16 100%);
+      box-shadow: 0 6px 18px rgba(214, 158, 46, 0.5);
     }
 
     .login-hint {
@@ -225,102 +228,100 @@
       text-align: center;
       padding: 10px 14px;
       background: #fef3c7;
-      border: 1px dashed #f59e0b;
+      border: 1px dashed #d69e2e;
       border-radius: var(--radius-md);
       line-height: 1.6;
     }
-    .login-hint strong { color: #b45309; }
+    .login-hint strong { color: #975a16; }
 
-    /* Responsive */
+    /* ===== Responsive ===== */
     @media (max-width: 980px) {
       .login-shell { grid-template-columns: 1fr; }
-      .login-panel-left { min-height: 420px; padding: 32px 28px; }
-      .login-headline { font-size: 26px; margin-top: 40px; }
-      .hero-photo-grid { grid-template-columns: 1fr; grid-template-rows: 1fr 1fr; }
-      .hero-photo.main { grid-row: 1; grid-column: 1; }
-      .hero-photo.townhouse { display: none; }
-      .hero-photo.construction { grid-row: 2; grid-column: 1; }
+      .login-panel-left { min-height: 500px; padding: 32px 28px; }
+      .login-headline { font-size: 34px; }
       .hero-stats { grid-template-columns: repeat(3, 1fr); gap: 8px; }
-      .hero-stat { padding: 12px; }
-      .hero-stat .num { font-size: 20px; }
+      .hero-stat { padding: 10px 12px; }
+      .hero-stat .num { font-size: 22px; }
     }
   </style>
 </head>
 <body>
   <div class="login-shell">
 
-    <!-- ============ Hero Panel (ซ้าย) — Photo Collage ============ -->
+    <!-- ============ Hero Panel (ซ้าย) — Full-bleed luxury photo ============ -->
     <div class="login-panel-left">
-
-      <!-- Photo collage: ภาพจริงจาก Unsplash -->
-      <div class="hero-photo-grid">
-        <div class="hero-photo main"></div>
-        <div class="hero-photo townhouse"></div>
-        <div class="hero-photo construction"></div>
-      </div>
-
-      <!-- Content layer -->
       <div class="login-content">
+
+        <!-- Brand (top center) -->
         <div class="login-brand">
           <div class="logo-mark">CP</div>
-          <span>CONSTRUCTION&nbsp;PROCUREMENT</span>
+          <div class="brand-text">CONSTRUCTION&nbsp;PROCUREMENT</div>
+          <div class="brand-sub">Procurement Intelligence for Housing</div>
         </div>
 
-        <div>
+        <!-- Hero content (bottom) -->
+        <div class="login-hero">
+          <div class="login-eyebrow">ระบบจัดซื้ออัจฉริยะ</div>
           <h1 class="login-headline">
             จัดซื้อวัสดุก่อสร้าง<br>
-            <span class="accent">อย่างชาญฉลาด</span> สำหรับบ้านแนวราบ
+            <span class="accent">อย่างชาญฉลาด</span>
           </h1>
           <p class="login-sub">
-            วิเคราะห์ราคา แนะนำจังหวะการสั่งซื้อที่เหมาะสม ประเมินซัพพลายเออร์
-            และแจ้งเตือนความผิดปกติของราคา — เพื่อให้ทีมงานบริหารต้นทุนได้อย่างแม่นยำ
+            สำหรับโครงการบ้านแนวราบ — วิเคราะห์ราคา แนะนำจังหวะการสั่งซื้อที่เหมาะสม
+            ประเมินซัพพลายเออร์ และแจ้งเตือนความผิดปกติของราคา เพื่อให้ทีมงานบริหารต้นทุนได้อย่างแม่นยำ
           </p>
 
           <div class="login-features">
             <div class="login-feature">
               <span class="ico">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5"><polyline points="20 6 9 17 4 12"/></svg>
               </span>
               วิเคราะห์ราคาอัจฉริยะ
             </div>
             <div class="login-feature">
               <span class="ico">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5"><polyline points="20 6 9 17 4 12"/></svg>
               </span>
               ประเมินซัพพลายเออร์อัตโนมัติ
             </div>
             <div class="login-feature">
               <span class="ico">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5"><polyline points="20 6 9 17 4 12"/></svg>
               </span>
               แจ้งเตือนความผิดปกติ Real-time
             </div>
             <div class="login-feature">
               <span class="ico">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5"><polyline points="20 6 9 17 4 12"/></svg>
               </span>
               เปรียบเทียบ BOQ vs ประวัติซื้อ
             </div>
+            <div class="login-feature">
+              <span class="ico">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5"><polyline points="20 6 9 17 4 12"/></svg>
+              </span>
+              Fuzzy Match + Unit Conversion
+            </div>
           </div>
-        </div>
 
-        <!-- Stat cards -->
-        <div class="hero-stats">
-          <div class="hero-stat">
-            <div class="num">4<span class="unit">โครงการ</span></div>
-            <div class="lbl">กำลังดำเนินการ</div>
+          <!-- Stat cards -->
+          <div class="hero-stats">
+            <div class="hero-stat">
+              <div class="num">4<span class="unit">โครงการ</span></div>
+              <div class="lbl">กำลังดำเนินการ</div>
+            </div>
+            <div class="hero-stat">
+              <div class="num">68<span class="unit">หลัง</span></div>
+              <div class="lbl">อยู่ระหว่างก่อสร้าง</div>
+            </div>
+            <div class="hero-stat">
+              <div class="num">38.5<span class="unit">ล้าน</span></div>
+              <div class="lbl">มูลค่าจัดซื้อ/เดือน</div>
+            </div>
           </div>
-          <div class="hero-stat">
-            <div class="num">68<span class="unit">หลัง</span></div>
-            <div class="lbl">อยู่ระหว่างก่อสร้าง</div>
-          </div>
-          <div class="hero-stat">
-            <div class="num">38.5<span class="unit">ล้าน</span></div>
-            <div class="lbl">มูลค่าจัดซื้อ/เดือน</div>
-          </div>
-        </div>
 
-        <div class="login-meta">© 2569 Construction Procurement · เวอร์ชัน 1.0.0</div>
+          <div class="login-meta">© 2569 Construction Procurement · เวอร์ชัน 1.0.0</div>
+        </div>
       </div>
     </div>
 
