@@ -10,13 +10,43 @@
   <link rel="stylesheet" href="css/style.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <style>
-    /* ========== Reorder Alert specific styles ========== */
-    .reorder-row {
-      display: grid;
-      grid-template-columns: 28px 1fr auto auto auto;
-      gap: 14px;
+    /* ========== Section header (no emoji) ========== */
+    .section-header {
+      display: flex;
       align-items: center;
-      padding: 14px 18px;
+      gap: 12px;
+      padding: 12px 18px;
+      border-bottom: 2px solid #e3e8ef;
+      background: #f8fafc;
+    }
+    .section-header.danger  { background: #fef2f2; border-bottom-color: #dc2626; }
+    .section-header.warning { background: #fffbeb; border-bottom-color: #d97706; }
+    .section-header-bar {
+      width: 4px;
+      height: 30px;
+      border-radius: 2px;
+      flex-shrink: 0;
+    }
+    .section-header.danger  .section-header-bar { background: #dc2626; }
+    .section-header.warning .section-header-bar { background: #d97706; }
+    .section-header-title {
+      font-weight: 700;
+      font-size: 14px;
+      color: #0f172a;
+    }
+    .section-header.danger  .section-header-title { color: #dc2626; }
+    .section-header.warning .section-header-title { color: #92400e; }
+    .section-header-sub {
+      font-size: 11.5px;
+      color: #64748b;
+      margin-top: 2px;
+    }
+
+    /* ========== Reorder row (3 column flex) ========== */
+    .reorder-row {
+      display: flex;
+      align-items: stretch;
+      gap: 0;
       border-bottom: 1px solid #e3e8ef;
     }
     .reorder-row:last-child { border-bottom: 0; }
@@ -25,37 +55,90 @@
     .reorder-row.prepare { background: #fffbeb; }
 
     .urgency-bar {
-      width: 8px;
-      height: 44px;
-      border-radius: 4px;
+      width: 4px;
+      flex-shrink: 0;
     }
     .urgency-bar.overdue { background: #dc2626; }
     .urgency-bar.urgent  { background: #ea580c; }
     .urgency-bar.prepare { background: #d97706; }
     .urgency-bar.safe    { background: #16a34a; }
 
+    .rr-content {
+      flex: 1;
+      min-width: 0;
+      padding: 13px 16px;
+    }
+    .rr-title {
+      font-weight: 600;
+      color: #0f172a;
+      font-size: 13.5px;
+      line-height: 1.3;
+    }
+    .rr-meta {
+      font-size: 11.5px;
+      color: #64748b;
+      margin-top: 4px;
+      line-height: 1.5;
+    }
+    .rr-meta strong { color: #475569; font-weight: 600; }
+    .rr-supplier {
+      font-size: 11.5px;
+      color: #64748b;
+      margin-top: 2px;
+    }
+
+    .rr-due {
+      width: 140px;
+      flex-shrink: 0;
+      padding: 10px 14px;
+      border-left: 1px solid rgba(0,0,0,0.06);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: flex-start;
+      gap: 5px;
+    }
+    .rr-due-label {
+      font-size: 10.5px;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      font-weight: 600;
+    }
+    .rr-due-date {
+      font-weight: 700;
+      font-size: 13.5px;
+      color: #0f172a;
+      white-space: nowrap;
+    }
+
+    .rr-action {
+      width: 130px;
+      flex-shrink: 0;
+      padding: 10px 16px;
+      border-left: 1px solid rgba(0,0,0,0.06);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: flex-end;
+      gap: 5px;
+    }
+
     .due-badge {
       display: inline-block;
-      padding: 4px 10px;
-      border-radius: 6px;
-      font-size: 12px;
+      padding: 3px 9px;
+      border-radius: 4px;
+      font-size: 11px;
       font-weight: 600;
       white-space: nowrap;
+      line-height: 1.4;
     }
     .due-badge.overdue { background: #dc2626; color: #fff; }
     .due-badge.urgent  { background: #ea580c; color: #fff; }
     .due-badge.prepare { background: #fef3c7; color: #92400e; }
     .due-badge.safe    { background: #dcfce7; color: #166534; }
 
-    .overdue-note {
-      font-size: 11.5px;
-      color: #64748b;
-      margin-top: 4px;
-    }
-    .overdue-note strong { color: #dc2626; }
-
     .alerts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-
     @media (max-width: 1100px) { .alerts-grid { grid-template-columns: 1fr; } }
 
     .filter-bar {
@@ -146,7 +229,7 @@
       <main class="content">
         <div class="page-header">
           <div>
-            <h1>⏰ วัสดุ & การสั่งซื้อ — ป้องกันงานดีเลย์จากวัสดุมาช้า</h1>
+            <h1>วัสดุ & การสั่งซื้อ — ป้องกันงานดีเลย์จากวัสดุมาช้า</h1>
             <div class="subtitle">
               ระบบคำนวณ <strong>"ต้องสั่งภายในวันที่"</strong> อัตโนมัติ = วันที่ต้องใช้ − Lead Time − Safety Buffer 3 วัน
               เพื่อเตือน PM ล่วงหน้า ไม่ให้งานหยุดเพราะรอของ
@@ -163,23 +246,25 @@
 
         <!-- ด่วน + เตรียมการ side-by-side -->
         <div class="alerts-grid mb-4">
-          <!-- 🔥 ต้องสั่งภายใน 3 วัน -->
+          <!-- ต้องสั่งภายใน 3 วัน -->
           <div class="card">
-            <div class="card-header" style="background:#fef2f2;border-bottom:2px solid #dc2626;">
+            <div class="section-header danger">
+              <div class="section-header-bar"></div>
               <div>
-                <h3 style="color:#dc2626;">🔥 ต้องสั่งภายใน 3 วัน — ด่วน!</h3>
-                <div class="sub">รวมทั้ง "เลยกำหนด" และ "ต้องสั่งวันนี้/พรุ่งนี้/มะรืน"</div>
+                <div class="section-header-title">ต้องสั่งภายใน 3 วัน — ด่วน</div>
+                <div class="section-header-sub">รวมทั้ง "เลยกำหนด" และ "ต้องสั่งวันนี้/พรุ่งนี้/มะรืน"</div>
               </div>
             </div>
             <div class="card-body no-pad" id="urgent-alerts-container"></div>
           </div>
 
-          <!-- 🟡 เตรียมการ -->
+          <!-- เตรียมการ -->
           <div class="card">
-            <div class="card-header" style="background:#fffbeb;border-bottom:2px solid #d97706;">
+            <div class="section-header warning">
+              <div class="section-header-bar"></div>
               <div>
-                <h3 style="color:#92400e;">🟡 เริ่มเตรียมการ (4-7 วัน)</h3>
-                <div class="sub">ยังมีเวลา แต่ควรเปิด PR/ส่งใบเสนอราคาให้ supplier ภายในสัปดาห์นี้</div>
+                <div class="section-header-title">เริ่มเตรียมการ (4-7 วัน)</div>
+                <div class="section-header-sub">ยังมีเวลา แต่ควรเปิด PR/ส่งใบเสนอราคาให้ supplier ภายในสัปดาห์นี้</div>
               </div>
             </div>
             <div class="card-body no-pad" id="prepare-alerts-container"></div>
@@ -190,14 +275,14 @@
         <div class="card mb-4">
           <div class="card-header">
             <div>
-              <h3>📋 ตารางต้องสั่งวัสดุทั้งหมด</h3>
+              <h3>ตารางต้องสั่งวัสดุทั้งหมด</h3>
               <div class="sub">เรียงตาม "ต้องสั่งภายใน" (ใกล้สุดก่อน) — กรองตามโครงการ/สถานะ PO ได้</div>
             </div>
             <div class="legends">
               <span><span class="dot" style="background:#dc2626"></span>เลยกำหนด</span>
-              <span><span class="dot" style="background:#ea580c"></span>ด่วน ≤3 วัน</span>
-              <span><span class="dot" style="background:#d97706"></span>เตรียม 4-7 วัน</span>
-              <span><span class="dot" style="background:#16a34a"></span>ปลอดภัย &gt;7 วัน</span>
+              <span><span class="dot" style="background:#ea580c"></span>ด่วน (≤3 วัน)</span>
+              <span><span class="dot" style="background:#d97706"></span>เตรียม (4-7 วัน)</span>
+              <span><span class="dot" style="background:#16a34a"></span>ปลอดภัย (&gt;7 วัน)</span>
             </div>
           </div>
           <div class="filter-bar">
@@ -213,10 +298,10 @@
             </select>
             <select id="f-urgency">
               <option value="">ทุกระดับความด่วน</option>
-              <option value="overdue">🔴 เลยกำหนด</option>
-              <option value="urgent">🔥 ด่วน ≤3 วัน</option>
-              <option value="prepare">🟡 เตรียม 4-7 วัน</option>
-              <option value="safe">🟢 ปลอดภัย &gt;7 วัน</option>
+              <option value="overdue">[ด่วนสุด] เลยกำหนด</option>
+              <option value="urgent">[ด่วน] ภายใน 3 วัน</option>
+              <option value="prepare">[เตรียม] 4-7 วัน</option>
+              <option value="safe">[ปลอดภัย] มากกว่า 7 วัน</option>
             </select>
           </div>
           <div class="card-body no-pad" id="reorder-table-container"></div>
@@ -226,7 +311,7 @@
         <div class="card mb-4">
           <div class="card-header">
             <div>
-              <h3>📦 วัสดุ ณ ไซต์งาน (ของคงเหลือ)</h3>
+              <h3>วัสดุ ณ ไซต์งาน (ของคงเหลือ)</h3>
               <div class="sub">ปริมาณที่จัดส่งเข้าไซต์ ใช้ไป และคงเหลือ — แยกตามโครงการและ Block</div>
             </div>
           </div>
@@ -311,34 +396,35 @@
 
     function reorderRow(item, opts = {}) {
       const { showStatus = true } = opts;
+      const isUnordered = item.poStatus === 'ยังไม่สั่ง';
+      const statusPillMap = {
+        'ยังไม่สั่ง': 'pending',
+        'ล่าช้า': 'delayed',
+        'กำลังจัดส่ง': 'in-transit',
+        'สั่งแล้ว': 'confirmed'
+      };
       return `
         <div class="reorder-row ${item.urgency}">
           <div class="urgency-bar ${item.urgency}"></div>
-          <div style="min-width:0;">
-            <div style="font-weight:600;color:#0f172a;font-size:13.5px;">${item.material}</div>
-            <div class="overdue-note">
-              <strong style="color:#475569;">${item.project}</strong> · ${item.phase}
-              · ต้องใช้วันที่ <strong>${fmt.date(item.needBy)}</strong>
-              · คงเหลือ ${item.onSite} ${item.unit}
+          <div class="rr-content">
+            <div class="rr-title">${item.material}</div>
+            <div class="rr-meta">
+              <strong>${item.project}</strong> · ${item.phase} · ต้องใช้วันที่ <strong>${fmt.date(item.needBy)}</strong>
+            </div>
+            <div class="rr-supplier">
+              สั่งที่: ${item.supplier} · LT ${item.leadTime} วัน · buffer ${item.safety} วัน · คงเหลือ <strong>${item.onSite}</strong> ${item.unit}
             </div>
           </div>
-          <div style="text-align:right;">
-            <div style="font-size:11px;color:#64748b;">สั่งได้ที่</div>
-            <div style="font-size:13px;color:#0f172a;font-weight:600;">${item.supplier}</div>
-            <div style="font-size:11px;color:#64748b;">LT ${item.leadTime} วัน</div>
+          <div class="rr-due">
+            <div class="rr-due-label">ต้องสั่งภายใน</div>
+            <div class="rr-due-date">${fmt.date(item.orderBy)}</div>
+            <span class="due-badge ${item.urgency}">${dueLabel(item.daysFromNow)}</span>
           </div>
-          <div style="text-align:right;">
-            <div style="font-size:11px;color:#64748b;">ต้องสั่งภายใน</div>
-            <div style="font-size:13.5px;color:#0f172a;font-weight:700;">${fmt.date(item.orderBy)}</div>
-            <div style="margin-top:4px;">
-              <span class="due-badge ${item.urgency}">${dueLabel(item.daysFromNow)}</span>
-            </div>
-          </div>
-          <div style="text-align:right;">
-            ${item.poStatus === 'ยังไม่สั่ง'
+          <div class="rr-action">
+            ${isUnordered
               ? `<button class="btn btn-sm btn-primary" style="white-space:nowrap;">สั่งเลย</button>`
-              : `<div style="font-size:11.5px;color:#16a34a;font-weight:600;">${item.poStatus}</div>
-                 ${item.poRef ? `<div style="font-size:11px;color:#64748b;">${item.poRef}</div>` : ''}`}
+              : `${fmt.statusPill(statusPillMap[item.poStatus])}
+                 ${item.poRef ? `<div style="font-size:11px;color:#64748b;font-family:monospace;margin-top:3px;">${item.poRef}</div>` : ''}`}
           </div>
         </div>
       `;
@@ -390,7 +476,7 @@
       `;
     }
 
-    /* ===== 🔥 Urgent alerts (overdue + urgent, ≤ 3 days) ===== */
+    /* ===== Urgent alerts (overdue + urgent, ≤ 3 days) ===== */
     function renderUrgentAlerts() {
       const c = document.getElementById('urgent-alerts-container');
       if (!on) {
@@ -411,7 +497,7 @@
       c.innerHTML = list.map(item => reorderRow(item)).join('');
     }
 
-    /* ===== 🟡 Prepare alerts (4-7 days) ===== */
+    /* ===== Prepare alerts (4-7 days) ===== */
     function renderPrepareAlerts() {
       const c = document.getElementById('prepare-alerts-container');
       if (!on) {
@@ -432,7 +518,7 @@
       c.innerHTML = list.map(item => reorderRow(item)).join('');
     }
 
-    /* ===== 📋 Full reorder table (filterable) ===== */
+    /* ===== Full reorder table (filterable) ===== */
     function renderReorderTable() {
       const c = document.getElementById('reorder-table-container');
 
@@ -521,7 +607,7 @@
       document.getElementById('f-urgency').addEventListener('change', filterAndRender);
     }
 
-    /* ===== 📦 Site materials reorder (existing) ===== */
+    /* ===== Site materials reorder (existing) ===== */
     function renderSiteReorder() {
       const c = document.getElementById('reorder-container');
       if (!on) {
