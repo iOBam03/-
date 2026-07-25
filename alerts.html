@@ -1777,8 +1777,9 @@
                 <th style="width:90px;">รหัสสินค้า</th>
                 <th>รายการ ประวัติซื้อ</th>
                 <th class="num">จำนวน</th>
-                <th class="num">ราคา BOQ</th>
+                <th class="num">ราคา BOQ<br><span style="font-size:10px;font-weight:400;color:#94a3b8;">(ต่อหน่วย)</span></th>
                 <th class="num">ราคาเฉลี่ย (ประวัติ)</th>
+                <th class="num">ราคารวม<br><span style="font-size:10px;font-weight:400;color:#94a3b8;">(จำนวน × ราคา)</span></th>
                 <th>เปรียบเทียบ</th>
                 <th>สรุป</th>
                 <th></th>
@@ -1821,7 +1822,7 @@
                   <td class="num">
                     ${r.item.estimatedPrice > 0 ? `<div class="compare-price-cell">
                       <span class="now">${fmt.currency(r.item.estimatedPrice)}</span>
-                      <span class="hist">รวม ${fmt.currencyShort(r.estTotal)}</span>
+                      <span class="hist">ต่อ ${r.item.unit || 'หน่วย'}</span>
                     </div>` : '<span style="color:var(--color-text-muted);">ไม่ระบุ</span>'}
                   </td>
                   <td class="num">
@@ -1830,6 +1831,15 @@
                       <span class="hist">${fmt.currency(r.stats.min)} - ${fmt.currency(r.stats.max)}</span>
                       <div style="margin-top:4px;">${sourceBadge(r.stats)}</div>
                     </div>` : `<div style="color:var(--color-text-muted);">ไม่มี PO ตรงรายการนี้<div style="font-size:10px;margin-top:2px;">ลองระบุชื่อให้ตรง SAP หรือเลือกจากประวัติ</div></div>`}
+                  </td>
+                  <td class="num">
+                    ${r.item.totalRequired > 0 && r.item.estimatedPrice > 0 ? `
+                      <div class="compare-price-cell">
+                        <span class="now"><strong>${fmt.currency(r.estTotal)}</strong></span>
+                        <span class="hist">จาก ${r.item.totalRequired} × ${fmt.currencyShort(r.item.estimatedPrice)}</span>
+                        ${r.stats ? `<span class="hist" style="color:var(--color-text-muted);">vs ประวัติ ${fmt.currencyShort(r.histTotal)}</span>` : ''}
+                      </div>
+                    ` : `<span style="color:var(--color-text-muted);">ไม่ระบุ</span>`}
                   </td>
                   <td>
                     ${r.verdict.level === 'no-data' ? '<span style="color:var(--color-text-muted);">—</span>' : `
