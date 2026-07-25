@@ -256,22 +256,6 @@
     }
     .factor-chip .name { font-weight: 600; }
 
-    /* Manual map button */
-    .manual-map-btn {
-      background: none; border: 1px dashed var(--color-border-strong);
-      color: var(--color-text-secondary);
-      padding: 3px 10px;
-      border-radius: 4px;
-      font-size: 11px;
-      cursor: pointer;
-      margin-left: 6px;
-      font-family: inherit;
-    }
-    .manual-map-btn:hover {
-      border-color: var(--color-accent);
-      color: var(--color-accent);
-      background: var(--color-accent-soft);
-    }
 
     /* Match info row (under material name) */
     .match-info-row {
@@ -834,9 +818,6 @@
 
     /* ---------- State ---------- */
     let uploadedBOQ = null;  // { projectId, projectName, phase, items: [...], fileName, isSample }
-    // manualMappings: จับคู่ชื่อสินค้าใน BOQ กับ key ใน purchaseHistory ด้วยตัวเอง
-    // ใช้เมื่อ fuzzy matching เลือก key ผิด หรือต้องการ override
-    let manualMappings = {};  // { 'BOQ material name': 'history key' }
 
     /* ---------- Helpers ---------- */
 
@@ -982,14 +963,28 @@
      * @returns {object|null}
      */
     function getHistoryStats(materialName, targetUnit) {
-      // 1. Manual mapping มี priority สูงสุด
-      let key = manualMappings[materialName];
-      let matchType = 'manual';
-      let matchScore = 1;
+      // ใช้ fuzzy match หรือ exact match จาก SAP เป็นแหล่งข้อมูล
+      let key = null;
+      let matchType = null;
+      let matchScore = 0;
       let source = 'sap';
 
-      // 2. Fuzzy match (>= 0.35 = น่าจะใช่ตัวเดียวกัน) — ใช้ SAP เป็นแหล่งข้อมูล
-      if (!key) {
+      const SAP = window.SAP_PURCHASE_HISTORY;
+      let isExact = false;
+      if (SAP && SAP.lookupByMaterial) {
+        const direct = SAP.lookupByMaterial(materialName);
+        if (direct) {
+          isExact = true;
+        }
+      }
+
+      // 1. Exact match (substring ตรง)
+      if (isExact) {
+        key = materialName;
+        matchType = 'exact';
+        matchScore = 1;
+      } else {
+        // 2. Fuzzy match (>= 0.35 = น่าจะใช่ตัวเดียวกัน)
         const top = findFuzzyMatches(materialName, 1)[0];
         if (top && top.score >= 0.35) {
           key = top.key;
@@ -1003,7 +998,6 @@
         // === CATEGORY FALLBACK: เมื่อไม่เจอ material ให้ลองใช้ keyword หา category hint ===
         const catHint = inferCategoryFromMaterial(materialName);
         if (catHint) {
-          const SAP = window.SAP_PURCHASE_HISTORY;
           if (SAP && SAP.lookupByCategory) {
             const cat = SAP.lookupByCategory(catHint);
             if (cat) {
@@ -1037,7 +1031,6 @@
       }
 
       // Read source: SAP entry (real data only)
-      const SAP = window.SAP_PURCHASE_HISTORY;
       let h = null;
       if (SAP && SAP.lookupByMaterial) {
         const sapEntry = SAP.lookupByMaterial(key);
@@ -1194,55 +1187,7 @@
       };
     }
 
-    /* === Manual Map Picker === */
-    function openManualMapModal(boqMaterial) {
-      const candidates = findFuzzyMatches(boqMaterial, 8);
-      const html = `
-        <div style="font-size:13px;color:var(--color-text-secondary);margin-bottom:12px;">
-          เลือกรายการในประวัติการซื้อที่ตรงกับ <strong>"${boqMaterial}"</strong>
-        </div>
-        <div class="mapping-list">
-          ${candidates.length === 0 ? '<div style="color:var(--color-text-muted);font-size:12px;">ไม่พบรายการใกล้เคียง</div>' :
-            candidates.map((c, idx) => {
-              // Resolve entry: SAP (real data only)
-              let entry = null;
-              let badge = '';
-              const SAP = window.SAP_PURCHASE_HISTORY;
-              if (SAP && SAP.lookupByMaterial) {
-                const sapEntry = SAP.lookupByMaterial(c.key);
-                entry = sapEntryToHistory(sapEntry);
-                badge = '<span class="sap-badge">SAP</span>';
-              }
-              if (!entry) return '';
-              const isSelected = manualMappings[boqMaterial] === c.key;
-              return `
-                <div class="mapping-item ${isSelected ? 'selected' : ''}" onclick="confirmManualMap('${boqMaterial.replace(/'/g, "\\'")}', '${c.key.replace(/'/g, "\\'")}')">
-                  <div class="name">${c.key}<span class="score">${(c.score * 100).toFixed(0)}%</span>${badge}</div>
-                  <div class="meta">
-                    หมวด: ${entry.category} · หน่วย: ${entry.unit} · ${entry.records.length} ครั้ง
-                    ${(entry.aliases || []).length ? ` · aliases: ${entry.aliases.slice(0, 3).join(', ')}` : ''}
-                  </div>
-                </div>
-              `;
-            }).join('')}
-        </div>
-      `;
-      document.getElementById('modalTitle').textContent = 'จับคู่รายการด้วยตัวเอง (Manual Map)';
-      document.getElementById('modalSubtitle').textContent = `สำหรับ: ${boqMaterial}`;
-      document.getElementById('modalBody').innerHTML = html;
-      document.getElementById('historyModal').classList.add('open');
-    }
-
-    function confirmManualMap(boqMaterial, historyKey) {
-      if (historyKey === '__reset__') {
-        delete manualMappings[boqMaterial];
-      } else {
-        manualMappings[boqMaterial] = historyKey;
-      }
-      closeHistoryModal();
-      renderComparison();
-    }
-
+    /* === Verdict === */
     function compareVerdict(estimatedPrice, stats) {
       if (!stats) return { level: 'no-data', label: 'ไม่มีประวัติ', deltaPct: 0 };
       if (estimatedPrice === 0) return { level: 'no-data', label: 'ไม่ได้ระบุราคา', deltaPct: 0 };
@@ -1842,13 +1787,13 @@
               ${rows.map(r => {
                 // === Match indicator chip ===
                 // ถ้า exact match → chip เดียวพอ (ไม่ต้องบอกชื่อที่จับคู่ เพราะซ้ำกับชื่อ BOQ)
-                // ถ้า fuzzy/manual → chip + ชื่อที่จับคู่จริง + ปุ่มเปลี่ยน
+                // ถ้า fuzzy → chip + ชื่อที่จับคู่จริง
                 const matchChip = r.stats ? (
                   r.stats.matchType === 'exact'
                     ? `<span class="match-chip exact" title="ชื่อใน BOQ ตรงกับชื่อในประวัติเป๊ะ">✓ ตรง</span>`
                     : r.stats.matchType === 'fuzzy'
                     ? `<span class="match-chip fuzzy" title="จับคู่อัตโนมัติกับ '${r.stats.matchedKey}' (ความเที่ยง ${(r.stats.matchScore * 100).toFixed(0)}%)">~ ${(r.stats.matchScore * 100).toFixed(0)}%</span>`
-                    : `<span class="match-chip manual" title="จับคู่ด้วยตัวเองกับ '${r.stats.matchedKey}'">✋ กำหนดเอง</span>`
+                    : ''
                 ) : '';
 
                 // === Unit warning/conversion notice (สำคัญ ต้องเก็บไว้) ===
@@ -1858,11 +1803,9 @@
                   ? `<div class="unit-warn" style="background:var(--color-success-soft);color:var(--color-success);" title="แปลงราคาจาก ${r.stats.originalUnit} เป็น ${r.stats.unit} อัตโนมัติ">🔄 แปลง ${r.stats.originalUnit} → ${r.stats.unit}</div>`
                   : '';
 
-                // === Match key text (เฉพาะ fuzzy/manual เท่านั้น — exact ไม่ต้องบอกเพราะซ้ำ) ===
-                const matchKeyText = r.stats && r.stats.matchType !== 'exact'
-                  ? `<div class="match-info-row">→ จับคู่กับ: <strong>${r.stats.matchedKey}</strong> <button class="manual-map-btn" onclick="openManualMapModal('${r.item.material.replace(/'/g, "\\'")}')">เปลี่ยน</button></div>`
-                  : r.stats && r.stats.matchType === 'exact'
-                  ? `<div class="match-info-row"><button class="manual-map-btn" onclick="openManualMapModal('${r.item.material.replace(/'/g, "\\'")}')">เปลี่ยนการจับคู่</button></div>`
+                // === Match key text (เฉพาะ fuzzy — exact ไม่ต้องบอกเพราะซ้ำ) ===
+                const matchKeyText = r.stats && r.stats.matchType === 'fuzzy'
+                  ? `<div class="match-info-row">→ จับคู่กับ: <strong>${r.stats.matchedKey}</strong></div>`
                   : '';
 
                 return `
@@ -1994,7 +1937,7 @@
       document.getElementById('modalTitle').textContent = materialName;
       const matchLabel = stats.matchType === 'exact' ? '✓ จับคู่ตรง' :
                          stats.matchType === 'fuzzy' ? `~ Fuzzy ${(stats.matchScore * 100).toFixed(0)}%` :
-                         `✋ กำหนดเอง`;
+                         '';
       const unitLabel = stats.unitConverted
         ? `🔄 แปลง ${stats.originalUnit} → ${stats.unit}`
         : stats.unitMismatch
@@ -2083,8 +2026,6 @@
         </table>
 
         <div style="margin-top:14px;display:flex;gap:8px;">
-          <button class="btn btn-sm" onclick="openManualMapModal('${materialName.replace(/'/g, "\\'")}')">⚙️ เปลี่ยนการจับคู่</button>
-          ${manualMappings[materialName] ? `<button class="btn btn-sm" onclick="confirmManualMap('${materialName.replace(/'/g, "\\'")}', '__reset__')">↩️ คืนค่าเป็น Auto</button>` : ''}
         </div>
       `;
 
