@@ -1983,23 +1983,41 @@
         <h4 style="font-size:14px;font-weight:600;margin-bottom:10px;">กราฟราคาตามช่วงเวลา</h4>
         <div class="chart-container sm" style="margin-bottom:18px;"><canvas id="historyChart"></canvas></div>
 
-        <h4 style="font-size:14px;font-weight:600;margin-bottom:10px;">ประวัติการซื้อทั้งหมด (${stats.records.length} ครั้ง)</h4>
-        <table class="data-table">
-          <thead><tr><th>โครงการ</th><th>วันที่ซื้อ</th><th>ผู้ขาย</th><th class="num">จำนวน</th><th class="num">ราคา/หน่วย</th><th class="num">ค่าขนส่ง</th><th class="num">เครดิต</th><th class="num">รวม</th></tr></thead>
+        <h4 style="font-size:14px;font-weight:600;margin-bottom:10px;">เปรียบเทียบราคาตามผู้ขาย (${(() => {
+          const set = new Set(stats.records.map(r => r.supplier));
+          return set.size;
+        })()} เจ้า · ${stats.records.length} ครั้ง)</h4>
+        <table class="data-table" style="margin-bottom:18px;">
+          <thead><tr>
+            <th>ผู้ขาย</th>
+            <th>โครงการ</th>
+            <th>วันที่ซื้อ</th>
+            <th class="num">จำนวน</th>
+            <th class="num">ราคา/หน่วย</th>
+            <th class="num">รวม</th>
+          </tr></thead>
           <tbody>
-          ${[...stats.records].sort((a, b) => new Date(a.date) - new Date(b.date)).map(r => {
-            const isCheapest = r.pricePerUnit === stats.min;
-            return `<tr>
-              <td><span class="project-chip">${r.project}</span>${isCheapest ? '<span class="cheapest-tag">ถูกสุด</span>' : ''}</td>
-              <td style="font-size:12px;color:#475569;">${fmt.date(r.date)}</td>
-              <td style="font-size:12px;">${r.supplier}</td>
-              <td class="num">${fmt.num(r.quantity)}</td>
-              <td class="num"><strong>${fmt.currency(r.pricePerUnit)}</strong></td>
-              <td class="num">฿${fmt.num(r.freight || 0)}</td>
-              <td class="num">${r.creditDays || 0} วัน</td>
-              <td class="num">${fmt.currency(r.pricePerUnit * r.quantity)}</td>
-            </tr>`;
-          }).join('')}
+          ${(() => {
+            // Group + sort records by supplier name (A-Z), then date desc
+            const sorted = [...stats.records].sort((a, b) => {
+              const s = a.supplier.localeCompare(b.supplier, 'th');
+              if (s !== 0) return s;
+              return new Date(b.date) - new Date(a.date);
+            });
+            // Find cheapest (overall) for tag
+            const globalMin = Math.min(...sorted.map(r => r.pricePerUnit));
+            return sorted.map(r => {
+              const isCheapest = r.pricePerUnit === globalMin;
+              return `<tr>
+                <td style="font-size:13px;"><strong>${r.supplier}</strong>${isCheapest ? '<span class="cheapest-tag" style="margin-left:6px;">ถูกสุด</span>' : ''}</td>
+                <td><span class="project-chip">${r.project}</span></td>
+                <td style="font-size:12px;color:#475569;">${fmt.date(r.date)}</td>
+                <td class="num">${fmt.num(r.quantity)}</td>
+                <td class="num"><strong style="color:${isCheapest ? 'var(--color-success)' : 'var(--color-text)'};">${fmt.currency(r.pricePerUnit)}</strong></td>
+                <td class="num">${fmt.currency(r.pricePerUnit * r.quantity)}</td>
+              </tr>`;
+            }).join('');
+          })()}
           </tbody>
         </table>
 
