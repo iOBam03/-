@@ -665,10 +665,10 @@
           </div>
         </div>
 
-        <!-- Mode switcher: เปรียบเทียบ BOQ vs ประวัติ / เปรียบเทียบ 7 supplier -->
+        <!-- Mode switcher: เปรียบเทียบ BOQ vs ประวัติ / เปรียบเทียบราคาผู้ขาย -->
         <div class="tabs" id="compareModeTabs">
           <div class="tab active" data-mode="history" onclick="switchCompareMode('history')">เปรียบเทียบ BOQ กับประวัติการซื้อ</div>
-          <div class="tab" data-mode="supplier" onclick="switchCompareMode('supplier')">เปรียบเทียบ 7 ผู้ขาย (จัดทำใบเสนอราคา)</div>
+          <div class="tab" data-mode="supplier" onclick="switchCompareMode('supplier')">เปรียบเทียบราคาผู้ขาย (จัดทำใบเสนอราคา)</div>
         </div>
 
         <!-- ============== Mode: history (existing) ============== -->
@@ -1729,7 +1729,7 @@
       renderUploadSection();
     }
 
-    /* ---------- Mode switcher (BOQ vs ประวัติ / 7 ผู้ขาย) ---------- */
+    /* ---------- Mode switcher (BOQ vs ประวัติ / ผู้ขาย) ---------- */
     function switchCompareMode(mode) {
       document.querySelectorAll('#compareModeTabs .tab').forEach(t => {
         t.classList.toggle('active', t.dataset.mode === mode);
