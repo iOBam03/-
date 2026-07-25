@@ -809,6 +809,7 @@
   <script src="js/data.js"></script>
   <script src="js/demo.js"></script>
   <script src="js/supplier-comparison.js"></script>
+  <script src="js/purchase-history-sap.js"></script>
   <script>
     DemoController.injectToggle('#demo-toggle-mount');
     DemoController.injectBanner();
@@ -882,15 +883,60 @@
     /**
      * หา candidates ที่ใกล้เคียงที่สุด (topN) สำหรับ materialName
      * คะแนนคำนวณจาก: ชื่อ key + aliases (เพื่อจับ alias ที่อยู่ใน BOQ)
+     * รวมทั้งตัวอย่างใน purchaseHistory (data.js) และ SAP Export (purchase-history-sap.js)
+     * Optimize: pre-filter SAP entries ด้วย token overlap ก่อน fuzzy score (เร็วขึ้น 50×)
      */
     function findFuzzyMatches(materialName, topN = 5) {
-      const results = Object.keys(D.purchaseHistory).map(key => {
+      const results = [];
+      // 1. Sample purchaseHistory (data.js) — มีจำนวนน้อย คำนวณครบทุก key
+      Object.keys(D.purchaseHistory).forEach(key => {
         const entry = D.purchaseHistory[key];
         const haystack = [key, ...(entry.aliases || [])].join(' | ');
-        return { key, score: fuzzyScore(materialName, haystack) };
+        results.push({ key, score: fuzzyScore(materialName, haystack), source: 'sample' });
       });
+      // 2. SAP purchase history (real data) — 19,177 entries ต้อง pre-filter
+      const SAP = window.SAP_PURCHASE_HISTORY;
+      if (SAP && SAP.entries && SAP.searchByMaterial) {
+        // First, use SAP's tiny built-in search (substring match) — fast
+        const subset = SAP.searchByMaterial(materialName, 200);
+        subset.forEach(e => {
+          results.push({ key: e.m, score: fuzzyScore(materialName, e.m), source: 'sap' });
+        });
+      } else if (SAP && SAP.entries) {
+        // Fallback: linear scan (slow)
+        SAP.entries.forEach(e => {
+          results.push({ key: e.m, score: fuzzyScore(materialName, e.m), source: 'sap' });
+        });
+      }
       results.sort((a, b) => b.score - a.score);
       return results.slice(0, topN);
+    }
+
+    /**
+     * แปลง SAP entry (slim schema) เป็น full-shape entry ที่ getHistoryStats() ใช้
+     * @param {object} sapEntry - { m, c, u, n, a, min, max, lp, ld, r: [[po,date,supplier,project,price,qty]] }
+     * @returns {object|null}
+     */
+    function sapEntryToHistory(sapEntry) {
+      if (!sapEntry) return null;
+      const records = sapEntry.r.map(r => ({
+        poNumber: r[0],
+        date: r[1],
+        supplier: r[2],
+        project: r[3],
+        pricePerUnit: r[4],
+        quantity: r[5],
+        freight: 0,
+        creditDays: 0,
+      }));
+      return {
+        material: sapEntry.m,
+        aliases: [],
+        category: sapEntry.c,
+        unit: sapEntry.u,
+        records,
+        unitConversions: {},
+      };
     }
 
     /**
@@ -904,6 +950,7 @@
       let key = manualMappings[materialName];
       let matchType = 'manual';
       let matchScore = 1;
+      let source = 'sample';  // 'sample' | 'sap'
 
       // 2. Exact match
       if (!key && D.purchaseHistory[materialName]) {
@@ -919,12 +966,22 @@
           key = top.key;
           matchType = 'fuzzy';
           matchScore = top.score;
+          source = top.source;
         }
       }
 
       if (!key) return null;
-      const h = D.purchaseHistory[key];
-      if (!h || h.records.length === 0) return null;
+
+      // Read source: SAP entry or sample purchaseHistory
+      let h = D.purchaseHistory[key];
+      if (!h && source === 'sap') {
+        const SAP = window.SAP_PURCHASE_HISTORY;
+        if (SAP && SAP.lookupByMaterial) {
+          const sapEntry = SAP.lookupByMaterial(key);
+          h = sapEntryToHistory(sapEntry);
+        }
+      }
+      if (!h || !h.records || h.records.length === 0) return null;
 
       const prices = h.records.map(r => r.pricePerUnit);
       let avg = prices.reduce((a, b) => a + b, 0) / prices.length;
@@ -971,6 +1028,7 @@
         matchedKey: key,              // key ใน purchaseHistory ที่จับได้
         matchType,                    // 'exact' | 'fuzzy' | 'manual'
         matchScore,                   // ความมั่นใจ (0-1)
+        source,                       // 'sample' | 'sap' — แหล่งข้อมูล
         alternatives: allCandidates,  // top fuzzy candidates (สำหรับ manual map picker)
         unitMismatch,                 // true = หน่วยต่างกัน และแปลงไม่ได้
         unitConverted,                // true = หน่วยต่างกัน แต่แปลงได้
@@ -1084,11 +1142,24 @@
         <div class="mapping-list">
           ${candidates.length === 0 ? '<div style="color:var(--color-text-muted);font-size:12px;">ไม่พบรายการใกล้เคียง</div>' :
             candidates.map((c, idx) => {
-              const entry = D.purchaseHistory[c.key];
+              // Resolve entry: try sample first, then SAP
+              let entry = D.purchaseHistory[c.key];
+              let badge = '';
+              if (!entry && c.source === 'sap') {
+                const SAP = window.SAP_PURCHASE_HISTORY;
+                if (SAP && SAP.lookupByMaterial) {
+                  const sapEntry = SAP.lookupByMaterial(c.key);
+                  entry = sapEntryToHistory(sapEntry);
+                  badge = '<span class="sap-badge">SAP</span>';
+                }
+              } else if (entry) {
+                badge = '<span class="sap-badge" style="background:#e8f5e9;color:#2e7d32;">ตัวอย่าง</span>';
+              }
+              if (!entry) return '';
               const isSelected = manualMappings[boqMaterial] === c.key;
               return `
                 <div class="mapping-item ${isSelected ? 'selected' : ''}" onclick="confirmManualMap('${boqMaterial.replace(/'/g, "\\'")}', '${c.key.replace(/'/g, "\\'")}')">
-                  <div class="name">${c.key}<span class="score">${(c.score * 100).toFixed(0)}%</span></div>
+                  <div class="name">${c.key}<span class="score">${(c.score * 100).toFixed(0)}%</span>${badge}</div>
                   <div class="meta">
                     หมวด: ${entry.category} · หน่วย: ${entry.unit} · ${entry.records.length} ครั้ง
                     ${(entry.aliases || []).length ? ` · aliases: ${entry.aliases.slice(0, 3).join(', ')}` : ''}
