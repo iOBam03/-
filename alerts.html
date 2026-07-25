@@ -940,6 +940,55 @@
     }
 
     /**
+     * อนุมาน SAP category จากชื่อวัสดุใน BOQ
+     * ใช้เมื่อ material name ไม่ตรงกับ SAP entries (เช่น BOQ ใช้ part number ภาษาอังกฤษ แต่ SAP เก็บชื่อไทย)
+     * @param {string} materialName - ชื่อจาก BOQ
+     * @returns {string|null} category hint หรือ null
+     */
+    function inferCategoryFromMaterial(materialName) {
+      if (!materialName) return null;
+      const n = materialName.toLowerCase();
+      const nTh = materialName;
+      // ลำดับความสำคัญ: ตรวจสอบ keyword จากเฉพาะ → ทั่วไป
+      const rules = [
+        // ตู้เมนไฟ
+        { keys: ['mdb', 'panal', 'cabinat', 'main distribution', 'main board', 'เบรคเกอร์', 'เบรกเกอร์', 'breaker', 'ตู้ไฟ', 'ตู้โหลด', 'ตู้เมน'], cat: 'ตู้เมนไฟ' },
+        // โคมไฟ
+        { keys: ['โคมไฟ', 'โคม led', 'led panel', 'โคมผนัง', 'หลอดไฟ', 'หลอด led', 'led bulb', 'หลอดฟลูออเรสเซนต์'], cat: 'โคมไฟ' },
+        // ปลั๊กและสวิสไฟฟ้า
+        { keys: ['เต้ารับ', 'ปลั๊ก', 'สวิส', 'สวิตช์', 'switch', 'plug', 'socket', 'กริ่ง'], cat: 'ปลั๊กและสวิสไฟฟ้า' },
+        // ท่อสายและอุปกรณ์
+        { keys: ['iec', 'สายไฟ', 'cable', 'wireway', 'conduit', 'ท่อร้อยสาย', 'ท่อสาย', 'ท่อพีวีซี', 'ท่อเหล็ก'], cat: 'ท่อสายและอุปกรณ์' },
+        // ระบบไฟฟ้า (งานชั่วคราว)
+        { keys: ['เดินสาย', 'เดินไฟ', 'ระบบไฟ', 'งานไฟฟ้า', 'ติดตั้งไฟ'], cat: 'ระบบไฟฟ้า-Temp' },
+        // ประตู/หน้าต่าง
+        { keys: ['hdf', 'wpc', 'upvc', 'วงกบ', 'บานประตู', 'หน้าต่าง'], cat: 'ประตูและวงกบ' },
+        // สุขภัณฑ์
+        { keys: ['ชักโครก', 'โถส้วม', 'อ่างล้างหน้า', 'ก็อก', 'สุขภัณฑ์', 'อุปกรณ์ห้องน้ำ'], cat: 'สุขภัณฑ์' },
+        // กระเบื้อง
+        { keys: ['กระเบื้อง', 'tile', 'พื้น hcl', 'พื้น gvv'], cat: 'กระเบื้องพื้น' },
+        // เหล็ก
+        { keys: ['เหล็กเส้น', 'เหล็กข้ออ้อย', 'เหล็ก rb', 'เหล็ก db', 'wire mesh'], cat: 'เหล็กเส้น' },
+        // ปูน/ซีเมนต์
+        { keys: ['ปูนซีเมนต์', 'ปูนปอร์ตแลนด์', 'ปูนฉาบ', 'ปูนเท'], cat: 'ปูนซีเมนต์' },
+        // อิฐ
+        { keys: ['อิฐมวล', 'อิฐบล็อก', 'อิฐแดง', 'อิฐเซรามิค'], cat: 'อิฐ' },
+        // สวิต/ปลั๊ก
+        { keys: ['gang plate', 'relfa'], cat: 'สวิต/ปลั๊ก' },
+        // เสาเข็ม
+        { keys: ['เสาเข็ม', 'เข็มเจาะ', 'เข็มตอก'], cat: 'เสาเข็ม' },
+        // หลังคา
+        { keys: ['หลังคา', 'เมทัลชีท', 'กระเบื้องหลังคา', 'เชิงชาย'], cat: 'โครงหลังคาสำเร็จรูป' },
+      ];
+      for (const r of rules) {
+        for (const k of r.keys) {
+          if (n.includes(k.toLowerCase()) || nTh.includes(k)) return r.cat;
+        }
+      }
+      return null;
+    }
+
+    /**
      * getHistoryStats — รองรับ Manual Map + Exact + Fuzzy + Unit Conversion
      * @param {string} materialName - ชื่อจาก BOQ
      * @param {string} [targetUnit] - หน่วยจาก BOQ (ใช้แปลงราคาเพื่อเทียบ)
@@ -970,7 +1019,42 @@
         }
       }
 
-      if (!key) return null;
+      if (!key) {
+        // === CATEGORY FALLBACK: เมื่อไม่เจอ material ให้ลองใช้ keyword หา category hint ===
+        const catHint = inferCategoryFromMaterial(materialName);
+        if (catHint) {
+          const SAP = window.SAP_PURCHASE_HISTORY;
+          if (SAP && SAP.lookupByCategory) {
+            const cat = SAP.lookupByCategory(catHint);
+            if (cat) {
+              // สร้าง synthetic entry จาก category stats (ใช้ top sample entries เป็น records)
+              return {
+                avg: cat.avgPrice,
+                min: cat.minPrice,
+                max: cat.maxPrice,
+                cheapestProject: cat.sampleEntries[0]?.name || '-',
+                cheapestPrice: cat.sampleEntries[0]?.avgPrice || 0,
+                cheapestDate: cat.sampleEntries[0]?.lastDate || '',
+                recordCount: cat.totalRecords,
+                unit: '',
+                originalUnit: '',
+                category: cat.category,
+                records: cat.sampleEntries.map(s => ({ supplier: '-', project: '-', date: s.lastDate, pricePerUnit: s.avgPrice, quantity: 0 })),
+                matchedKey: `[หมวด:${cat.category}]`,
+                matchType: 'category',
+                matchScore: 0.5,
+                source: 'sap',
+                alternatives: [],
+                unitMismatch: false,
+                unitConverted: false,
+                isCategoryFallback: true,
+                categoryEntryCount: cat.entryCount,
+              };
+            }
+          }
+        }
+        return null;
+      }
 
       // Read source: SAP entry or sample purchaseHistory
       let h = D.purchaseHistory[key];
@@ -1193,6 +1277,23 @@
       if (Math.abs(deltaPct) <= 2) return { level: 'equal',    label: 'เท่ากับประวัติ', deltaPct };
       if (deltaPct < 0)             return { level: 'cheaper',  label: 'ถูกกว่าประวัติ', deltaPct };
       return                                { level: 'expensive',label: 'แพงกว่าประวัติ', deltaPct };
+    }
+
+    /**
+     * ป้ายบอกแหล่งข้อมูล (sample / sap / category fallback)
+     */
+    function sourceBadge(stats) {
+      if (!stats) return '';
+      if (stats.isCategoryFallback) {
+        return `<span class="source-badge source-cat" title="ไม่มี PO โดยตรง — ใช้ค่าเฉลี่ยของหมวด '${stats.category}' (${stats.categoryEntryCount} รายการ, ${stats.recordCount} ครั้งซื้อ)">📊 หมวด: ${stats.category}</span>`;
+      }
+      if (stats.source === 'sap') {
+        return `<span class="source-badge source-sap" title="จาก SAP Export 4000 — ${stats.recordCount} ครั้งที่เคยซื้อ">📦 SAP</span>`;
+      }
+      if (stats.source === 'sample') {
+        return `<span class="source-badge source-sample" title="ข้อมูลตัวอย่าง">🧪 ตัวอย่าง</span>`;
+      }
+      return '';
     }
 
     /* ---------- AI Scan (Gemini API — OCR เอกสาร BOQ จากกระดาษ) ---------- */
@@ -1843,9 +1944,10 @@
                   </td>
                   <td class="num">
                     ${r.stats ? `<div class="compare-price-cell">
-                      <span class="now">${fmt.currency(r.stats.avg)}<span style="font-size:10px;color:var(--color-text-muted);font-weight:500;">/${r.stats.unit}</span></span>
+                      <span class="now">${fmt.currency(r.stats.avg)}<span style="font-size:10px;color:var(--color-text-muted);font-weight:500;">/${r.stats.unit || '-'}</span></span>
                       <span class="hist">${fmt.currency(r.stats.min)} - ${fmt.currency(r.stats.max)}</span>
-                    </div>` : '<span style="color:var(--color-text-muted);">ไม่มีประวัติ</span>'}
+                      <div style="margin-top:4px;">${sourceBadge(r.stats)}</div>
+                    </div>` : `<div style="color:var(--color-text-muted);">ไม่มี PO ตรงรายการนี้<div style="font-size:10px;margin-top:2px;">ลองระบุชื่อให้ตรง SAP หรือเลือกจากประวัติ</div></div>`}
                   </td>
                   <td>
                     ${r.verdict.level === 'no-data' ? '<span style="color:var(--color-text-muted);">—</span>' : `
@@ -1855,9 +1957,11 @@
                   </td>
                   <td>
                     <span class="verdict-pill ${r.verdict.level}">${r.verdict.label}</span>
-                    ${r.stats ? `
+                    ${r.stats && !r.stats.isCategoryFallback ? `
                       <div style="font-size:11px;color:var(--color-text-muted);margin-top:3px;">ถูกสุด: ${r.stats.cheapestProject}</div>
                       <div class="cheapest-date-row"><span class="dot"></span>${fmt.date(r.stats.cheapestDate)}</div>
+                    ` : r.stats && r.stats.isCategoryFallback ? `
+                      <div style="font-size:11px;color:var(--color-text-muted);margin-top:3px;">📊 ค่าเฉลี่ย ${r.stats.categoryEntryCount} รายการในหมวด</div>
                     ` : ''}
                   </td>
                   <td>

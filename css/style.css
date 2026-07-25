@@ -1284,6 +1284,36 @@ select.form-control { cursor: pointer; }
 }
 
 /* ==========================================================================
+   Source badges — แสดงแหล่งข้อมูลของ stats แต่ละ row
+   ========================================================================== */
+.source-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+.source-badge.source-sap {
+  background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+  color: #0d47a1;
+  border: 1px solid #90caf9;
+}
+.source-badge.source-sample {
+  background: linear-gradient(135deg, #fff8e1 0%, #ffecb3 100%);
+  color: #e65100;
+  border: 1px solid #ffcc80;
+}
+.source-badge.source-cat {
+  background: linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%);
+  color: #6a1b9a;
+  border: 1px solid #ce93d8;
+  font-style: italic;
+}
+
+/* ==========================================================================
    PRINT — A4 portrait, hide chrome
    ========================================================================== */
 @media print {
