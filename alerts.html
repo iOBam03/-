@@ -1670,8 +1670,17 @@
     async function handleFileUpload(event) {
       const file = event.target.files[0];
       if (!file) return;
+      console.log('[handleFileUpload] file:', file.name, 'size:', file.size, 'type:', file.type);
       try {
+        if (typeof XLSX === 'undefined') {
+          throw new Error('SheetJS (XLSX) ยังโหลดไม่สำเร็จ — ลอง refresh หน้านี้ใหม่');
+        }
         const items = await parseBOQFromXLSX(file);
+        console.log('[handleFileUpload] parsed items:', items.length);
+        if (items.length === 0) {
+          showToast(`ไฟล์ "${file.name}" อ่านได้ แต่ไม่พบรายการวัสดุ — กรุณาตรวจสอบว่าคอลัมน์ต้องมี "material"`, 'error');
+          return;
+        }
         const projectName = items[0]?.projectName || 'ไฟล์ที่อัปโหลด';
         const phase = items[0]?.phase || 'ไม่ระบุ';
         const project = D.projects?.find(p => p.name === projectName);
@@ -1688,8 +1697,11 @@
         document.getElementById('comparisonSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
         showToast(`โหลด BOQ จากไฟล์ ${file.name} (${items.length} รายการ)`, 'success');
       } catch (err) {
-        console.error(err);
+        console.error('[handleFileUpload] error:', err);
         showToast('อ่านไฟล์ไม่สำเร็จ: ' + err.message, 'error');
+      } finally {
+        // Reset input value เพื่อให้เลือกไฟล์เดิมซ้ำได้
+        event.target.value = '';
       }
     }
 
