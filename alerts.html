@@ -1714,7 +1714,32 @@
               const field = matchHeaderToField(h);
               if (field && colIndex[field] === undefined) colIndex[field] = i;
             });
-            console.log('[parseBOQFromXLSX] detected fields:', JSON.stringify(colIndex));
+            console.log('[parseBOQFromXLSX] detected fields (header-based):', JSON.stringify(colIndex));
+
+            // === Step 3b: Content-based fallback for price + quantity columns ===
+            // If estimatedPrice or totalRequired wasn't matched from headers,
+            // try detecting them by their numeric value characteristics.
+            function detectByContent(fieldName, numericPredicate) {
+              if (colIndex[fieldName] !== undefined) return;
+              // For each column, check if its values match the predicate
+              const numCols = headers.map((_, i) => i);
+              for (const c of numCols) {
+                if (Object.values(colIndex).includes(c)) continue; // already taken
+                if (c >= allRows[headerRowIdx + 1].length) continue;
+                const values = dataRows.map(r => Number(r[c]) || 0).filter(v => v > 0);
+                if (values.length >= dataRows.length * 0.5 && values.every(numericPredicate)) {
+                  colIndex[fieldName] = c;
+                  console.log(`[parseBOQFromXLSX] auto-detected ${fieldName} = col "${headers[c]}" by content pattern`);
+                  return;
+                }
+              }
+            }
+            // estimatedPrice: numeric, typically 100-1,000,000 (skip very small numbers)
+            detectByContent('estimatedPrice', v => v >= 10);
+            // totalRequired: numeric, typically 1-10,000 (integer-ish)
+            detectByContent('totalRequired', v => v >= 1 && v <= 100000);
+
+            console.log('[parseBOQFromXLSX] detected fields (final):', JSON.stringify(colIndex));
 
             // === Step 4: Build items using detected columns ===
             const items = dataRows.map((r, idx) => {
@@ -1741,6 +1766,9 @@
             }).filter(Boolean);
 
             console.log('[parseBOQFromXLSX] parsed items:', items.length);
+            if (items.length > 0) {
+              console.log('[parseBOQFromXLSX] sample item[0]:', JSON.stringify(items[0]));
+            }
             resolve(items);
           } catch (err) {
             reject(err);
