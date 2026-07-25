@@ -24,7 +24,6 @@
     winnerByItem: {},      // { itemIdx: supplierIdx } — manual picks
     conclusionSupplier: '',
     conclusionReason: '',
-    isDemo: false,
   };
 
   /* ---------- Helpers ---------- */
@@ -65,7 +64,6 @@
       workName: workLine,
       thresholdLabel: projectLine,
       sheets: sheets,
-      isDemo: false,
     };
   }
 
@@ -245,18 +243,6 @@
   }
 
   function renderUploadPrompt() {
-    const demoButton = `
-      <button class="sample-btn" onclick="SupplierCompareController.loadDemo()" style="grid-column:1/-1;">
-        <div class="sample-icon">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="1"/><path d="M9 9h6v6H9z"/></svg>
-        </div>
-        <div class="sample-info">
-          <div class="sample-name">BLESSINI — งาน วงกบประตู (Type S)</div>
-          <div class="sample-meta">ข้อมูลตัวอย่าง · 12 รายการ · 7 ผู้ขาย</div>
-        </div>
-      </button>
-    `;
-
     return `
       <div class="upload-card" id="supplierUploadCard">
         <div class="upload-icon">
@@ -284,20 +270,6 @@
         <div class="file-types">
           <span>.xlsx</span>
         </div>
-
-        <div class="divider-with-text">
-          <span>หรือทดลองใช้งาน</span>
-        </div>
-
-        <p style="margin-bottom:12px;">เลือกข้อมูลตัวอย่าง (จากโครงการ BLESSINI):</p>
-        <div class="sample-grid">${demoButton}</div>
-
-        <div class="demo-hint-card">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/>
-          </svg>
-          <span>ระบบจะเน้นผู้ที่ถูกสุดด้วยสีเขียว แต่ไม่ตัดสินใจเลือกผู้ชนะแทน — ฝ่ายจัดซื้อเลือกเอง</span>
-        </div>
       </div>
     `;
   }
@@ -320,7 +292,7 @@
         <div class="file-meta">
           <div class="name">
             📄 ${escapeHtml(state.fileName)}
-            ${state.isDemo ? '<span class="sample-tag">ตัวอย่าง</span>' : ''}
+            <!-- (sample-tag removed — sample data no longer used) -->
           </div>
           <div class="detail">
             งาน: <strong>${escapeHtml(state.workName || '—')}</strong>
@@ -784,7 +756,6 @@
           state.winnerByItem = {};
           state.conclusionSupplier = '';
           state.conclusionReason = '';
-          state.isDemo = false;
           renderUploadCard();
           renderComparisonView();
           showToast(`โหลดสำเร็จ: ${parsed.sheets.length} ฉบับ, ${getActiveItems().length} รายการ`);
@@ -797,23 +768,8 @@
     },
 
     loadDemo() {
-      const sample = D.supplierCompareSamples && D.supplierCompareSamples[0];
-      if (!sample) {
-        showToast('ไม่พบข้อมูลตัวอย่าง — ตรวจสอบ js/data.js');
-        return;
-      }
-      state.fileName = sample.fileName || 'BLESSINI — งานวงกบประตู Type S.xlsx';
-      state.workName = sample.workName;
-      state.thresholdLabel = sample.thresholdLabel || 'วงเงินเกิน 500,000 ขึ้นไป';
-      state.sheets = sample.sheets;
-      state.activeSheetIdx = sample.sheets.length - 1;
-      state.winnerByItem = {};
-      state.conclusionSupplier = '';
-      state.conclusionReason = '';
-      state.isDemo = true;
-      renderUploadCard();
-      renderComparisonView();
-      showToast('โหลดข้อมูลตัวอย่างสำเร็จ');
+      // sample data removed — use actual XLSX file upload instead
+      showToast('ไม่มีข้อมูลตัวอย่าง — กรุณาอัปโหลดไฟล์ .xlsx จริง', 'info');
     },
 
     switchSheet(idx) {
@@ -834,7 +790,6 @@
       state.winnerByItem = {};
       state.conclusionSupplier = '';
       state.conclusionReason = '';
-      state.isDemo = false;
       renderUploadCard();
       renderComparisonView();
     },

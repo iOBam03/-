@@ -652,7 +652,6 @@
             <div class="avatar">จซ</div>
             <span class="user-name">ฝ่ายจัดซื้อ</span>
           </div>
-          <div id="demo-toggle-mount"></div>
         </div>
       </div>
 
@@ -807,42 +806,16 @@
 
   <script src="config.local.js"></script>
   <script src="js/data.js"></script>
-  <script src="js/demo.js"></script>
   <script src="js/supplier-comparison.js"></script>
   <script src="js/purchase-history-sap.js"></script>
   <script>
-    DemoController.injectToggle('#demo-toggle-mount');
-    DemoController.injectBanner();
-
     const D = window.SAMPLE_DATA;
-    const on = DemoController.isOn();
 
     /* ---------- State ---------- */
     let uploadedBOQ = null;  // { projectId, projectName, phase, items: [...], fileName, isSample }
     // manualMappings: จับคู่ชื่อสินค้าใน BOQ กับ key ใน purchaseHistory ด้วยตัวเอง
     // ใช้เมื่อ fuzzy matching เลือก key ผิด หรือต้องการ override
     let manualMappings = {};  // { 'BOQ material name': 'history key' }
-
-    /* ---------- Sample BOQs สำหรับ demo ---------- */
-    const SAMPLE_BOQS = [
-      { project: 'เดอะวัลเลย์',     phase: 'ฐานราก',  icon: 'foundation', fileName: 'BOQ_วัลเลย์_ฐานราก.xlsx',  desc: '6 รายการ' },
-      { project: 'กรีนวิลล์ 2',      phase: 'โครงสร้าง', icon: 'structure', fileName: 'BOQ_กรีนวิลล์2_โครงสร้าง.xlsx', desc: '3 รายการ' },
-      { project: 'กรีนวิลล์ 2',      phase: 'ผนัง',    icon: 'walls',    fileName: 'BOQ_กรีนวิลล์2_ผนัง.xlsx', desc: '2 รายการ' },
-      { project: 'เดอะพาร์ค',       phase: 'ผนัง',    icon: 'walls',    fileName: 'BOQ_เดอะพาร์ค_ผนัง.xlsx', desc: '3 รายการ' },
-      // BOQ จริง — ทิพยประกันภัย สาขาอุบลราชธานี
-      { project: 'ทิพยประกันภัย สาขาอุบลราชธานี', phase: 'งานตกแต่งภายใน ชั้น 1', icon: 'interior', fileName: 'BOQ_ทิพยอุบล_ตกแต่งชั้น1.xlsx', desc: 'BOQ จริง · 43 รายการ' },
-      { project: 'ทิพยประกันภัย สาขาอุบลราชธานี', phase: 'งานตกแต่งภายใน ชั้น 2', icon: 'interior', fileName: 'BOQ_ทิพยอุบล_ตกแต่งชั้น2.xlsx', desc: 'BOQ จริง · 9 รายการ' },
-      { project: 'ทิพยประกันภัย สาขาอุบลราชธานี', phase: 'งานระบบ ชั้น 1',     icon: 'electrical', fileName: 'BOQ_ทิพยอุบล_ระบบชั้น1.xlsx', desc: 'BOQ จริง · 79 รายการ' },
-      { project: 'ทิพยประกันภัย สาขาอุบลราชธานี', phase: 'งานระบบ ชั้น 2',     icon: 'electrical', fileName: 'BOQ_ทิพยอุบล_ระบบชั้น2.xlsx', desc: 'BOQ จริง · 28 รายการ' },
-    ];
-
-    const SAMPLE_ICONS = {
-      foundation: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 22h20"/><path d="M6 18v-5"/><path d="M10 18v-5"/><path d="M14 18v-5"/><path d="M18 18v-5"/><path d="M3 13l9-4 9 4"/></svg>',
-      structure:  '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-4"/></svg>',
-      walls:      '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="1"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg>',
-      interior:   '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3h18v18H3z"/><path d="M3 9h18M9 21V9"/></svg>',
-      electrical: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>',
-    };
 
     /* ---------- Helpers ---------- */
 
@@ -882,19 +855,12 @@
 
     /**
      * หา candidates ที่ใกล้เคียงที่สุด (topN) สำหรับ materialName
-     * คะแนนคำนวณจาก: ชื่อ key + aliases (เพื่อจับ alias ที่อยู่ใน BOQ)
-     * รวมทั้งตัวอย่างใน purchaseHistory (data.js) และ SAP Export (purchase-history-sap.js)
+     * คะแนนคำนวณจาก: ชื่อ material ใน SAP Export (purchase-history-sap.js)
      * Optimize: pre-filter SAP entries ด้วย token overlap ก่อน fuzzy score (เร็วขึ้น 50×)
      */
     function findFuzzyMatches(materialName, topN = 5) {
       const results = [];
-      // 1. Sample purchaseHistory (data.js) — มีจำนวนน้อย คำนวณครบทุก key
-      Object.keys(D.purchaseHistory).forEach(key => {
-        const entry = D.purchaseHistory[key];
-        const haystack = [key, ...(entry.aliases || [])].join(' | ');
-        results.push({ key, score: fuzzyScore(materialName, haystack), source: 'sample' });
-      });
-      // 2. SAP purchase history (real data) — 19,177 entries ต้อง pre-filter
+      // SAP purchase history (real data) — 19,177 entries ต้อง pre-filter
       const SAP = window.SAP_PURCHASE_HISTORY;
       if (SAP && SAP.entries && SAP.searchByMaterial) {
         // First, use SAP's tiny built-in search (substring match) — fast
@@ -999,16 +965,9 @@
       let key = manualMappings[materialName];
       let matchType = 'manual';
       let matchScore = 1;
-      let source = 'sample';  // 'sample' | 'sap'
+      let source = 'sap';
 
-      // 2. Exact match
-      if (!key && D.purchaseHistory[materialName]) {
-        key = materialName;
-        matchType = 'exact';
-        matchScore = 1;
-      }
-
-      // 3. Fuzzy match (>= 0.35 = น่าจะใช่ตัวเดียวกัน)
+      // 2. Fuzzy match (>= 0.35 = น่าจะใช่ตัวเดียวกัน) — ใช้ SAP เป็นแหล่งข้อมูล
       if (!key) {
         const top = findFuzzyMatches(materialName, 1)[0];
         if (top && top.score >= 0.35) {
@@ -1056,14 +1015,12 @@
         return null;
       }
 
-      // Read source: SAP entry or sample purchaseHistory
-      let h = D.purchaseHistory[key];
-      if (!h && source === 'sap') {
-        const SAP = window.SAP_PURCHASE_HISTORY;
-        if (SAP && SAP.lookupByMaterial) {
-          const sapEntry = SAP.lookupByMaterial(key);
-          h = sapEntryToHistory(sapEntry);
-        }
+      // Read source: SAP entry (real data only)
+      const SAP = window.SAP_PURCHASE_HISTORY;
+      let h = null;
+      if (SAP && SAP.lookupByMaterial) {
+        const sapEntry = SAP.lookupByMaterial(key);
+        h = sapEntryToHistory(sapEntry);
       }
       if (!h || !h.records || h.records.length === 0) return null;
 
@@ -1226,18 +1183,14 @@
         <div class="mapping-list">
           ${candidates.length === 0 ? '<div style="color:var(--color-text-muted);font-size:12px;">ไม่พบรายการใกล้เคียง</div>' :
             candidates.map((c, idx) => {
-              // Resolve entry: try sample first, then SAP
-              let entry = D.purchaseHistory[c.key];
+              // Resolve entry: SAP (real data only)
+              let entry = null;
               let badge = '';
-              if (!entry && c.source === 'sap') {
-                const SAP = window.SAP_PURCHASE_HISTORY;
-                if (SAP && SAP.lookupByMaterial) {
-                  const sapEntry = SAP.lookupByMaterial(c.key);
-                  entry = sapEntryToHistory(sapEntry);
-                  badge = '<span class="sap-badge">SAP</span>';
-                }
-              } else if (entry) {
-                badge = '<span class="sap-badge" style="background:#e8f5e9;color:#2e7d32;">ตัวอย่าง</span>';
+              const SAP = window.SAP_PURCHASE_HISTORY;
+              if (SAP && SAP.lookupByMaterial) {
+                const sapEntry = SAP.lookupByMaterial(c.key);
+                entry = sapEntryToHistory(sapEntry);
+                badge = '<span class="sap-badge">SAP</span>';
               }
               if (!entry) return '';
               const isSelected = manualMappings[boqMaterial] === c.key;
@@ -1438,14 +1391,9 @@
     function openAIScan() {
       _aiScanTarget = null;
 
-      // render sample buttons in source-selector
+      // clear sample buttons (sample data removed — only upload remains)
       const samplesEl = document.getElementById('source-samples');
-      samplesEl.innerHTML = SAMPLE_BOQS.map((s, i) => `
-        <button class="source-btn" data-sample="${i}" onclick="selectSample(${i})">
-          <span class="ico">${SAMPLE_ICONS[s.icon] || SAMPLE_ICONS.structure}</span>
-          ${s.project}
-        </button>
-      `).join('');
+      if (samplesEl) samplesEl.innerHTML = '';
 
       // reset paper-preview to text mode
       const preview = document.getElementById('paper-preview');
@@ -1479,56 +1427,6 @@
     function closeAIScan() {
       document.getElementById('ai-scan-modal').classList.remove('open');
       _aiScanTarget = null;
-    }
-
-    function selectSample(idx) {
-      const sample = SAMPLE_BOQS[idx];
-      const sampleItems = D.boq.filter(b => b.projectName === sample.project && b.phase === sample.phase);
-      _aiScanTarget = {
-        type: 'sample',
-        idx,
-        project: sample.project,
-        phase: sample.phase,
-        items: sampleItems
-      };
-
-      // paper preview = text mock
-      const preview = document.getElementById('paper-preview');
-      preview.classList.remove('image-mode', 'scanning');
-      const oldImg = preview.querySelector('img');
-      if (oldImg) oldImg.remove();
-      document.getElementById('paper-project').textContent = sample.project + ' · ' + sample.phase;
-      document.getElementById('paper-rows').innerHTML = sampleItems.slice(0, 8).map(i => `
-        <div class="paper-row">
-          <div>${i.material}</div>
-          <div class="num">${fmt.num(i.totalRequired)}</div>
-          <div class="num">${i.unit}</div>
-          <div class="num">${fmt.currency(i.estimatedPrice)}</div>
-        </div>
-      `).join('');
-
-      // update source buttons
-      document.querySelectorAll('.source-btn').forEach(b => b.classList.remove('active'));
-      const btn = document.querySelector(`.source-btn[data-sample="${idx}"]`);
-      if (btn) btn.classList.add('active');
-
-      // ตัวอย่าง: extract ทันที (ไม่ต้องกด Scan)
-      document.getElementById('scan-status').className = 'scan-status done';
-      document.getElementById('scan-status-pulse').style.display = 'none';
-      document.getElementById('scan-status-lbl').textContent = 'พร้อมนำเข้า (ข้อมูลตัวอย่าง)';
-      document.getElementById('scan-status-lbl').style.color = '#166534';
-      document.getElementById('scan-detail').textContent = `พบ ${sampleItems.length} รายการ — กด "นำเข้าข้อมูล" ได้เลย`;
-      document.getElementById('scan-trigger-btn').disabled = true;
-      document.getElementById('extracted-list').innerHTML = sampleItems.map(i => `
-        <div class="extracted-item">
-          <div>
-            <div class="name">${i.material}</div>
-            <div class="meta">${i.sku || '—'} · ฿${i.estimatedPrice}/${i.unit}</div>
-          </div>
-          <div class="qty">${fmt.num(i.totalRequired)} ${i.unit}</div>
-        </div>
-      `).join('');
-      document.getElementById('scan-confirm-btn').disabled = false;
     }
 
     async function handlePaperUpload(event) {
@@ -1660,11 +1558,7 @@
 
     function confirmAIScan() {
       if (!_aiScanTarget) return;
-      if (_aiScanTarget.type === 'sample') {
-        closeAIScan();
-        loadSampleBOQ(_aiScanTarget.idx);
-        showToast('นำเข้าข้อมูลตัวอย่างเรียบร้อย', 'success');
-      } else if (_aiScanTarget.type === 'image' && _aiScanTarget.items) {
+      if (_aiScanTarget.type === 'image' && _aiScanTarget.items) {
         closeAIScan();
         loadExtractedBOQ(_aiScanTarget.items, _aiScanTarget.project, _aiScanTarget.phase);
         showToast(`นำเข้าข้อมูลจากการสแกน Gemini (${_aiScanTarget.items.length} รายการ)`, 'success');
@@ -1699,7 +1593,6 @@
             <div class="file-meta">
               <div class="name">
                 📄 ${uploadedBOQ.fileName}
-                ${uploadedBOQ.isSample ? '<span class="sample-tag">ตัวอย่าง</span>' : ''}
               </div>
               <div class="detail">
                 โครงการ: <strong>${uploadedBOQ.projectName}</strong>
@@ -1742,29 +1635,6 @@
               <span>.pdf</span>
               <span>.jpg/.png</span>
             </div>
-
-            <div class="divider-with-text">
-              <span>หรือทดลองใช้งาน</span>
-            </div>
-
-            <p style="margin-bottom:12px;">เลือก BOQ ตัวอย่างเพื่อดูว่าจะเจออะไรบ้างเมื่อแนบ BOQ เข้าไป:</p>
-
-            <div class="sample-grid">
-              ${SAMPLE_BOQS.map((s, i) => `
-                <button class="sample-btn" onclick="loadSampleBOQ(${i})">
-                  <div class="sample-icon">${SAMPLE_ICONS[s.icon] || SAMPLE_ICONS.structure}</div>
-                  <div class="sample-info">
-                    <div class="sample-name">${s.project}</div>
-                    <div class="sample-meta">${s.phase} · ${s.desc}</div>
-                  </div>
-                </button>
-              `).join('')}
-            </div>
-
-            <div class="demo-hint-card">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
-              <span>ต้นแบบนี้ยังไม่ได้เชื่อมต่อไฟล์จริง — กดปุ่มตัวอย่างเพื่อจำลองการแนบ BOQ</span>
-            </div>
           </div>
         `;
 
@@ -1772,41 +1642,85 @@
         const card = document.getElementById('uploadCard');
         card.addEventListener('dragover', (e) => { e.preventDefault(); card.classList.add('dragover'); });
         card.addEventListener('dragleave', () => card.classList.remove('dragover'));
-        card.addEventListener('drop', (e) => {
+        card.addEventListener('drop', async (e) => {
           e.preventDefault();
           card.classList.remove('dragover');
-          if (e.dataTransfer.files.length > 0) simulateUpload(e.dataTransfer.files[0].name, 'เดอะวัลเลย์', 'ฐานราก', false);
+          if (e.dataTransfer.files.length > 0) {
+            const file = e.dataTransfer.files[0];
+            await handleFileUpload({ target: { files: [file] } });
+          }
         });
       }
     }
 
-    function handleFileUpload(event) {
+    // sample data removed — loadSampleBOQ no longer used
+
+    // Parse a real BOQ XLSX file using SheetJS (loaded via CDN)
+    // Expected columns: project, phase, sku, material, qtyPerUnit, totalRequired, unit, estimatedPrice
+    function parseBOQFromXLSX(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          try {
+            const data = new Uint8Array(e.target.result);
+            const wb = XLSX.read(data, { type: 'array' });
+            const sheet = wb.Sheets[wb.SheetNames[0]];
+            const rows = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+            // Normalize keys to lowercase
+            const items = rows.map((r, idx) => {
+              const norm = {};
+              for (const k of Object.keys(r)) {
+                norm[String(k).toLowerCase().trim()] = r[k];
+              }
+              return {
+                id: `BOQ-${Date.now()}-${idx}`,
+                sku: norm.sku || norm['รหัส'] || '',
+                project: norm.project || norm['โครงการ'] || 'ไม่ระบุ',
+                projectName: norm.projectname || norm.project || norm['โครงการ'] || 'ไม่ระบุ',
+                phase: norm.phase || norm['งวด'] || norm['ขั้นตอน'] || 'ไม่ระบุ',
+                material: norm.material || norm['รายการ'] || norm['description'] || '',
+                qtyPerUnit: Number(norm.qtyperunit || norm['จำนวน/หน่วย'] || 1) || 1,
+                totalRequired: Number(norm.totalrequired || norm['จำนวนรวม'] || norm['qty'] || 1) || 1,
+                ordered: Number(norm.ordered || 0) || 0,
+                delivered: Number(norm.delivered || 0) || 0,
+                unit: norm.unit || norm['หน่วย'] || '',
+                estimatedPrice: Number(norm.estimatedprice || norm['ราคา'] || norm['price'] || 0) || 0,
+              };
+            }).filter(it => it.material);
+            resolve(items);
+          } catch (err) {
+            reject(err);
+          }
+        };
+        reader.onerror = () => reject(new Error('อ่านไฟล์ไม่สำเร็จ'));
+        reader.readAsArrayBuffer(file);
+      });
+    }
+
+    async function handleFileUpload(event) {
       const file = event.target.files[0];
-      if (file) simulateUpload(file.name, 'เดอะวัลเลย์', 'ฐานราก', false);
-    }
-
-    function loadSampleBOQ(idx) {
-      const sample = SAMPLE_BOQS[idx];
-      simulateUpload(sample.fileName, sample.project, sample.phase, true);
-    }
-
-    function simulateUpload(fileName, projectName, phase, isSample) {
-      // ใน prototype: load ตาม project+phase ที่เลือก
-      // ในของจริง จะ parse ไฟล์ .xlsx/.csv ที่อัปโหลด
-      const sampleBOQ = D.boq.filter(b => b.projectName === projectName && b.phase === phase);
-      const project = D.projects.find(p => p.name === projectName);
-      uploadedBOQ = {
-        projectId: project ? project.id : projectName,
-        projectName: projectName,
-        phase: phase,
-        items: sampleBOQ,
-        fileName: fileName,
-        isSample: isSample
-      };
-      renderUploadSection();
-      renderComparison();
-      // Scroll to comparison
-      document.getElementById('comparisonSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      if (!file) return;
+      try {
+        const items = await parseBOQFromXLSX(file);
+        const projectName = items[0]?.projectName || 'ไฟล์ที่อัปโหลด';
+        const phase = items[0]?.phase || 'ไม่ระบุ';
+        const project = D.projects?.find(p => p.name === projectName);
+        uploadedBOQ = {
+          projectId: project ? project.id : projectName,
+          projectName: projectName,
+          phase: phase,
+          items: items,
+          fileName: file.name,
+          isSample: false
+        };
+        renderUploadSection();
+        renderComparison();
+        document.getElementById('comparisonSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        showToast(`โหลด BOQ จากไฟล์ ${file.name} (${items.length} รายการ)`, 'success');
+      } catch (err) {
+        console.error(err);
+        showToast('อ่านไฟล์ไม่สำเร็จ: ' + err.message, 'error');
+      }
     }
 
     function clearUpload() {
