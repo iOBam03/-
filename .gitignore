@@ -32,6 +32,10 @@ node_modules/
 dist/
 build/
 
+# npm files (web app ใช้ CDN, build script parse XML ตรงๆ ไม่ต้อง install)
+package.json
+package-lock.json
+
 # Vercel
 .vercel/
 .vercel
