@@ -1580,9 +1580,13 @@
     function confirmAIScan() {
       if (!_aiScanTarget) return;
       if (_aiScanTarget.type === 'image' && _aiScanTarget.items) {
+        // ดึงค่าออกมาก่อน เพราะ closeAIScan() จะ set _aiScanTarget = null
+        const items = _aiScanTarget.items;
+        const project = _aiScanTarget.project;
+        const phase = _aiScanTarget.phase;
         closeAIScan();
-        loadExtractedBOQ(_aiScanTarget.items, _aiScanTarget.project, _aiScanTarget.phase);
-        showToast(`นำเข้าข้อมูลจากการสแกน Gemini (${_aiScanTarget.items.length} รายการ)`, 'success');
+        loadExtractedBOQ(items, project, phase);
+        showToast(`นำเข้าข้อมูลจากการสแกน Gemini (${items.length} รายการ)`, 'success');
       }
     }
 
