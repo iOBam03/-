@@ -1636,6 +1636,7 @@
             const wb = XLSX.read(data, { type: 'array' });
             const sheet = wb.Sheets[wb.SheetNames[0]];
             const rows = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+            console.log('[parseBOQFromXLSX] sheet:', wb.SheetNames[0], 'rows:', rows.length, 'first row keys:', rows[0] ? Object.keys(rows[0]) : '(empty)');
             // Normalize keys to lowercase
             const items = rows.map((r, idx) => {
               const norm = {};
@@ -1644,17 +1645,17 @@
               }
               return {
                 id: `BOQ-${Date.now()}-${idx}`,
-                sku: norm.sku || norm['รหัส'] || '',
-                project: norm.project || norm['โครงการ'] || 'ไม่ระบุ',
-                projectName: norm.projectname || norm.project || norm['โครงการ'] || 'ไม่ระบุ',
-                phase: norm.phase || norm['งวด'] || norm['ขั้นตอน'] || 'ไม่ระบุ',
-                material: norm.material || norm['รายการ'] || norm['description'] || '',
+                sku: norm.sku || norm['รหัสสินค้า'] || norm['รหัส'] || norm['code'] || '',
+                project: norm.project || norm['โครงการ'] || norm['ชื่อโครงการ'] || 'ไม่ระบุ',
+                projectName: norm.projectname || norm.project || norm['โครงการ'] || norm['ชื่อโครงการ'] || 'ไม่ระบุ',
+                phase: norm.phase || norm['งวด'] || norm['ขั้นตอน'] || norm['งวดงาน'] || 'ไม่ระบุ',
+                material: norm.material || norm['ชื่อวัสดุ'] || norm['รายการ'] || norm['รายการวัสดุ'] || norm['ชื่อสินค้า'] || norm['description'] || norm['desc'] || '',
                 qtyPerUnit: Number(norm.qtyperunit || norm['จำนวน/หน่วย'] || 1) || 1,
-                totalRequired: Number(norm.totalrequired || norm['จำนวนรวม'] || norm['qty'] || 1) || 1,
-                ordered: Number(norm.ordered || 0) || 0,
-                delivered: Number(norm.delivered || 0) || 0,
+                totalRequired: Number(norm.totalrequired || norm['จำนวนรวม'] || norm['จำนวน'] || norm['qty'] || norm['quantity'] || 1) || 1,
+                ordered: Number(norm.ordered || norm['สั่งแล้ว'] || 0) || 0,
+                delivered: Number(norm.delivered || norm['ส่งแล้ว'] || 0) || 0,
                 unit: norm.unit || norm['หน่วย'] || '',
-                estimatedPrice: Number(norm.estimatedprice || norm['ราคา'] || norm['price'] || 0) || 0,
+                estimatedPrice: Number(norm.estimatedprice || norm['ราคา'] || norm['ราคากลาง'] || norm['ราคาต่อหน่วย'] || norm['price'] || norm['unitprice'] || 0) || 0,
               };
             }).filter(it => it.material);
             resolve(items);
