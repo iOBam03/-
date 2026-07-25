@@ -1636,7 +1636,15 @@
             const wb = XLSX.read(data, { type: 'array' });
             const sheet = wb.Sheets[wb.SheetNames[0]];
             const rows = XLSX.utils.sheet_to_json(sheet, { defval: '' });
-            console.log('[parseBOQFromXLSX] sheet:', wb.SheetNames[0], 'rows:', rows.length, 'first row keys:', rows[0] ? Object.keys(rows[0]) : '(empty)');
+            // DIAGNOSTIC: log raw first row to see actual column names
+            if (rows.length > 0) {
+              const rawKeys = Object.keys(rows[0]);
+              console.log('[parseBOQFromXLSX] sheet:', wb.SheetNames[0], 'rows:', rows.length);
+              console.log('[parseBOQFromXLSX] RAW COLUMNS:', JSON.stringify(rawKeys));
+              console.log('[parseBOQFromXLSX] FIRST ROW DATA:', JSON.stringify(rows[0]));
+            } else {
+              console.log('[parseBOQFromXLSX] sheet:', wb.SheetNames[0], 'rows: 0 — sheet empty?');
+            }
             // Normalize keys to lowercase
             const items = rows.map((r, idx) => {
               const norm = {};
