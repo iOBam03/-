@@ -1753,7 +1753,7 @@
 
       sec.innerHTML = `
         <div id="kpi-container" class="kpi-grid" style="margin-bottom:18px;">
-          <div class="kpi"><div class="accent-bar"></div><div class="label">รายการใน BOQ</div><div class="value">${items.length}<span class="unit">รายการ</span></div><div class="delta neutral">${uploadedBOQ.projectName} · ${uploadedBOQ.phase}</div></div>
+          <div class="kpi"><div class="accent-bar"></div><div class="label">รายการใน BOQ</div><div class="value">${items.length}<span class="unit">รายการ</span></div></div>
           <div class="kpi success"><div class="accent-bar"></div><div class="label">ถูกกว่าประวัติ</div><div class="value">${cheaperCount}<span class="unit">รายการ</span></div><div class="delta up">ราคา BOQ ตั้งไว้ดี</div></div>
           <div class="kpi warning"><div class="accent-bar"></div><div class="label">แพงกว่าประวัติ</div><div class="value">${expensiveCount}<span class="unit">รายการ</span></div><div class="delta down">ควรทบทวนราคา BOQ</div></div>
           <div class="kpi"><div class="accent-bar"></div><div class="label">ส่วนต่างรวม</div><div class="value">${fmt.currencyShort(totalEstimated - totalHistorical)}</div><div class="delta ${(totalEstimated - totalHistorical) > 0 ? 'down' : 'up'}">${(totalEstimated - totalHistorical) > 0 ? 'BOQ สูงกว่าประวัติ' : 'BOQ ต่ำกว่าประวัติ'}</div></div>
@@ -1763,7 +1763,6 @@
           <div class="card-header">
             <div>
               <h3>เปรียบเทียบรายการใน BOQ กับประวัติการซื้อจริง</h3>
-              <div class="sub">แสดง ${items.length} รายการจาก BOQ · คลิก "ดูประวัติ" เพื่อดูข้อมูลการซื้อย้อนหลัง</div>
             </div>
             <div class="legend">
               <div class="legend-item"><span class="legend-swatch" style="background:var(--color-success)"></span>ถูกกว่า</div>
@@ -1819,27 +1818,9 @@
                     ${matchKeyText}
                   </td>
                   <td class="num"><strong>${fmt.num(r.item.totalRequired)}</strong></td>
-                  <td class="num">
-                    ${r.item.estimatedPrice > 0 ? `<div class="compare-price-cell">
-                      <span class="now">${fmt.currency(r.item.estimatedPrice)}</span>
-                      <span class="hist">ต่อ ${r.item.unit || 'หน่วย'}</span>
-                    </div>` : '<span style="color:var(--color-text-muted);">ไม่ระบุ</span>'}
-                  </td>
-                  <td class="num">
-                    ${r.item.totalRequired > 0 && r.item.estimatedPrice > 0 ? `
-                      <div class="compare-price-cell">
-                        <span class="now"><strong>${fmt.currency(r.estTotal)}</strong></span>
-                        ${r.stats ? `<span class="hist" style="color:var(--color-text-muted);">vs ${fmt.currencyShort(r.histTotal)}</span>` : ''}
-                      </div>
-                    ` : `<span style="color:var(--color-text-muted);">ไม่ระบุ</span>`}
-                  </td>
-                  <td class="num">
-                    ${r.stats ? `<div class="compare-price-cell">
-                      <span class="now">${fmt.currency(r.stats.avg)}<span style="font-size:10px;color:var(--color-text-muted);font-weight:500;">/${r.stats.unit || '-'}</span></span>
-                      <span class="hist">${fmt.currency(r.stats.min)} - ${fmt.currency(r.stats.max)}</span>
-                      <div style="margin-top:4px;">${sourceBadge(r.stats)}</div>
-                    </div>` : `<div style="color:var(--color-text-muted);">ไม่มี PO ตรงรายการนี้<div style="font-size:10px;margin-top:2px;">ลองระบุชื่อให้ตรง SAP หรือเลือกจากประวัติ</div></div>`}
-                  </td>
+                  <td class="num">${r.item.estimatedPrice > 0 ? fmt.currency(r.item.estimatedPrice) : '<span style="color:var(--color-text-muted);">-</span>'}</td>
+                  <td class="num">${r.item.totalRequired > 0 && r.item.estimatedPrice > 0 ? `<strong>${fmt.currency(r.estTotal)}</strong>` : '<span style="color:var(--color-text-muted);">-</span>'}</td>
+                  <td class="num">${r.stats ? fmt.currency(r.stats.avg) : '<span style="color:var(--color-text-muted);">-</span>'}</td>
                   <td>
                     ${r.verdict.level === 'no-data' ? '<span style="color:var(--color-text-muted);">—</span>' : `
                       ${arrow(r.verdict.level)}
@@ -1848,12 +1829,6 @@
                   </td>
                   <td>
                     <span class="verdict-pill ${r.verdict.level}">${r.verdict.label}</span>
-                    ${r.stats && !r.stats.isCategoryFallback ? `
-                      <div style="font-size:11px;color:var(--color-text-muted);margin-top:3px;">ถูกสุด: ${r.stats.cheapestProject}</div>
-                      <div class="cheapest-date-row"><span class="dot"></span>${fmt.date(r.stats.cheapestDate)}</div>
-                    ` : r.stats && r.stats.isCategoryFallback ? `
-                      <div style="font-size:11px;color:var(--color-text-muted);margin-top:3px;">📊 ค่าเฉลี่ย ${r.stats.categoryEntryCount} รายการในหมวด</div>
-                    ` : ''}
                   </td>
                   <td>
                     ${r.stats ? `<button class="btn btn-sm" onclick="openHistoryModal('${r.item.material.replace(/'/g, "\\'")}', ${r.item.estimatedPrice > 0 ? r.item.estimatedPrice : r.stats.avg}, '${r.item.unit}')">ดูประวัติ</button>` : '<span style="color:var(--color-text-muted);font-size:12px;">ไม่มีข้อมูล</span>'}
@@ -1870,7 +1845,6 @@
           <div class="card-header">
             <div>
               <h3>สรุปภาพรวม — โครงการ ${uploadedBOQ.projectName} (${uploadedBOQ.phase})</h3>
-              <div class="sub">เปรียบเทียบมูลค่ารวมระหว่างราคา BOQ กับราคาตามประวัติ</div>
             </div>
           </div>
           <div class="card-body">
@@ -1878,20 +1852,15 @@
               <div style="padding:14px;background:var(--color-surface-alt);border-radius:var(--radius-md);border:1px solid var(--color-border);">
                 <div style="font-size:12px;color:var(--color-text-muted);margin-bottom:4px;">มูลค่าตาม BOQ</div>
                 <div style="font-size:20px;font-weight:700;">${fmt.currencyShort(totalEstimated)}</div>
-                <div style="font-size:11px;color:var(--color-text-secondary);margin-top:2px;">ราคาที่บริษัทประมาณการไว้</div>
               </div>
               <div style="padding:14px;background:var(--color-surface-alt);border-radius:var(--radius-md);border:1px solid var(--color-border);">
                 <div style="font-size:12px;color:var(--color-text-muted);margin-bottom:4px;">มูลค่าตามประวัติ</div>
                 <div style="font-size:20px;font-weight:700;color:var(--color-success);">${fmt.currencyShort(totalHistorical)}</div>
-                <div style="font-size:11px;color:var(--color-text-secondary);margin-top:2px;">ถ้าซื้อตามราคาเฉลี่ย</div>
               </div>
               <div style="padding:14px;background:var(--color-surface-alt);border-radius:var(--radius-md);border:1px solid var(--color-border);">
                 <div style="font-size:12px;color:var(--color-text-muted);margin-bottom:4px;">ส่วนต่าง</div>
                 <div style="font-size:20px;font-weight:700;color:${(totalEstimated - totalHistorical) > 0 ? 'var(--color-danger)' : 'var(--color-success)'};">
                   ${(totalEstimated - totalHistorical) > 0 ? '+' : ''}${fmt.currencyShort(totalEstimated - totalHistorical)}
-                </div>
-                <div style="font-size:11px;color:var(--color-text-secondary);margin-top:2px;">
-                  ${(totalEstimated - totalHistorical) > 0 ? 'BOQ ตั้งราคาสูงกว่าประวัติ' : 'BOQ ตั้งราคาต่ำกว่าประวัติ'}
                 </div>
               </div>
             </div>
