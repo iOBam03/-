@@ -9,6 +9,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <style>
     /* Upload area */
     .upload-card {
@@ -665,11 +666,26 @@
           </div>
         </div>
 
-        <!-- Upload section (เปลี่ยน state ตามการอัปโหลด) -->
-        <div id="uploadSection"></div>
+        <!-- Mode switcher: เปรียบเทียบ BOQ vs ประวัติ / เปรียบเทียบ 7 supplier -->
+        <div class="tabs" id="compareModeTabs">
+          <div class="tab active" data-mode="history" onclick="switchCompareMode('history')">เปรียบเทียบ BOQ กับประวัติการซื้อ</div>
+          <div class="tab" data-mode="supplier" onclick="switchCompareMode('supplier')">เปรียบเทียบ 7 ผู้ขาย (จัดทำใบเสนอราคา)</div>
+        </div>
 
-        <!-- Comparison table (แสดงหลังอัปโหลด) -->
-        <div id="comparisonSection" style="display:none;"></div>
+        <!-- ============== Mode: history (existing) ============== -->
+        <div id="historyMode">
+          <!-- Upload section (เปลี่ยน state ตามการอัปโหลด) -->
+          <div id="uploadSection"></div>
+
+          <!-- Comparison table (แสดงหลังอัปโหลด) -->
+          <div id="comparisonSection" style="display:none;"></div>
+        </div>
+
+        <!-- ============== Mode: supplier (NEW) ============== -->
+        <div id="supplierMode" style="display:none;">
+          <div id="supplierComparisonUploadSection"></div>
+          <div id="supplierComparisonSection" style="display:none;"></div>
+        </div>
 
       </main>
 
@@ -792,6 +808,7 @@
   <script src="config.local.js"></script>
   <script src="js/data.js"></script>
   <script src="js/demo.js"></script>
+  <script src="js/supplier-comparison.js"></script>
   <script>
     DemoController.injectToggle('#demo-toggle-mount');
     DemoController.injectBanner();
@@ -1624,6 +1641,25 @@
       uploadedBOQ = null;
       document.getElementById('comparisonSection').style.display = 'none';
       renderUploadSection();
+    }
+
+    /* ---------- Mode switcher (BOQ vs ประวัติ / 7 ผู้ขาย) ---------- */
+    function switchCompareMode(mode) {
+      document.querySelectorAll('#compareModeTabs .tab').forEach(t => {
+        t.classList.toggle('active', t.dataset.mode === mode);
+      });
+      const historyMode = document.getElementById('historyMode');
+      const supplierMode = document.getElementById('supplierMode');
+      if (mode === 'history') {
+        historyMode.style.display = '';
+        supplierMode.style.display = 'none';
+      } else {
+        historyMode.style.display = 'none';
+        supplierMode.style.display = '';
+        if (window.SupplierCompareController) {
+          window.SupplierCompareController.init();
+        }
+      }
     }
 
     /* ---------- Render Comparison ---------- */
