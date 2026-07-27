@@ -50,6 +50,8 @@
       },
     },
     terms: {},             // { supplierIdx: { key: value } }
+    selectedTermsVendorIdx: null,  // idx ของ vendor ที่เลือกในหน้า terms (null = auto)
+    extraTermsVendors: [],        // [{ id, name, terms: {key:value} }] — vendor ที่เพิ่มเอง
   };
 
   /* ผังกลุ่มลายเซ็นสำหรับ render/แก้ไข */
@@ -753,27 +755,114 @@
     { key: 'contact', label: 'รายชื่อผู้ติดต่อ', ph: 'เช่น นัท 061-9211113' },
   ];
 
+  /* ============================================================
+     AUTO-EXTRACT TERMS (R2) — รวบข้อความจาก state แล้ว regex ตาม fieldKey
+     ============================================================ */
+  function gatherTermsSourceText() {
+    const sheet = state.sheets && state.sheets[state.activeSheetIdx];
+    const parts = [];
+    if (state.fileName) parts.push(state.fileName);
+    if (state.projectName) parts.push(state.projectName);
+    if (sheet) {
+      if (sheet.projectLine) parts.push(sheet.projectLine);
+      if (sheet.workLine) parts.push(sheet.workLine);
+      if (sheet.name) parts.push(sheet.name);
+      // รวมชื่อผู้ขาย + note ของแต่ละ vendor (ถ้ามี)
+      const suppliers = (sheet.supplierNames || []);
+      parts.push(suppliers.join(' '));
+      // รวม note/description ของ item
+      (sheet.items || []).forEach(it => {
+        if (it.name) parts.push(it.name);
+        if (it.wdTitle) parts.push(it.wdTitle);
+      });
+    }
+    return parts.filter(Boolean).join('\n');
+  }
+
+  /* regex patterns สำหรับแต่ละ field — return string | null */
+  function extractTermFromText(text, fieldKey) {
+    if (!text) return null;
+    const t = String(text);
+    switch (fieldKey) {
+      case 'priceNote': {
+        const m = t.match(/(ราคา\s*[:]?\s*(?:รวม|ไม่รวม)?\s*ภาษีมูลค่าเพิ่ม\s*\d*\s*%|ราคารวมภาษี|VAT\s*\d+\s*%|ภาษี\s*\d+\s*%)/i);
+        return m ? m[1].replace(/\s+/g, ' ').trim() : null;
+      }
+      case 'validUntil': {
+        const m = t.match(/(ยืนราคา(?:ถึง)?\s*[\d\sก-๙]+\s*\d{4}|ยืนราคาตลอด(?:ทั้ง)?โครงการ|ยืนราคา\s*\d+\s*วัน)/);
+        return m ? m[1].replace(/\s+/g, ' ').trim() : null;
+      }
+      case 'paymentTerm': {
+        const m = t.match(/(เครดิต\s*\d+\s*วัน[^\n]{0,40}|เงินสด|ชำระ(?:เงิน)?[^\n]{0,40})/);
+        return m ? m[1].replace(/\s+/g, ' ').trim() : null;
+      }
+      case 'delivery': {
+        const m = t.match(/(ผลิต\s*\d+(?:-\d+)?\s*วัน[^\n]{0,40}|ส่งมอบ(?:ภายใน)?\s*\d+(?:-\d+)?\s*วัน[^\n]{0,40}|ภายใน\s*\d+(?:-\d+)?\s*วัน[^\n]{0,40})/);
+        return m ? m[1].replace(/\s+/g, ' ').trim() : null;
+      }
+      case 'warranty': {
+        const m = t.match(/(รับประกัน(?:สินค้า)?\s*\d+\s*ปี|รับประกัน\s*\d+\s*เดือน)/);
+        return m ? m[1].replace(/\s+/g, ' ').trim() : null;
+      }
+      case 'contact': {
+        const m = t.match(/(คุณ[^\s\d]{1,30}\s*[\d\-]{8,12}|นาย[^\s\d]{1,30}\s*[\d\-]{8,12}|นางสาว[^\s\d]{1,30}\s*[\d\-]{8,12}|0\d{1,2}[-\s]?\d{3}[-\s]?\d{4,7})/);
+        return m ? m[1].replace(/\s+/g, ' ').trim() : null;
+      }
+    }
+    return null;
+  }
+
   function renderTermsBlock() {
     const suppliers = getActiveSuppliers().filter(s => !/BOQ/i.test(s.name));
-    if (!suppliers.length) return '';
+    const extra = state.extraTermsVendors || [];
+    const totalCount = suppliers.length + extra.length;
+    if (!totalCount) return '';
 
-    const cols = suppliers.map((s, si) => {
-      const t = state.terms[si] || {};
-      const fields = TERM_FIELDS.map(f => `
-        <div class="term-field">
-          <label>${escapeHtml(f.label)}</label>
+    // รวม vendor list: index ของ parser supplier ก่อน, แล้วต่อด้วย extra (id = 'e0', 'e1', ...)
+    const all = [];
+    suppliers.forEach((s, si) => all.push({ id: si, name: s.name, isExtra: false }));
+    extra.forEach((v, i) => all.push({ id: 'e' + i, name: v.name, isExtra: true }));
+
+    // เลือก vendor ที่จะแสดง: ถ้ายังไม่ได้เลือก หรือ id ไม่อยู่ใน list → auto-pick
+    let selectedId = state.selectedTermsVendorIdx;
+    const exists = all.some(v => v.id === selectedId);
+    if (!exists) {
+      // default: winner ถ้ามี, ไม่งั้น vendor แรก
+      const winnerName = state.conclusionSupplier;
+      const winnerItem = winnerName ? all.find(v => v.name === winnerName) : null;
+      selectedId = winnerItem ? winnerItem.id : all[0].id;
+      state.selectedTermsVendorIdx = selectedId;
+    }
+    const selected = all.find(v => v.id === selectedId);
+
+    // ดึง terms object ของ vendor ที่เลือก
+    let t = {};
+    if (selected.isExtra) {
+      const extraVendor = extra[parseInt(String(selected.id).replace('e', ''), 10)];
+      t = (extraVendor && extraVendor.terms) || {};
+    } else {
+      t = state.terms[selected.id] || {};
+    }
+
+    const fields = TERM_FIELDS.map(f => `
+      <div class="term-field">
+        <label>${escapeHtml(f.label)}</label>
+        <div class="term-input-row">
           <input type="text" class="form-control"
                  value="${escapeHtml(t[f.key] || '')}"
                  placeholder="${escapeHtml(f.ph)}"
-                 oninput="SupplierCompareController.updateTerm(${si},'${f.key}',this.value)">
+                 oninput="SupplierCompareController.updateTerm('${selected.id}','${f.key}',this.value)">
+          <button type="button" class="btn-icon btn-extract"
+                  title="ดึงข้อมูลจากเอกสาร (อัตโนมัติ)"
+                  onclick="SupplierCompareController.autoExtractTerm('${selected.id}','${f.key}')">🔍</button>
         </div>
-      `).join('');
-      return `
-        <div class="terms-column">
-          <div class="terms-column-head">${escapeHtml(s.name)}</div>
-          ${fields}
-        </div>
-      `;
+      </div>
+    `).join('');
+
+    const dropdownOptions = all.map(v => {
+      const isWinner = v.name === state.conclusionSupplier;
+      const label = escapeHtml(v.name) + (isWinner ? ' (ผู้ชนะ)' : '');
+      return `<option value="${escapeHtml(String(v.id))}" ${v.id === selectedId ? 'selected' : ''}>${label}</option>`;
     }).join('');
 
     return `
@@ -781,11 +870,25 @@
         <div class="card-header">
           <div>
             <h3>รายละเอียดประกอบการเสนอราคา</h3>
-            <div class="sub">กรอกแยกตามผู้ขาย — จะไปอยู่ท้ายตารางในไฟล์ Excel</div>
+            <div class="sub">เลือกบริษัทจากดรอปดาวน์ — จะไปอยู่ท้ายตารางในไฟล์ Excel</div>
           </div>
         </div>
         <div class="card-body">
-          <div class="terms-grid-multi">${cols}</div>
+          <div class="terms-selector">
+            <label class="terms-selector-label">เลือกบริษัท:</label>
+            <select class="form-control terms-dropdown"
+                    onchange="SupplierCompareController.setTermsVendorIdx(this.value)">
+              ${dropdownOptions}
+            </select>
+            <button type="button" class="btn btn-secondary btn-sm"
+                    onclick="SupplierCompareController.addTermsVendor()">＋ เพิ่มบริษัท</button>
+            ${selected.isExtra ? `<button type="button" class="btn btn-danger btn-sm"
+                    onclick="SupplierCompareController.removeTermsVendor('${selected.id}')">🗑 ลบบริษัทนี้</button>` : ''}
+          </div>
+          <div class="terms-single">
+            <div class="terms-column-head">${escapeHtml(selected.name)}${selected.name === state.conclusionSupplier ? ' <span class="winner-badge">★ ผู้ชนะ</span>' : ''}</div>
+            ${fields}
+          </div>
         </div>
       </div>
     `;
@@ -842,6 +945,14 @@
       name: name,
       terms: state.terms[i] || {},
     }));
+
+    // ต่อด้วย extra vendors (ที่ user เพิ่มเอง) — terms มี แต่ไม่มีราคาในตารางเทียบ
+    (state.extraTermsVendors || []).forEach((v) => {
+      vendors.push({
+        name: v.name,
+        terms: v.terms || {},
+      });
+    });
 
     const winner = state.conclusionSupplier || (vendors[0] && vendors[0].name) || '';
     const reason = state.conclusionReason || 'คุณภาพและราคาเหมาะสม';
@@ -1031,8 +1142,72 @@
     },
 
     updateTerm(supplierIdx, key, value) {
-      if (!state.terms[supplierIdx]) state.terms[supplierIdx] = {};
-      state.terms[supplierIdx][key] = value;
+      // รองรับทั้ง numeric index (parser vendor) และ 'eN' string (extra vendor)
+      if (typeof supplierIdx === 'string' && supplierIdx.startsWith('e')) {
+        const idx = parseInt(supplierIdx.slice(1), 10);
+        const vendor = state.extraTermsVendors[idx];
+        if (!vendor) return;
+        if (!vendor.terms) vendor.terms = {};
+        vendor.terms[key] = value;
+      } else {
+        if (!state.terms[supplierIdx]) state.terms[supplierIdx] = {};
+        state.terms[supplierIdx][key] = value;
+      }
+    },
+
+    setTermsVendorIdx(id) {
+      state.selectedTermsVendorIdx = id;
+      renderComparisonView();
+    },
+
+    addTermsVendor() {
+      const name = prompt('ชื่อบริษัทที่ต้องการเพิ่ม:', '');
+      if (!name || !name.trim()) return;
+      const cleanName = name.trim();
+      // ป้องกันชื่อซ้ำ
+      const suppliers = getActiveSuppliers().filter(s => !/BOQ/i.test(s.name));
+      if (suppliers.some(s => s.name === cleanName)) {
+        alert('มีบริษัทนี้ในรายการอยู่แล้ว');
+        return;
+      }
+      if ((state.extraTermsVendors || []).some(v => v.name === cleanName)) {
+        alert('มีบริษัทนี้ถูกเพิ่มไว้แล้ว');
+        return;
+      }
+      if (!state.extraTermsVendors) state.extraTermsVendors = [];
+      const newId = 'e' + state.extraTermsVendors.length;
+      state.extraTermsVendors.push({ name: cleanName, terms: {} });
+      state.selectedTermsVendorIdx = newId;
+      renderComparisonView();
+    },
+
+    removeTermsVendor(id) {
+      if (typeof id !== 'string' || !id.startsWith('e')) return;
+      const idx = parseInt(id.slice(1), 10);
+      if (!confirm('ลบบริษัทนี้ออกจากรายการ terms?')) return;
+      state.extraTermsVendors.splice(idx, 1);
+      // รีเซ็ต selection (จะ auto-pick ใหม่ตอน render)
+      state.selectedTermsVendorIdx = null;
+      renderComparisonView();
+    },
+
+    autoExtractTerm(supplierIdx, fieldKey) {
+      // ดึงข้อความจาก sheet (workName, projectName, items, suppliers) แล้วยิง regex ตาม fieldKey
+      const text = gatherTermsSourceText();
+      if (!text) {
+        alert('ไม่พบข้อความต้นทาง — กรุณาอัปโหลดไฟล์ก่อน');
+        return;
+      }
+      const extracted = extractTermFromText(text, fieldKey);
+      if (!extracted) {
+        showToast('ไม่พบข้อความที่ตรงกับฟิลด์ "' + (TERM_FIELDS.find(f => f.key === fieldKey) || {}).label + '"', 'warn');
+        return;
+      }
+      // เติมค่าลง state แล้ว re-render
+      const ctrl = SupplierCompareController;
+      ctrl.updateTerm(supplierIdx, fieldKey, extracted);
+      renderComparisonView();
+      showToast('ดึงข้อมูลสำเร็จ: ' + extracted, 'success');
     },
 
     exportExcel() {
