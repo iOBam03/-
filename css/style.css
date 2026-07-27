@@ -1334,6 +1334,41 @@ select.form-control { cursor: pointer; }
   .winner-banner { flex-direction: column; align-items: flex-start; }
   .winner-banner-stats { width: 100%; }
 }
+
+/* Validation warnings (R3) */
+.validation-warning {
+  background: #fff7ed;
+  border: 1px solid #fbbf24;
+  border-left: 5px solid #f59e0b;
+  border-radius: 8px;
+  padding: 14px 18px;
+  margin-bottom: 18px;
+}
+.validation-warning-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  color: #92400e;
+  font-size: 13.5px;
+  margin-bottom: 8px;
+}
+.warning-icon {
+  font-size: 18px;
+  flex-shrink: 0;
+}
+.validation-warning ul {
+  margin: 0 0 8px 20px;
+  padding: 0;
+  color: #78350f;
+  font-size: 12.5px;
+  line-height: 1.6;
+}
+.validation-warning-foot {
+  font-size: 11.5px;
+  color: #92400e;
+  font-style: italic;
+}
 .terms-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);

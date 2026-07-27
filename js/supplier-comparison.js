@@ -440,6 +440,7 @@
 
     sec.innerHTML = `
       ${renderWinnerBanner(items, suppliers)}
+      ${renderValidationWarnings(items)}
       ${renderKpiStrip(items, suppliers)}
       ${renderComparisonTable(items, suppliers)}
       ${renderConclusionBlock(suppliers)}
@@ -465,6 +466,64 @@
       </div>
     `;
     highlightCheapest();
+  }
+
+  function renderValidationWarnings(items) {
+    // R3: ตรวจ qty/unit consistency ระหว่าง item-level กับ TYPE-level
+    const warnings = [];
+    const groups = new Map();
+    items.forEach(item => {
+      const g = item.group || 'รายการ';
+      if (!groups.has(g)) groups.set(g, []);
+      groups.get(g).push(item);
+    });
+
+    groups.forEach((itemsInGroup, groupName) => {
+      const typeQty = itemsInGroup[0].groupQty;
+      const typeUnit = itemsInGroup[0].groupUnit;
+      if (!typeQty || typeQty <= 0) return;
+
+      // คำนวณ total qty ของทุก item ในกลุ่ม
+      const totalItemQty = itemsInGroup.reduce((s, it) => s + (it.qty || 0), 0);
+
+      // ถ้า total item qty ไม่สอดคล้องกับ TYPE multiplier (อนุญาต ±20% สำหรับ buffer)
+      if (totalItemQty > 0 && typeUnit && itemsInGroup[0].unit === typeUnit) {
+        const ratio = totalItemQty / typeQty;
+        if (ratio < 0.5 || ratio > 2) {
+          warnings.push({
+            group: groupName,
+            typeQty: typeQty,
+            typeUnit: typeUnit,
+            itemTotal: totalItemQty,
+            ratio: ratio,
+          });
+        }
+      }
+    });
+
+    if (warnings.length === 0) return '';
+
+    const items2 = warnings.map(w => {
+      const ratioStr = (w.ratio * 100).toFixed(0) + '%';
+      return `
+        <li>
+          <strong>${escapeHtml(w.group)}</strong>:
+          TYPE ระบุ ${w.typeQty} ${escapeHtml(w.typeUnit)},
+          รายการรวม ${w.itemTotal} ${escapeHtml(w.typeUnit)} (${ratioStr})
+        </li>
+      `;
+    }).join('');
+
+    return `
+      <div class="validation-warning">
+        <div class="validation-warning-head">
+          <span class="warning-icon">⚠️</span>
+          <span>ตรวจพบจำนวนไม่สอดคล้องระหว่าง TYPE กับรายการย่อย</span>
+        </div>
+        <ul>${items2}</ul>
+        <div class="validation-warning-foot">ระบบยังคงคำนวณตามปกติ — โปรดตรวจสอบ BOQ ต้นทาง</div>
+      </div>
+    `;
   }
 
   function renderWinnerBanner(items, suppliers) {
