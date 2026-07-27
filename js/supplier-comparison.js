@@ -439,6 +439,7 @@
     const suppliers = getActiveSuppliers();
 
     sec.innerHTML = `
+      ${renderWinnerBanner(items, suppliers)}
       ${renderKpiStrip(items, suppliers)}
       ${renderComparisonTable(items, suppliers)}
       ${renderConclusionBlock(suppliers)}
@@ -464,6 +465,60 @@
       </div>
     `;
     highlightCheapest();
+  }
+
+  function renderWinnerBanner(items, suppliers) {
+    const winnerName = state.conclusionSupplier;
+    if (!winnerName) return ''; // ยังไม่เลือก → ไม่แสดง banner (กันรก)
+
+    // คำนวณยอดรวมของ winner ตามรายการที่ user เลือก winner (winnerByItem)
+    let winnerTotal = 0;
+    let winnerItemCount = 0;
+    items.forEach((item, itemIdx) => {
+      const wi = state.winnerByItem[itemIdx];
+      if (wi !== undefined && item.suppliers[wi] && item.suppliers[wi].total) {
+        winnerTotal += item.suppliers[wi].total;
+        winnerItemCount += 1;
+      } else if (wi !== undefined && item.suppliers[wi] && item.suppliers[wi].price) {
+        // fallback: price × qty
+        winnerTotal += (item.suppliers[wi].price || 0) * (item.qty || 0);
+        winnerItemCount += 1;
+      }
+    });
+
+    // ส่วนต่างจาก BOQ (ถ้ามี)
+    const boqTotal = items.reduce((s, it) => s + (it.boq || 0) * (it.qty || 0), 0);
+    const boqDelta = boqTotal > 0 ? winnerTotal - boqTotal : null;
+
+    return `
+      <div class="winner-banner">
+        <div class="winner-banner-left">
+          <div class="winner-banner-icon">★</div>
+          <div>
+            <div class="winner-banner-label">ผู้ขายที่เลือก</div>
+            <div class="winner-banner-name">${escapeHtml(winnerName)}</div>
+          </div>
+        </div>
+        <div class="winner-banner-stats">
+          <div class="winner-banner-stat">
+            <div class="stat-label">ยอดรวม (รายการที่เลือก)</div>
+            <div class="stat-value">${fmt.currencyShort(winnerTotal)}<span class="stat-unit">บาท</span></div>
+          </div>
+          <div class="winner-banner-stat">
+            <div class="stat-label">เลือกแล้ว</div>
+            <div class="stat-value">${winnerItemCount}<span class="stat-unit">/ ${items.length} รายการ</span></div>
+          </div>
+          ${boqDelta !== null ? `
+          <div class="winner-banner-stat">
+            <div class="stat-label">ส่วนต่างจาก BOQ</div>
+            <div class="stat-value ${boqDelta > 0 ? 'stat-up' : 'stat-down'}">
+              ${boqDelta > 0 ? '+' : ''}${fmt.currencyShort(boqDelta)}<span class="stat-unit">บาท</span>
+            </div>
+          </div>
+          ` : ''}
+        </div>
+      </div>
+    `;
   }
 
   function renderKpiStrip(items, suppliers) {

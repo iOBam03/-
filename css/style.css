@@ -1254,6 +1254,86 @@ select.form-control { cursor: pointer; }
   color: var(--color-primary);
   border-color: #b8d4f8;
 }
+
+/* Winner Banner (R7) */
+.winner-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  background: linear-gradient(135deg, #fff8e1 0%, #fff3c4 100%);
+  border: 1px solid #f5d76e;
+  border-left: 5px solid #f5b800;
+  border-radius: 10px;
+  padding: 16px 20px;
+  margin-bottom: 18px;
+  flex-wrap: wrap;
+}
+.winner-banner-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 220px;
+}
+.winner-banner-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: #f5b800;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.winner-banner-label {
+  font-size: 12px;
+  color: #8b6914;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+}
+.winner-banner-name {
+  font-size: 16px;
+  font-weight: 700;
+  color: #5c4400;
+  margin-top: 2px;
+}
+.winner-banner-stats {
+  display: flex;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+.winner-banner-stat {
+  min-width: 130px;
+}
+.stat-label {
+  font-size: 11px;
+  color: #8b6914;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  margin-bottom: 2px;
+}
+.stat-value {
+  font-size: 17px;
+  font-weight: 700;
+  color: #5c4400;
+}
+.stat-value.stat-up { color: #c0392b; }
+.stat-value.stat-down { color: #166534; }
+.stat-unit {
+  font-size: 11px;
+  font-weight: 500;
+  color: #8b6914;
+  margin-left: 4px;
+}
+@media (max-width: 700px) {
+  .winner-banner { flex-direction: column; align-items: flex-start; }
+  .winner-banner-stats { width: 100%; }
+}
 .terms-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);

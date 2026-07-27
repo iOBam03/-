@@ -631,6 +631,7 @@
         </ul>
       </div>
       <div class="sidebar-footer">
+        <div id="demo-toggle-mount" style="margin-bottom:8px"></div>
         <div>ผู้ใช้: <strong style="color:#cbd5e1">ฝ่ายจัดซื้อ</strong></div>
         <div style="margin-top:4px">v1.0.0 — Prototype</div>
       </div>
@@ -811,11 +812,14 @@
 
   <script src="config.local.js"></script>
   <script src="js/data.js"></script>
+  <script src="js/demo.js"></script>
   <script src="vendor/exceljs.min.js"></script>
   <script src="js/compare-excel-export.js"></script>
   <script src="js/supplier-comparison.js"></script>
   <script src="js/purchase-history-sap.js"></script>
   <script>
+    DemoController.injectToggle('#demo-toggle-mount');
+    DemoController.injectBanner();
     const D = window.SAMPLE_DATA;
 
     /* ---------- State ---------- */
