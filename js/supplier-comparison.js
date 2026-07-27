@@ -52,6 +52,7 @@
     terms: {},             // { supplierIdx: { key: value } }
     selectedTermsVendorIdx: null,  // idx ของ vendor ที่เลือกในหน้า terms (null = auto)
     extraTermsVendors: [],        // [{ id, name, terms: {key:value} }] — vendor ที่เพิ่มเอง
+    sortByCheapest: false,        // toggle: เรียงแถวตามราคาต่ำสุด (ถูกสุดอยู่บน)
   };
 
   /* ผังกลุ่มลายเซ็นสำหรับ render/แก้ไข */
@@ -511,7 +512,19 @@
       </th>`
     ).join('');
 
-    const rows = items.map((item, itemIdx) => {
+    // สร้าง array พร้อม original index เพื่อใช้ sort โดยไม่เสีย mapping
+    let indexed = items.map((item, itemIdx) => ({ item, itemIdx }));
+    if (state.sortByCheapest) {
+      indexed.sort((a, b) => {
+        const pa = a.item.suppliers.map(s => (s && s.price) || Infinity).filter(p => isFinite(p));
+        const pb = b.item.suppliers.map(s => (s && s.price) || Infinity).filter(p => isFinite(p));
+        const minA = pa.length ? Math.min(...pa) : Infinity;
+        const minB = pb.length ? Math.min(...pb) : Infinity;
+        return minA - minB; // ถูกสุดอยู่บน
+      });
+    }
+
+    const rows = indexed.map(({ item, itemIdx }) => {
       const cheapestIdx = findCheapestIdx(item);
       const cells = suppliers.map((s, sIdx) => {
         const sup = item.suppliers[sIdx];
@@ -554,6 +567,13 @@
               แสดง ${items.length} รายการ · ${suppliers.length} ผู้ขาย
               · <span style="color:var(--color-success);font-weight:600;">ถูกสุด</span> = ราคาต่ำสุดในแถว (visual cue เท่านั้น — ท่านเลือกผู้ชนะเอง)
             </div>
+          </div>
+          <div class="card-header-actions">
+            <label class="sort-toggle" title="เรียงแถวจากราคาถูกสุดไปแพงสุด (สำหรับผู้บริหารดูง่าย)">
+              <input type="checkbox" id="sortByCheapestChk" ${state.sortByCheapest ? 'checked' : ''}
+                     onchange="SupplierCompareController.setSortByCheapest(this.checked)">
+              <span>เรียงถูก→แพง</span>
+            </label>
           </div>
         </div>
         <div class="card-body no-pad">
@@ -1034,6 +1054,11 @@
      ============================================================ */
   const controller = {
     init() {
+      // restore preference
+      try {
+        const stored = localStorage.getItem('sortByCheapest');
+        if (stored === '1') state.sortByCheapest = true;
+      } catch (e) {}
       renderUploadCard();
     },
 
@@ -1157,6 +1182,13 @@
 
     setTermsVendorIdx(id) {
       state.selectedTermsVendorIdx = id;
+      renderComparisonView();
+    },
+
+    setSortByCheapest(on) {
+      state.sortByCheapest = !!on;
+      // persist preference
+      try { localStorage.setItem('sortByCheapest', state.sortByCheapest ? '1' : '0'); } catch (e) {}
       renderComparisonView();
     },
 
