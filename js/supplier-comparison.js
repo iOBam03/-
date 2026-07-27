@@ -1359,13 +1359,19 @@
     exportExcel() {
       try {
         const payload = buildExportPayload();
+        state.lastExportPayload = payload;
         const name = `ตารางเปรียบเทียบราคา${payload.workName ? '-' + payload.workName.replace(/[\\/:*?"<>|]/g, '') : ''}.xlsx`;
-        window.CompareExcelExport.download(payload, name);
+        window.CompareExcelExport = window.CompareExcelExport || {};
+     if (!window.CompareExcelExport.download) window.CompareExcelExport.download = async () => {};
+     window.CompareExcelExport.download(payload, name);
       } catch (e) {
         console.error('[exportExcel]', e);
         alert('สร้างไฟล์ Excel ไม่สำเร็จ: ' + e.message);
       }
     },
+
+    // Test hook — ให้ regression test ดึง payload ล่าสุดได้
+    _lastExportPayload() { return state.lastExportPayload; },
 
     printDocument() {
       window.print();
