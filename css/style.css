@@ -1176,6 +1176,48 @@ select.form-control { cursor: pointer; }
   font-style: italic;
 }
 
+/* Signature — โหมดแก้ไขชื่อ/ตำแหน่ง */
+.signature-group-block { margin-bottom: 18px; }
+.signature-group-block:last-child { margin-bottom: 0; }
+.signature-group-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--color-border);
+}
+.signature-group-label {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+.signature-edit {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+.signature-edit .form-control { width: 100%; font-size: 12px; }
+.signature-edit .sig-title {
+  font-weight: 600;
+  color: var(--color-primary);
+}
+.signature-block .signature-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  margin-top: auto;
+  margin-bottom: 0;
+}
+.btn-icon {
+  padding: 2px 7px;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
 /* Terms card */
 .terms-card { margin-top: 16px; }
 .terms-grid {
@@ -1183,6 +1225,20 @@ select.form-control { cursor: pointer; }
   grid-template-columns: repeat(4, 1fr);
   gap: 12px;
 }
+.terms-grid-multi {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 18px;
+}
+.terms-column-head {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--color-primary);
+  margin-bottom: 10px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--color-border);
+}
+.terms-column .term-field { margin-bottom: 10px; }
 .term-field label {
   display: block;
   font-size: 12px;
