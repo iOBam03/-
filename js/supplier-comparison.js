@@ -24,7 +24,47 @@
     winnerByItem: {},      // { itemIdx: supplierIdx } — manual picks
     conclusionSupplier: '',
     conclusionReason: '',
+    // ค่าเริ่มต้นตามไฟล์ต้นฉบับ BLESSINI — ผู้ใช้แก้ได้ในหน้าเว็บ
+    signatures: {
+      preparer: [
+        { title: 'Section Manager', name: 'คุณวิมลรัตน์  สิทธิโคตร' },
+      ],
+      reviewers: [
+        { title: 'Vice President #2', name: 'คุณอัศวิน  รองหานาม' },
+      ],
+      approvers: {
+        label: 'คณะกรรมการจัดซื้อจัดจ้าง (อนุมัติ) (วงเงินเกิน 500,000-30,000,000 บาท)',
+        people: [
+          { title: 'Assistant Vice President #1', name: 'คุณกิตติพจน์  พันธ์ประจิตร' },
+          { title: 'Assistant Vice President #1', name: 'คุณทศพร  ยุทธศักดิ์' },
+          { title: 'Senior Vice President #2', name: 'คุณศิริรัตน์  โรจนวิภาต' },
+          { title: 'Senior Managing Director', name: 'คุณเกรียงศักดิ์  เหี้ยมโท้' },
+        ],
+      },
+      executives: {
+        label: 'คณะกรรมการบริหาร (อนุมัติ) (วงเงินเกิน 30,000,000 บาท)',
+        people: [
+          { title: 'Deputy Chief Executive Officer', name: 'คุณวราภรณ์ จาวโกนันท์' },
+          { title: 'Chief Executive Officer', name: '' },
+        ],
+      },
+    },
+    terms: {},             // { supplierIdx: { key: value } }
   };
+
+  /* ผังกลุ่มลายเซ็นสำหรับ render/แก้ไข */
+  const SIG_GROUPS = [
+    { key: 'preparer', label: 'ผู้จัดทำ' },
+    { key: 'reviewers', label: 'คณะทำงานจัดซื้อจัดจ้าง (เห็นชอบ)' },
+    { key: 'approvers', label: 'คณะกรรมการจัดซื้อจัดจ้าง (อนุมัติ)', nested: true },
+    { key: 'executives', label: 'คณะกรรมการบริหาร (อนุมัติ)', nested: true },
+  ];
+
+  function sigPeople(key) {
+    const g = state.signatures[key];
+    if (!g) return [];
+    return Array.isArray(g) ? g : (g.people || []);
+  }
 
   /* ---------- Helpers ---------- */
   const num = (v) => {
@@ -151,6 +191,43 @@
     const items = [];
     const dataStart = priceHeaderRowIdx + 1; // start scanning right after sub-header (includes WD header rows)
     let currentWD = null;
+    let currentWDTitle = null;
+    let currentWDNo = null;
+    let currentGroup = null;
+    let currentGroupQty = 1;
+    let currentGroupUnit = 'ชุด';
+
+    // ดึง TYPE qty/unit จากตารางสรุปท้ายชีต (rows ที่มี TYPE ใน colB + qty/unit ในคอลัมน์ถัดไป)
+    // map: TYPE key ("S"|"M"|"L"|"TWIN") → { qty, unit }
+    const typeSummary = new Map();
+    const typeKeyFromTitle = (s) => {
+      const str = String(s || '');
+      // รองรับทั้ง "TYPE X" และ "X" ติดๆ (เช่น "TWIN" ไม่มี "TYPE" นำหน้าใน header row บางฉบับ)
+      const m = str.match(/(?:TYPE\s+)?\b(S|M|L|TWIN)\b/i);
+      return m ? m[1].toUpperCase() : null;
+    };
+    for (let r = dataStart; r < aoa.length; r++) {
+      const row = aoa[r] || [];
+      const colA = String(row[0] || '').trim();
+      const colB = String(row[1] || '').trim();
+      // ตารางสรุป: colA = 1,2,3,4 (sequential) + colB มี TYPE + qty/unit ในคอลัมน์ 6-7 (G-H) หรือ 7-8 (H-I)
+      // ลองทั้ง 2 layout
+      if (/^\d+$/.test(colA) && /TYPE/i.test(colB)) {
+        // ลอง H/I ก่อน (item layout)
+        let qty = null, unit = null;
+        if (typeof row[7] === 'number' && row[7] > 0 && typeof row[8] === 'string' && row[8].trim()) {
+          qty = row[7]; unit = String(row[8]).trim();
+        }
+        // ลอง G/H (summary layout ของ BLESSINI)
+        else if (typeof row[6] === 'number' && row[6] > 0 && typeof row[7] === 'string' && row[7].trim()) {
+          qty = row[6]; unit = String(row[7]).trim();
+        }
+        if (qty !== null && unit) {
+          const tk = typeKeyFromTitle(colB);
+          if (tk) typeSummary.set(tk, { qty, unit });
+        }
+      }
+    }
     for (let r = dataStart; r < aoa.length; r++) {
       const row = aoa[r] || [];
       const colA = String(row[0] || '').trim();
@@ -160,6 +237,22 @@
       // ข้ามแถวหัวข้อรวม
       if (/^รวม|ราคารวม|รวมทั้งสิ้น|^Sub.?total/i.test(colB)) continue;
 
+      // แถวหัวกลุ่ม (เช่น "สำหรับบ้านพักอาศัย TYPE S") — ไม่มีราคา ไม่มี WD
+      if (!colA && /TYPE|สำหรับบ้าน/i.test(colB) && !/WD\d{2}/i.test(colB)) {
+        currentGroup = stripSpaces(colB);
+        currentWD = null;
+        // ดึง qty/unit ของ TYPE นี้จาก typeSummary (ถ้ามี) — เป็นตัวคูณแปลง เช่น 36 แปลง
+        const tk = typeKeyFromTitle(currentGroup);
+        if (tk && typeSummary.has(tk)) {
+          currentGroupQty = typeSummary.get(tk).qty;
+          currentGroupUnit = typeSummary.get(tk).unit;
+        } else {
+          currentGroupQty = 1;
+          currentGroupUnit = 'ชุด';
+        }
+        continue;
+      }
+
       // ตรวจ WD header row (เช่น "1.2 WD02 ห้องน้ำ 1,2,3")
       const wdInA = colA.match(/WD\d{2}/i);
       const wdInB = colB.match(/WD\d{2}/i);
@@ -167,11 +260,18 @@
       if (wdInA) {
         // WD header row — อัปเดต currentWD แล้วข้าม (ไม่ใช่ item)
         currentWD = wdInA[0].toUpperCase();
+        currentWDNo = colA;
+        currentWDTitle = stripSpaces(colB);
         continue;
       }
       if (wdInB) {
         // WD ใน col B (item header บางแบบ) — ใช้ WD นี้แต่ยังต้องเช็คว่าเป็น item หรือ header
         currentWD = wdInB[0].toUpperCase();
+        if (colA) currentWDNo = colA;
+        // แถวที่มีแต่หัวข้อ WD ไม่มี spec สินค้า = header ไม่ใช่ item
+        if (!/วงกบ|บาน|ประตู|WPC|HDF|UPVC/i.test(colB.replace(/WD\d{2}/i, ''))) {
+          currentWDTitle = stripSpaces(colB);
+        }
       }
 
       // ถ้าแถวนี้ไม่มี spec (วงกบ/บาน/ประตู/...) — น่าจะเป็น header/หัวข้อ
@@ -182,9 +282,9 @@
       const wd = currentWD;
       if (!wd) continue;
 
-      // ปริมาณในไฟล์จริงเป็น label — default = 1
-      const qty = 1;
-      const unit = stripSpaces(row[7]) || 'ชุด';
+      // ปริมาณอยู่คอลัมน์ H (index 7), หน่วยอยู่คอลัมน์ I (index 8)
+      const qty = num(row[7]) !== null ? num(row[7]) : 1;
+      const unit = stripSpaces(row[8]) || 'ชุด';
 
       const itemSuppliers = suppliers.map(s => {
         const price = num(row[s.priceCol]);
@@ -201,6 +301,11 @@
 
       items.push({
         wd: wd,
+        wdNo: currentWDNo || '',
+        wdTitle: currentWDTitle || wd,
+        group: currentGroup || '',
+        groupQty: currentGroupQty,
+        groupUnit: currentGroupUnit,
         name: colB,
         qty: qty,
         unit: unit,
@@ -217,6 +322,8 @@
       projectLine: projectLine,
       workLine: workLine || projectLine,
       items: items,
+      supplierNames: suppliers.map(s => s.name),
+      hasBOQ: !!boq,
       isFinalShortlist: suppliers.length <= 2,
     };
   }
@@ -335,7 +442,15 @@
       ${renderSignatureBlock()}
       ${renderTermsBlock()}
       <div class="action-bar">
-        <button class="btn btn-primary" onclick="SupplierCompareController.printDocument()">
+        <button class="btn btn-primary" onclick="SupplierCompareController.exportExcel()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="7 10 12 15 17 10"/>
+            <line x1="12" y1="15" x2="12" y2="3"/>
+          </svg>
+          ดาวน์โหลด Excel (.xlsx)
+        </button>
+        <button class="btn" onclick="SupplierCompareController.printDocument()">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <polyline points="6 9 6 2 18 2 18 9"/>
             <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
@@ -577,98 +692,172 @@
   }
 
   function renderSignatureBlock() {
-    const roles = [
-      { group: 'ฝ่ายจัดทำ (ผู้จัดทำใบเปรียบเทียบ)', names: [
-        'Section Manager (จัดทำ)',
-        'Vice President #2',
-        'Assistant Vice President #1',
-        'Assistant Vice President #1',
-        'Senior Vice President #2',
-      ] },
-      { group: 'คณะกรรมการจัดซื้อจัดจ้าง (อนุมัติ/ผ่าน)', names: [
-        'Senior Managing Director',
-        'Deputy Chief Executive Officer',
-      ] },
-      { group: 'คณะกรรมการบริหาร (อนุมัติ/ผ่าน)', names: [
-        'Deputy Chief Executive Officer',
-        'Deputy Chief Executive',
-      ] },
-    ];
+    const total = SIG_GROUPS.reduce((n, g) => n + sigPeople(g.key).length, 0);
 
-    const blocks = [];
-    roles.forEach(g => {
-      g.names.forEach(name => {
-        blocks.push({ group: g.group, name: name });
-      });
-    });
+    const groupHtml = SIG_GROUPS.map((g) => {
+      const people = sigPeople(g.key);
+      const rows = people.map((p, i) => `
+        <div class="signature-block">
+          <div class="signature-edit">
+            <input type="text" class="form-control sig-title"
+                   value="${escapeHtml(p.title || '')}"
+                   placeholder="ตำแหน่ง เช่น Section Manager"
+                   oninput="SupplierCompareController.updateSignature('${g.key}',${i},'title',this.value)">
+            <input type="text" class="form-control sig-name"
+                   value="${escapeHtml(p.name || '')}"
+                   placeholder="ชื่อผู้มีอำนาจ"
+                   oninput="SupplierCompareController.updateSignature('${g.key}',${i},'name',this.value)">
+          </div>
+          <div class="signature-line"></div>
+          <div class="signature-meta">
+            <span class="placeholder">[ลายเซ็น]</span>
+            <button class="btn btn-icon" title="ลบช่องนี้"
+                    onclick="SupplierCompareController.removeSignature('${g.key}',${i})">✕</button>
+          </div>
+        </div>
+      `).join('');
+
+      return `
+        <div class="signature-group-block">
+          <div class="signature-group-head">
+            <span class="signature-group-label">${escapeHtml(g.label)}</span>
+            <button class="btn btn-sm" onclick="SupplierCompareController.addSignature('${g.key}')">
+              + เพิ่มช่องเซ็น
+            </button>
+          </div>
+          <div class="signature-grid">${rows || '<div class="sub">ยังไม่มีช่องเซ็นในกลุ่มนี้</div>'}</div>
+        </div>
+      `;
+    }).join('');
 
     return `
       <div class="card signature-card">
         <div class="card-header">
           <div>
-            <h3>สายอนุมัติ (9 ระดับ)</h3>
-            <div class="sub">พิมพ์เอกสารแล้วให้ผู้มีอำนาจลงนามตามลำดับ</div>
+            <h3>สายอนุมัติ (${total} ช่อง)</h3>
+            <div class="sub">แก้ตำแหน่ง/ชื่อได้ตามโครงการ — ค่าที่ตั้งไว้จะไปปรากฏในไฟล์ Excel</div>
+          </div>
+        </div>
+        <div class="card-body">${groupHtml}</div>
+      </div>
+    `;
+  }
+
+  /* หัวข้อ "รายละเอียดประกอบการเสนอราคา" — ต้องตรงกับ exporter */
+  const TERM_FIELDS = [
+    { key: 'priceNote', label: 'ราคา และ ปริมาณ', ph: 'เช่น ราคารวมภาษีมูลค่าเพิ่ม 7%' },
+    { key: 'validUntil', label: 'กำหนดระยะเวลายืนราคา', ph: 'เช่น ยืนราคาถึง 31 ธันวาคม 2569' },
+    { key: 'paymentTerm', label: 'เงื่อนไขชำระเงิน', ph: 'เช่น เครดิต 30 วัน นับจากวันวางบิล' },
+    { key: 'delivery', label: 'กำหนดการส่งมอบ', ph: 'เช่น ผลิต 20-30 วัน นับจากได้รับใบสั่งซื้อ' },
+    { key: 'warranty', label: 'กำหนดระยะเวลาการรับประกันและบริการ', ph: 'เช่น รับประกันสินค้า 2 ปี' },
+    { key: 'contact', label: 'รายชื่อผู้ติดต่อ', ph: 'เช่น นัท 061-9211113' },
+  ];
+
+  function renderTermsBlock() {
+    const suppliers = getActiveSuppliers().filter(s => !/BOQ/i.test(s.name));
+    if (!suppliers.length) return '';
+
+    const cols = suppliers.map((s, si) => {
+      const t = state.terms[si] || {};
+      const fields = TERM_FIELDS.map(f => `
+        <div class="term-field">
+          <label>${escapeHtml(f.label)}</label>
+          <input type="text" class="form-control"
+                 value="${escapeHtml(t[f.key] || '')}"
+                 placeholder="${escapeHtml(f.ph)}"
+                 oninput="SupplierCompareController.updateTerm(${si},'${f.key}',this.value)">
+        </div>
+      `).join('');
+      return `
+        <div class="terms-column">
+          <div class="terms-column-head">${escapeHtml(s.name)}</div>
+          ${fields}
+        </div>
+      `;
+    }).join('');
+
+    return `
+      <div class="card terms-card">
+        <div class="card-header">
+          <div>
+            <h3>รายละเอียดประกอบการเสนอราคา</h3>
+            <div class="sub">กรอกแยกตามผู้ขาย — จะไปอยู่ท้ายตารางในไฟล์ Excel</div>
           </div>
         </div>
         <div class="card-body">
-          <div class="signature-grid">
-            ${blocks.map(b => `
-              <div class="signature-block">
-                <div class="signature-role">${escapeHtml(b.name)}</div>
-                <div class="signature-line"></div>
-                <div class="signature-meta">
-                  <span class="placeholder">[ลายเซ็น]</span>
-                </div>
-                <div class="signature-fields">
-                  <div class="field">
-                    <div class="field-label">ชื่อ</div>
-                    <div class="field-line"></div>
-                  </div>
-                  <div class="field">
-                    <div class="field-label">วันที่</div>
-                    <div class="field-line"></div>
-                  </div>
-                </div>
-                <div class="signature-group">${escapeHtml(b.group)}</div>
-              </div>
-            `).join('')}
-          </div>
+          <div class="terms-grid-multi">${cols}</div>
         </div>
       </div>
     `;
   }
 
-  function renderTermsBlock() {
-    return `
-      <div class="card terms-card">
-        <div class="card-header">
-          <div>
-            <h3>เงื่อนไขการจัดซื้อ / กำหนดส่งมอบ</h3>
-            <div class="sub">ฝ่ายจัดซื้อระบุ — พิมพ์ออกมาพร้อมกันกับใบเสนอราคา</div>
-          </div>
-        </div>
-        <div class="card-body">
-          <div class="terms-grid">
-            <div class="term-field">
-              <label>กำหนดเสร็จงาน</label>
-              <input type="text" class="form-control" placeholder="เช่น 31 มีนาคม 2569">
-            </div>
-            <div class="term-field">
-              <label>ระยะเวลาจัดส่ง</label>
-              <input type="text" class="form-control" placeholder="เช่น 30 วัน">
-            </div>
-            <div class="term-field">
-              <label>เครดิต (วัน)</label>
-              <input type="text" class="form-control" placeholder="เช่น 30 วัน">
-            </div>
-            <div class="term-field">
-              <label>รับประกัน</label>
-              <input type="text" class="form-control" placeholder="เช่น 1 ปี">
-            </div>
-          </div>
-        </div>
-      </div>
-    `;
+  /* ============================================================
+     EXPORT PAYLOAD — แปลง state ให้เป็น input ของ compare-excel-export
+     ============================================================ */
+  function buildExportPayload() {
+    const sheet = state.sheets[state.activeSheetIdx];
+    if (!sheet) throw new Error('ยังไม่ได้เลือก sheet');
+
+    const items = sheet.items || [];
+    const suppliers = (sheet.supplierNames || []).slice();
+    const hasBOQ = !!sheet.hasBOQ;
+
+    // จัดกลุ่ม: group (TYPE) > section (WD) > items  โดยรักษาลำดับเดิมในไฟล์
+    const groupMap = new Map();
+    items.forEach((it) => {
+      const gKey = it.group || 'รายการ';
+      if (!groupMap.has(gKey)) {
+        // ใช้ qty/unit จาก item แรกของกลุ่ม (parser ดึงจากตารางสรุปท้ายชีต เช่น 36 แปลง)
+        const initQty = (typeof it.groupQty === 'number' && it.groupQty > 0) ? it.groupQty : 1;
+        const initUnit = it.groupUnit || 'ชุด';
+        groupMap.set(gKey, { title: gKey, qty: initQty, unit: initUnit, sectionMap: new Map() });
+      }
+      const g = groupMap.get(gKey);
+
+      const sKey = (it.wdNo || '') + '|' + (it.wdTitle || it.wd || '');
+      if (!g.sectionMap.has(sKey)) {
+        g.sectionMap.set(sKey, { no: it.wdNo || '', title: it.wdTitle || it.wd || '', items: [] });
+      }
+
+      // prices เรียงตามผู้ขายทั้งหมด แล้วต่อท้ายด้วย BOQ (ถ้ามี)
+      const prices = (it.suppliers || []).map(s => s.price);
+      if (hasBOQ) prices.push(it.boq);
+
+      g.sectionMap.get(sKey).items.push({
+        name: it.name,
+        qty: it.qty,
+        unit: it.unit,
+        prices: prices,
+      });
+    });
+
+    const groups = Array.from(groupMap.values()).map(g => ({
+      title: g.title,
+      qty: g.qty,
+      unit: g.unit,
+      sections: Array.from(g.sectionMap.values()),
+    }));
+
+    const vendors = suppliers.map((name, i) => ({
+      name: name,
+      terms: state.terms[i] || {},
+    }));
+
+    const winner = state.conclusionSupplier || (vendors[0] && vendors[0].name) || '';
+    const reason = state.conclusionReason || 'คุณภาพและราคาเหมาะสม';
+
+    return {
+      sheetName: (sheet.name || 'เปรียบเทียบราคา').substring(0, 31),
+      projectName: state.projectName || sheet.projectLine || '',
+      workName: state.workName || sheet.workLine || '',
+      thresholdLabel: state.thresholdLabel || 'วงเงินเกิน 500,000 ขึ้นไป',
+      vatRate: 0.07,
+      hasBOQ: hasBOQ,
+      vendors: vendors,
+      groups: groups,
+      conclusionText: `สรุปให้ ${winner} เป็นผู้ดำเนินการ ${state.workName ? 'สำหรับ' + state.workName + ' ' : ''}เนื่องจาก${reason}`,
+      signatures: state.signatures,
+    };
   }
 
   /* ============================================================
@@ -820,6 +1009,41 @@
       state.conclusionReason = reason;
       const preview = document.getElementById('conclusionPreview');
       if (preview) preview.innerHTML = buildConclusionText();
+    },
+
+    updateSignature(groupKey, idx, field, value) {
+      const people = sigPeople(groupKey);
+      if (people[idx]) people[idx][field] = value;
+    },
+
+    addSignature(groupKey) {
+      const g = state.signatures[groupKey];
+      if (!g) return;
+      const arr = Array.isArray(g) ? g : (g.people = g.people || []);
+      arr.push({ title: '', name: '' });
+      renderComparisonView();
+    },
+
+    removeSignature(groupKey, idx) {
+      const people = sigPeople(groupKey);
+      people.splice(idx, 1);
+      renderComparisonView();
+    },
+
+    updateTerm(supplierIdx, key, value) {
+      if (!state.terms[supplierIdx]) state.terms[supplierIdx] = {};
+      state.terms[supplierIdx][key] = value;
+    },
+
+    exportExcel() {
+      try {
+        const payload = buildExportPayload();
+        const name = `ตารางเปรียบเทียบราคา${payload.workName ? '-' + payload.workName.replace(/[\\/:*?"<>|]/g, '') : ''}.xlsx`;
+        window.CompareExcelExport.download(payload, name);
+      } catch (e) {
+        console.error('[exportExcel]', e);
+        alert('สร้างไฟล์ Excel ไม่สำเร็จ: ' + e.message);
+      }
     },
 
     printDocument() {
