@@ -123,6 +123,20 @@
   const stripSpaces = (s) => String(s || '').replace(/\s+/g, ' ').trim();
   const isSupplierHeader = (s) => /บริษัท|ห้าง|ร้าน|จำกัด|หจก/.test(s || '');
 
+  /* Format helpers (inlined — ก่อนหน้านี้มาจาก js/data.js ที่ถูกลบไปตอน supplier-only refactor
+     แต่ renderComparisonTable/renderWinnerBanner/renderConclusionBlock ยังเรียกใช้ → ReferenceError ทำให้ตารางไม่ render) */
+  const fmt = {
+    currencyShort: (n) => {
+      n = Number(n) || 0;
+      if (n >= 1e9) return (n / 1e9).toFixed(1) + ' พันล้าน';
+      if (n >= 1e6) return (n / 1e6).toFixed(1) + ' ล้าน';
+      if (n >= 1e3) return (n / 1e3).toFixed(0) + ' พัน';
+      return n.toLocaleString('th-TH');
+    },
+    currency: (n) => '฿' + Number(n || 0).toLocaleString('th-TH', { maximumFractionDigits: 0 }),
+    num: (n) => Number(n || 0).toLocaleString('th-TH'),
+  };
+
   /* ---------- Toast (global helper — ใช้แทน showToast ที่หายไป) ---------- */
   function showToast(message, variant) {
     try {
