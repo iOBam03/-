@@ -164,6 +164,23 @@
             </div>
           </div>
 
+          <div class="card mb-4">
+            <div class="card-header">
+              <div>
+                <h3>ปัจจัยภายนอก (ราคาโลก)</h3>
+                <div class="sub">ทองคำ · น้ำมัน · แร่มีค่า · ดอกเบี้ยธนาคาร (BOT → BBL) — ดึงจาก API สาธารณะผ่าน Vercel proxy</div>
+              </div>
+              <div style="font-size:11.5px;color:#94a3b8;" id="factors-meta">กำลังโหลด…</div>
+            </div>
+            <div class="card-body">
+              <div id="external-factors-list" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;">
+                <div style="grid-column:1/-1;text-align:center;padding:24px;color:#94a3b8;font-size:13px;">
+                  ⏳ กำลังดึงข้อมูลจาก API…
+                </div>
+              </div>
+            </div>
+          </div>
+
         </div>
       </main>
 
@@ -265,6 +282,64 @@
         </div>
       `).join('');
 
+      // ดึงปัจจัยภายนอก (ทอง/น้ำมัน/แร่/ดอกเบี้ย BBL) จาก /api/factors
+      renderExternalFactors();
+    }
+
+    // ---------- External Factors (live API via /api/factors) ----------
+    const trendArrow = { up: '↑', down: '↓', flat: '→' };
+    const trendColor = { up: '#dc2626', down: '#16a34a', flat: '#64748b' };
+
+    function fmtFactorValue(f) {
+      // number formatting per unit
+      if (f.unit === '% ต่อปี') return f.current.toFixed(2) + '%';
+      if (f.unit === 'USD/oz' || f.unit === 'USD/barrel') return '$' + f.current.toLocaleString('en-US', { maximumFractionDigits: 2 });
+      return f.current.toLocaleString('en-US', { maximumFractionDigits: 2 });
+    }
+
+    async function renderExternalFactors() {
+      const el = document.getElementById('external-factors-list');
+      const metaEl = document.getElementById('factors-meta');
+      try {
+        const r = await fetch('/api/factors');
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        const data = await r.json();
+
+        const factors = data.factors || [];
+        el.innerHTML = factors.map(f => `
+          <div style="padding:14px;border:1px solid var(--color-border);border-radius:var(--radius-md);background:var(--color-surface);">
+            <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:8px;">
+              <div style="font-size:13px;font-weight:600;color:var(--color-text);">${f.label}</div>
+              <div style="font-size:18px;font-weight:700;color:${trendColor[f.trend]};">${trendArrow[f.trend]}</div>
+            </div>
+            <div style="font-size:24px;font-weight:700;color:var(--color-text);margin-bottom:4px;">${fmtFactorValue(f)}</div>
+            <div style="font-size:11px;color:var(--color-text-muted);margin-bottom:8px;">${f.unit}${f.isFallback ? ' · fallback' : ''}</div>
+            <div style="font-size:11.5px;color:var(--color-text-secondary);line-height:1.45;padding-top:8px;border-top:1px solid var(--color-border);">
+              ${f.impact}
+            </div>
+            <div style="font-size:10.5px;color:#94a3b8;margin-top:6px;">📡 ${f.source}</div>
+          </div>
+        `).join('');
+
+        // meta info
+        const ts = data.meta && data.meta.timestamp ? new Date(data.meta.timestamp) : new Date();
+        const status = data.meta && data.meta.apiStatus || {};
+        const liveCount = Object.values(status).filter(s => s === 'live').length;
+        const fallbackCount = Object.values(status).filter(s => s === 'fallback').length;
+        const tsStr = ts.toLocaleString('th-TH', { dateStyle: 'medium', timeStyle: 'short' });
+        const statusLabel = liveCount === 4
+          ? '<span style="color:#16a34a;">● Live</span>'
+          : '<span style="color:#d97706;">● Mixed (live ' + liveCount + ', fallback ' + fallbackCount + ')</span>';
+        metaEl.innerHTML = `${statusLabel} · อัปเดต: ${tsStr}`;
+      } catch (e) {
+        el.innerHTML = `
+          <div style="grid-column:1/-1;text-align:center;padding:24px;color:#dc2626;font-size:13px;">
+            ❌ โหลดปัจจัยภายนอกไม่สำเร็จ: ${e.message}<br>
+            <span style="font-size:11.5px;color:#94a3b8;">ลอง refresh หน้าอีกครั้ง หรือติดต่อผู้ดูแลระบบ</span>
+          </div>`;
+        metaEl.textContent = 'โหลดไม่สำเร็จ';
+        console.warn('[renderExternalFactors]', e);
+      }
     }
   </script>
 </body>

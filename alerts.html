@@ -823,6 +823,49 @@
     const D = window.SAMPLE_DATA;
 
     /* ---------- State ---------- */
+    const BOQ_STATE_KEY = 'procurement:uploaded-boq:v1';
+    const COMPARE_MODE_KEY = 'procurement:compare-mode:v1';
+    const MAX_BOQ_BYTES = 4 * 1024 * 1024; // 4MB — localStorage safety
+
+    function persistBOQ() {
+      try {
+        if (!uploadedBOQ) {
+          localStorage.removeItem(BOQ_STATE_KEY);
+          return;
+        }
+        const json = JSON.stringify(uploadedBOQ);
+        if (json.length > MAX_BOQ_BYTES) {
+          // ใหญ่เกิน — persist เฉพาะ metadata (ไม่รวม items)
+          const lite = Object.assign({}, uploadedBOQ, { items: [], _itemsOmitted: true });
+          localStorage.setItem(BOQ_STATE_KEY, JSON.stringify(lite));
+          console.warn('[persistBOQ] uploadedBOQ exceeds ' + MAX_BOQ_BYTES + ' bytes, saved metadata only');
+        } else {
+          localStorage.setItem(BOQ_STATE_KEY, json);
+        }
+      } catch (e) {
+        console.warn('[persistBOQ] failed:', e && e.message);
+      }
+    }
+    function restoreBOQ() {
+      try {
+        const raw = localStorage.getItem(BOQ_STATE_KEY);
+        if (!raw) return null;
+        const obj = JSON.parse(raw);
+        return (obj && typeof obj === 'object') ? obj : null;
+      } catch (e) {
+        return null;
+      }
+    }
+    function persistMode(mode) {
+      try { localStorage.setItem(COMPARE_MODE_KEY, mode || 'history'); } catch (e) {}
+    }
+    function restoreMode() {
+      try {
+        const m = localStorage.getItem(COMPARE_MODE_KEY);
+        return (m === 'supplier' || m === 'history') ? m : 'history';
+      } catch (e) { return 'history'; }
+    }
+
     let uploadedBOQ = null;  // { projectId, projectName, phase, items: [...], fileName, isSample }
 
     /* ---------- Helpers ---------- */
@@ -1526,6 +1569,7 @@
       renderUploadSection();
       renderComparison();
       document.getElementById('comparisonSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      persistBOQ();
     }
 
     function confirmAIScan() {
@@ -1813,6 +1857,7 @@
         renderUploadSection();
         renderComparison();
         document.getElementById('comparisonSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        persistBOQ();
         showToast(`โหลด BOQ จากไฟล์ ${file.name} (${items.length} รายการ)`, 'success');
       } catch (err) {
         console.error('[handleFileUpload] error:', err);
@@ -1827,6 +1872,7 @@
       uploadedBOQ = null;
       document.getElementById('comparisonSection').style.display = 'none';
       renderUploadSection();
+      persistBOQ();
     }
 
     /* ---------- Mode switcher (BOQ vs ประวัติ / ผู้ขาย) ---------- */
@@ -1846,6 +1892,7 @@
           window.SupplierCompareController.init();
         }
       }
+      persistMode(mode);
     }
 
     /* ---------- Render Comparison ---------- */
@@ -2194,7 +2241,21 @@
     });
 
     /* ---------- Init ---------- */
+    // Restore: uploadedBOQ + mode จาก localStorage (กัน state หายตอนสลับหน้า)
+    const _restoredBOQ = restoreBOQ();
+    if (_restoredBOQ) {
+      uploadedBOQ = _restoredBOQ;
+      if (_restoredBOQ._itemsOmitted) {
+        showToast('กู้คืนข้อมูลบางส่วน — กรุณาอัปโหลด BOQ อีกครั้งเพื่อคืนตารางเปรียบเทียบ', 'info');
+      }
+    }
+    const _restoredMode = restoreMode();
     renderUploadSection();
+    switchCompareMode(_restoredMode);
+    // ถ้ามี uploadedBOQ → render ตารางเปรียบเทียบทันที
+    if (uploadedBOQ && uploadedBOQ.items && uploadedBOQ.items.length > 0) {
+      renderComparison();
+    }
   </script>
 </body>
 </html>

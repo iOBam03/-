@@ -15,6 +15,34 @@
   'use strict';
 
   /* ---------- State ---------- */
+  const STATE_KEY = 'procurement:supplier-compare:v1';
+  const MAX_PERSIST_BYTES = 4 * 1024 * 1024; // 4MB — localStorage quota safety
+
+  const DEFAULT_SIGNATURES = {
+    preparer: [
+      { title: 'Section Manager', name: 'คุณวิมลรัตน์  สิทธิโคตร' },
+    ],
+    reviewers: [
+      { title: 'Vice President #2', name: 'คุณอัศวิน  รองหานาม' },
+    ],
+    approvers: {
+      label: 'คณะกรรมการจัดซื้อจัดจ้าง (อนุมัติ) (วงเงินเกิน 500,000-30,000,000 บาท)',
+      people: [
+        { title: 'Assistant Vice President #1', name: 'คุณกิตติพจน์  พันธ์ประจิตร' },
+        { title: 'Assistant Vice President #1', name: 'คุณทศพร  ยุทธศักดิ์' },
+        { title: 'Senior Vice President #2', name: 'คุณศิริรัตน์  โรจนวิภาต' },
+        { title: 'Senior Managing Director', name: 'คุณเกรียงศักดิ์  เหี้ยมโท้' },
+      ],
+    },
+    executives: {
+      label: 'คณะกรรมการบริหาร (อนุมัติ) (วงเงินเกิน 30,000,000 บาท)',
+      people: [
+        { title: 'Deputy Chief Executive Officer', name: 'คุณวราภรณ์ จาวโกนันท์' },
+        { title: 'Chief Executive Officer', name: '' },
+      ],
+    },
+  };
+
   const state = {
     fileName: '',
     workName: '',          // เช่น "งานวงกบประตู"
@@ -24,36 +52,53 @@
     winnerByItem: {},      // { itemIdx: supplierIdx } — manual picks
     conclusionSupplier: '',
     conclusionReason: '',
-    // ค่าเริ่มต้นตามไฟล์ต้นฉบับ BLESSINI — ผู้ใช้แก้ได้ในหน้าเว็บ
-    signatures: {
-      preparer: [
-        { title: 'Section Manager', name: 'คุณวิมลรัตน์  สิทธิโคตร' },
-      ],
-      reviewers: [
-        { title: 'Vice President #2', name: 'คุณอัศวิน  รองหานาม' },
-      ],
-      approvers: {
-        label: 'คณะกรรมการจัดซื้อจัดจ้าง (อนุมัติ) (วงเงินเกิน 500,000-30,000,000 บาท)',
-        people: [
-          { title: 'Assistant Vice President #1', name: 'คุณกิตติพจน์  พันธ์ประจิตร' },
-          { title: 'Assistant Vice President #1', name: 'คุณทศพร  ยุทธศักดิ์' },
-          { title: 'Senior Vice President #2', name: 'คุณศิริรัตน์  โรจนวิภาต' },
-          { title: 'Senior Managing Director', name: 'คุณเกรียงศักดิ์  เหี้ยมโท้' },
-        ],
-      },
-      executives: {
-        label: 'คณะกรรมการบริหาร (อนุมัติ) (วงเงินเกิน 30,000,000 บาท)',
-        people: [
-          { title: 'Deputy Chief Executive Officer', name: 'คุณวราภรณ์ จาวโกนันท์' },
-          { title: 'Chief Executive Officer', name: '' },
-        ],
-      },
-    },
+    // ค่าเริ่มต้นตามไฟล์ต้นฉบับ BLESSINI — ผู้ใช้แก้ไขได้ในหน้าเว็บ
+    signatures: JSON.parse(JSON.stringify(DEFAULT_SIGNATURES)),
     terms: {},             // { supplierIdx: { key: value } }
     selectedTermsVendorIdx: null,  // idx ของ vendor ที่เลือกในหน้า terms (null = auto)
     extraTermsVendors: [],        // [{ id, name, terms: {key:value} }] — vendor ที่เพิ่มเอง
     sortByCheapest: false,        // toggle: เรียงแถวตามราคาต่ำสุด (ถูกสุดอยู่บน)
   };
+
+  /* ---------- Persistence (localStorage) — กัน state หายตอนสลับหน้า ---------- */
+  let _persistTimer = null;
+  function persistState() {
+    // debounce: รวมหลาย mutation เป็น 1 write
+    if (_persistTimer) clearTimeout(_persistTimer);
+    _persistTimer = setTimeout(() => {
+      try {
+        const json = JSON.stringify(state);
+        if (json.length > MAX_PERSIST_BYTES) {
+          // state ใหญ่เกิน — persist เฉพาะ metadata (ไม่รวม sheets) พร้อมเครื่องหมายต้อง re-upload
+          const lite = Object.assign({}, state, { sheets: [], activeSheetIdx: 0, _sheetsOmitted: true });
+          localStorage.setItem(STATE_KEY, JSON.stringify(lite));
+          console.warn('[persistState] state exceeds ' + MAX_PERSIST_BYTES + ' bytes (' + json.length + '), saved metadata only — re-upload file to restore comparison table');
+        } else {
+          localStorage.setItem(STATE_KEY, json);
+        }
+      } catch (e) {
+        console.warn('[persistState] failed:', e && e.message);
+      }
+    }, 100);
+  }
+  function restoreState() {
+    try {
+      const raw = localStorage.getItem(STATE_KEY);
+      if (!raw) return false;
+      const saved = JSON.parse(raw);
+      if (!saved || typeof saved !== 'object') return false;
+      // shallow-merge แต่ละ key (sheets/terms ฯลฯ ที่อยู่ใน saved จะ override default)
+      Object.keys(saved).forEach(k => { state[k] = saved[k]; });
+      // signatures: ถ้า saved ไม่มี/เสีย → restore default
+      if (!state.signatures || typeof state.signatures !== 'object' || !state.signatures.preparer) {
+        state.signatures = JSON.parse(JSON.stringify(DEFAULT_SIGNATURES));
+      }
+      return true;
+    } catch (e) {
+      console.warn('[restoreState] failed:', e && e.message);
+      return false;
+    }
+  }
 
   /* ผังกลุ่มลายเซ็นสำหรับ render/แก้ไข */
   const SIG_GROUPS = [
@@ -889,63 +934,6 @@
     { key: 'contact', label: 'รายชื่อผู้ติดต่อ', ph: 'เช่น นัท 061-9211113' },
   ];
 
-  /* ============================================================
-     AUTO-EXTRACT TERMS (R2) — รวบข้อความจาก state แล้ว regex ตาม fieldKey
-     ============================================================ */
-  function gatherTermsSourceText() {
-    const sheet = state.sheets && state.sheets[state.activeSheetIdx];
-    const parts = [];
-    if (state.fileName) parts.push(state.fileName);
-    if (state.projectName) parts.push(state.projectName);
-    if (sheet) {
-      if (sheet.projectLine) parts.push(sheet.projectLine);
-      if (sheet.workLine) parts.push(sheet.workLine);
-      if (sheet.name) parts.push(sheet.name);
-      // รวมชื่อผู้ขาย + note ของแต่ละ vendor (ถ้ามี)
-      const suppliers = (sheet.supplierNames || []);
-      parts.push(suppliers.join(' '));
-      // รวม note/description ของ item
-      (sheet.items || []).forEach(it => {
-        if (it.name) parts.push(it.name);
-        if (it.wdTitle) parts.push(it.wdTitle);
-      });
-    }
-    return parts.filter(Boolean).join('\n');
-  }
-
-  /* regex patterns สำหรับแต่ละ field — return string | null */
-  function extractTermFromText(text, fieldKey) {
-    if (!text) return null;
-    const t = String(text);
-    switch (fieldKey) {
-      case 'priceNote': {
-        const m = t.match(/(ราคา\s*[:]?\s*(?:รวม|ไม่รวม)?\s*ภาษีมูลค่าเพิ่ม\s*\d*\s*%|ราคารวมภาษี|VAT\s*\d+\s*%|ภาษี\s*\d+\s*%)/i);
-        return m ? m[1].replace(/\s+/g, ' ').trim() : null;
-      }
-      case 'validUntil': {
-        const m = t.match(/(ยืนราคา(?:ถึง)?\s*[\d\sก-๙]+\s*\d{4}|ยืนราคาตลอด(?:ทั้ง)?โครงการ|ยืนราคา\s*\d+\s*วัน)/);
-        return m ? m[1].replace(/\s+/g, ' ').trim() : null;
-      }
-      case 'paymentTerm': {
-        const m = t.match(/(เครดิต\s*\d+\s*วัน[^\n]{0,40}|เงินสด|ชำระ(?:เงิน)?[^\n]{0,40})/);
-        return m ? m[1].replace(/\s+/g, ' ').trim() : null;
-      }
-      case 'delivery': {
-        const m = t.match(/(ผลิต\s*\d+(?:-\d+)?\s*วัน[^\n]{0,40}|ส่งมอบ(?:ภายใน)?\s*\d+(?:-\d+)?\s*วัน[^\n]{0,40}|ภายใน\s*\d+(?:-\d+)?\s*วัน[^\n]{0,40})/);
-        return m ? m[1].replace(/\s+/g, ' ').trim() : null;
-      }
-      case 'warranty': {
-        const m = t.match(/(รับประกัน(?:สินค้า)?\s*\d+\s*ปี|รับประกัน\s*\d+\s*เดือน)/);
-        return m ? m[1].replace(/\s+/g, ' ').trim() : null;
-      }
-      case 'contact': {
-        const m = t.match(/(คุณ[^\s\d]{1,30}\s*[\d\-]{8,12}|นาย[^\s\d]{1,30}\s*[\d\-]{8,12}|นางสาว[^\s\d]{1,30}\s*[\d\-]{8,12}|0\d{1,2}[-\s]?\d{3}[-\s]?\d{4,7})/);
-        return m ? m[1].replace(/\s+/g, ' ').trim() : null;
-      }
-    }
-    return null;
-  }
-
   function renderTermsBlock() {
     const suppliers = getActiveSuppliers().filter(s => !/BOQ/i.test(s.name));
     const extra = state.extraTermsVendors || [];
@@ -986,9 +974,6 @@
                  value="${escapeHtml(t[f.key] || '')}"
                  placeholder="${escapeHtml(f.ph)}"
                  oninput="SupplierCompareController.updateTerm('${selected.id}','${f.key}',this.value)">
-          <button type="button" class="btn-icon btn-extract"
-                  title="ดึงข้อมูลจากเอกสาร (อัตโนมัติ)"
-                  onclick="SupplierCompareController.autoExtractTerm('${selected.id}','${f.key}')">🔍</button>
         </div>
       </div>
     `).join('');
@@ -1168,12 +1153,16 @@
      ============================================================ */
   const controller = {
     init() {
-      // restore preference
-      try {
-        const stored = localStorage.getItem('sortByCheapest');
-        if (stored === '1') state.sortByCheapest = true;
-      } catch (e) {}
+      // restore state จาก localStorage ก่อน (กัน state หายตอนสลับหน้า)
+      const restored = restoreState();
       renderUploadCard();
+      // ถ้ามี sheets ครบ → render ตารางเปรียบเทียบด้วย
+      if (restored && state.sheets && state.sheets.length > 0) {
+        renderComparisonView();
+        if (state._sheetsOmitted) {
+          showToast('กู้คืนข้อมูลบางส่วน — กรุณาอัปโหลดไฟล์อีกครั้งเพื่อคืนตารางเปรียบเทียบ', 'info');
+        }
+      }
     },
 
     handleFileUpload(event) {
@@ -1195,8 +1184,10 @@
           state.winnerByItem = {};
           state.conclusionSupplier = '';
           state.conclusionReason = '';
+          state._sheetsOmitted = false;
           renderUploadCard();
           renderComparisonView();
+          persistState();
           showToast(`โหลดสำเร็จ: ${parsed.sheets.length} ฉบับ, ${getActiveItems().length} รายการ`);
         } catch (err) {
           console.error(err);
@@ -1218,6 +1209,7 @@
       state.conclusionReason = '';
       renderUploadCard();
       renderComparisonView();
+      persistState();
     },
 
     clear() {
@@ -1231,6 +1223,7 @@
       state.conclusionReason = '';
       renderUploadCard();
       renderComparisonView();
+      persistState();
     },
 
     setWinner(itemIdx, supplierIdx) {
@@ -1247,23 +1240,27 @@
         const label = input.closest('.winner-radio');
         if (label) label.classList.toggle('selected', parseInt(input.value) === state.winnerByItem[itemIdx]);
       });
+      persistState();
     },
 
     setConclusionSupplier(name) {
       state.conclusionSupplier = name;
       const preview = document.getElementById('conclusionPreview');
       if (preview) preview.innerHTML = buildConclusionText();
+      persistState();
     },
 
     setConclusionReason(reason) {
       state.conclusionReason = reason;
       const preview = document.getElementById('conclusionPreview');
       if (preview) preview.innerHTML = buildConclusionText();
+      persistState();
     },
 
     updateSignature(groupKey, idx, field, value) {
       const people = sigPeople(groupKey);
       if (people[idx]) people[idx][field] = value;
+      persistState();
     },
 
     addSignature(groupKey) {
@@ -1272,12 +1269,14 @@
       const arr = Array.isArray(g) ? g : (g.people = g.people || []);
       arr.push({ title: '', name: '' });
       renderComparisonView();
+      persistState();
     },
 
     removeSignature(groupKey, idx) {
       const people = sigPeople(groupKey);
       people.splice(idx, 1);
       renderComparisonView();
+      persistState();
     },
 
     updateTerm(supplierIdx, key, value) {
@@ -1292,17 +1291,18 @@
         if (!state.terms[supplierIdx]) state.terms[supplierIdx] = {};
         state.terms[supplierIdx][key] = value;
       }
+      persistState();
     },
 
     setTermsVendorIdx(id) {
       state.selectedTermsVendorIdx = id;
       renderComparisonView();
+      persistState();
     },
 
     setSortByCheapest(on) {
       state.sortByCheapest = !!on;
-      // persist preference
-      try { localStorage.setItem('sortByCheapest', state.sortByCheapest ? '1' : '0'); } catch (e) {}
+      persistState();
       renderComparisonView();
     },
 
@@ -1325,6 +1325,7 @@
       state.extraTermsVendors.push({ name: cleanName, terms: {} });
       state.selectedTermsVendorIdx = newId;
       renderComparisonView();
+      persistState();
     },
 
     removeTermsVendor(id) {
@@ -1335,25 +1336,7 @@
       // รีเซ็ต selection (จะ auto-pick ใหม่ตอน render)
       state.selectedTermsVendorIdx = null;
       renderComparisonView();
-    },
-
-    autoExtractTerm(supplierIdx, fieldKey) {
-      // ดึงข้อความจาก sheet (workName, projectName, items, suppliers) แล้วยิง regex ตาม fieldKey
-      const text = gatherTermsSourceText();
-      if (!text) {
-        alert('ไม่พบข้อความต้นทาง — กรุณาอัปโหลดไฟล์ก่อน');
-        return;
-      }
-      const extracted = extractTermFromText(text, fieldKey);
-      if (!extracted) {
-        showToast('ไม่พบข้อความที่ตรงกับฟิลด์ "' + (TERM_FIELDS.find(f => f.key === fieldKey) || {}).label + '"', 'warn');
-        return;
-      }
-      // เติมค่าลง state แล้ว re-render
-      const ctrl = SupplierCompareController;
-      ctrl.updateTerm(supplierIdx, fieldKey, extracted);
-      renderComparisonView();
-      showToast('ดึงข้อมูลสำเร็จ: ' + extracted, 'success');
+      persistState();
     },
 
     exportExcel() {
