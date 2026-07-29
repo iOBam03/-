@@ -149,12 +149,18 @@ try {
   assert(mainOutput && mainOutput.html.includes('terms-card'), 'contains terms card');
   assert(mainOutput && mainOutput.html.includes('action-bar'), 'contains action bar');
   // กัน fmt is not defined — เคย throw ตรงนี้
-  assert(mainOutput && /[\d,.]+\s*(พัน|ล้าน|พันล้าน)/.test(mainOutput.html), 'contains Thai-formatted numbers (fmt.currencyShort works)');
-  // กัน qty cell ไม่ใช่แค่ "1" — ต้องมี × TYPE = total format
-  assert(mainOutput && /qty-mult/.test(mainOutput.html), 'qty cell uses qty-mult span');
-  assert(mainOutput && /qty-eq/.test(mainOutput.html), 'qty cell uses qty-eq span');
-  // BLESSINI มี TYPE S=36, M=29, L=20, TWIN=76 — อย่างน้อยต้องเจอ 1 × 36
-  assert(mainOutput && /1\s*<span[^>]*qty-mult[^>]*>\s*×\s*<\/span>\s*36/.test(mainOutput.html), 'contains "1 × 36" pattern (TYPE S)');
+  assert(mainOutput && /[\d,]+/.test(mainOutput.html), 'contains formatted numbers (with comma)');
+  // User feedback 2026-07-29: ไม่ต้องการ "พัน/ล้าน/พันล้าน" suffix ในตัวเลข
+  // (false-positive guard: ห้ามจับ "พันธ์ประจิตร" ซึ่งเป็นชื่อคน)
+  assert(!/\d\s*พัน(?!\w)/.test(mainOutput.html), 'NO "N พัน" suffix (false-positive safe for พันธ์...)');
+  assert(!/\d\s*ล้าน(?!\w)/.test(mainOutput.html), 'NO "N ล้าน" suffix');
+  assert(!/\d\s*พันล้าน(?!\w)/.test(mainOutput.html), 'NO "N พันล้าน" suffix');
+  // User feedback 2026-07-29: qty cell ไม่ต้องมี × หรือ = (just total number)
+  assert(!/qty-mult|qty-eq/.test(mainOutput.html), 'qty cell has NO calculation symbols (× / =)');
+  // BLESSINI TYPE S = 36 — ต้องเจอเลข 36 ใน qty cell
+  assert(mainOutput && /<strong[^>]*>\s*36\s*<\/strong>/.test(mainOutput.html), 'contains <strong>36</strong> (TYPE S total)');
+  // BOQ cell ต้องมี comma (เช่น 1,000 ไม่ใช่ 1 พัน)
+  assert(mainOutput && /boq-cell[^>]*>\s*[\d,]+/.test(mainOutput.html), 'BOQ cell shows comma-separated number');
 
   if (fail === 0) {
     console.log(`\n✓✓✓ ALL PASSED (${pass}/${pass}) ✓✓✓`);

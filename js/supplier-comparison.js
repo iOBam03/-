@@ -124,17 +124,21 @@
   const isSupplierHeader = (s) => /บริษัท|ห้าง|ร้าน|จำกัด|หจก/.test(s || '');
 
   /* Format helpers (inlined — ก่อนหน้านี้มาจาก js/data.js ที่ถูกลบไปตอน supplier-only refactor
-     แต่ renderComparisonTable/renderWinnerBanner/renderConclusionBlock ยังเรียกใช้ → ReferenceError ทำให้ตารางไม่ render) */
+     แต่ renderComparisonTable/renderWinnerBanner/renderConclusionBlock ยังเรียกใช้ → ReferenceError ทำให้ตารางไม่ render)
+     User feedback 2026-07-29: ไม่ต้องการ "พัน/ล้าน/พันล้าน" suffix → ใช้เลขเต็ม + คอมม่า */
   const fmt = {
-    currencyShort: (n) => {
-      n = Number(n) || 0;
-      if (n >= 1e9) return (n / 1e9).toFixed(1) + ' พันล้าน';
-      if (n >= 1e6) return (n / 1e6).toFixed(1) + ' ล้าน';
-      if (n >= 1e3) return (n / 1e3).toFixed(0) + ' พัน';
-      return n.toLocaleString('th-TH');
+    /** ราคา/จำนวนเงิน — เลขเต็ม + คอมม่า 2 ตำแหน่ง (ไม่มี suffix ภาษาไทย) */
+    price: (n) => {
+      const v = Number(n) || 0;
+      return v.toLocaleString('th-TH', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
     },
-    currency: (n) => '฿' + Number(n || 0).toLocaleString('th-TH', { maximumFractionDigits: 0 }),
-    num: (n) => Number(n || 0).toLocaleString('th-TH'),
+    /** จำนวนเต็ม — เลขเต็ม + คอมม่า (ไม่มีทศนิยม) */
+    int: (n) => Math.round(Number(n) || 0).toLocaleString('th-TH'),
+    /** alias เก่า — เก็บไว้กัน break (deprecated) */
+    currencyShort: (n) => {
+      const v = Number(n) || 0;
+      return v.toLocaleString('th-TH', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+    },
   };
 
   /* ---------- Toast (global helper — ใช้แทน showToast ที่หายไป) ---------- */
@@ -506,9 +510,19 @@
       const wd = currentWD;
       if (!wd) continue;
 
-      // ปริมาณอยู่คอลัมน์ H (index 7), หน่วยอยู่คอลัมน์ I (index 8)
-      const qty = num(row[7]) !== null ? num(row[7]) : 1;
-      const unit = stripSpaces(row[8]) || 'ชุด';
+      // Layout detection: qty/unit อยู่คนละคอลัมน์กัน ขึ้นกับไฟล์
+      // - BLESSINI: ปริมาณอยู่ G (col 6), หน่วยอยู่ H (col 7), suppliers เริ่มที่ I (col 8)
+      // - ไฟล์อื่นอาจใช้ H (col 7) = qty, I (col 8) = unit, suppliers เริ่มที่ J (col 9)
+      let qty = 1, unit = 'ชุด';
+      if (num(row[6]) !== null && typeof row[7] === 'string' && row[7].trim() && num(row[7]) === null) {
+        // Layout 1 (BLESSINI): qty=G(6), unit=H(7)
+        qty = num(row[6]);
+        unit = stripSpaces(row[7]) || 'ชุด';
+      } else if (num(row[7]) !== null && typeof row[8] === 'string' && row[8].trim() && num(row[8]) === null) {
+        // Layout 2 (alternative): qty=H(7), unit=I(8)
+        qty = num(row[7]);
+        unit = stripSpaces(row[8]) || 'ชุด';
+      }
 
       const itemSuppliers = suppliers.map(s => {
         const price = num(row[s.priceCol]);
@@ -859,26 +873,19 @@
   }
 
   /**
-   * renderQtyCell — แสดงปริมาณแบบ 2 ระดับ: item.qty × TYPE groupQty = total
-   * - item.qty = จำนวนชิ้นต่อแถว (เช่น 1 ชิ้น/บาน)
-   * - item.groupQty = จำนวน TYPE นั้นๆ ในโครงการ (เช่น TYPE S = 36 แปลง)
-   * - total = item.qty × groupQty (เช่น 1 × 36 = 36 ชิ้น)
-   * Fallback: ถ้าไม่มี groupQty → แสดงแค่ item.qty
+   * renderQtyCell — แสดงปริมาณรวม (item.qty × TYPE groupQty) + unit
+   * User feedback 2026-07-29: ไม่ต้องแสดงวิธีคิด → แสดงแค่ตัวเลขผลลัพธ์
+   * - item.qty = จำนวนชิ้นต่อแถว (เช่น 1)
+   * - item.groupQty = จำนวน TYPE (เช่น 36 แปลง)
+   * - total = item.qty × groupQty (เช่น 36)
+   * Fallback: ถ้าไม่มี groupQty → แสดง item.qty
    */
   function renderQtyCell(item) {
     const u = escapeHtml(item.unit || 'ชุด');
     const q = Number(item.qty) || 0;
     const g = Number(item.groupQty);
-    if (!g || g <= 0) {
-      return `${q} <span class="unit-label">${u}</span>`;
-    }
-    const total = q * g;
-    if (q === 1) {
-      // 1 × 36 = 36 ชิ้น (อ่านง่าย ไม่เยอะ)
-      return `${q} <span class="qty-mult">×</span> ${g} <span class="qty-eq">=</span> <strong>${total}</strong> <span class="unit-label">${u}</span>`;
-    }
-    // 2 × 36 = 72 ชิ้น (item.qty มากกว่า 1)
-    return `${q} <span class="qty-mult">×</span> ${g} <span class="qty-eq">=</span> <strong>${total}</strong> <span class="unit-label">${u}</span>`;
+    const total = (g && g > 0) ? (q * g) : q;
+    return `<strong>${fmt.int(total)}</strong> <span class="unit-label">${u}</span>`;
   }
 
   function renderComparisonTable(items, suppliers) {
