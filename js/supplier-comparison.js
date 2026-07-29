@@ -191,8 +191,13 @@
 
   function getGeminiKey() {
     try {
-      const k = window.LOCAL_CONFIG && window.LOCAL_CONFIG.GEMINI_API_KEY;
-      return (k && String(k).trim()) || null;
+      // 1) อ่านจาก config.local.js (ถ้ามีไฟล์)
+      const fromConfig = window.LOCAL_CONFIG && window.LOCAL_CONFIG.GEMINI_API_KEY;
+      if (fromConfig && String(fromConfig).trim()) return String(fromConfig).trim();
+      // 2) fallback ไป localStorage (เก็บโดย AI scan modal)
+      const fromStorage = localStorage.getItem('cp_gemini_api_key');
+      if (fromStorage && fromStorage.trim()) return fromStorage.trim();
+      return null;
     } catch (e) { return null; }
   }
 
