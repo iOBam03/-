@@ -15,7 +15,7 @@
   'use strict';
 
   /* ---------- State ---------- */
-  const STATE_KEY = 'procurement:supplier-compare:v1';
+  const STATE_KEY = 'procurement:supplier-compare:v2';
   const MAX_PERSIST_BYTES = 4 * 1024 * 1024; // 4MB — localStorage quota safety
 
   const DEFAULT_SIGNATURES = {

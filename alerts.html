@@ -3,6 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   <title>เปรียบเทียบ BOQ กับประวัติการซื้อ — ระบบจัดซื้อวัสดุก่อสร้าง</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -658,6 +661,10 @@
             <div class="avatar">จซ</div>
             <span class="user-name">ฝ่ายจัดซื้อ</span>
           </div>
+          <button class="btn btn-ghost" onclick="resetAllState()" title="ล้าง state ทั้งหมด (BOQ, comparison, terms)" style="font-size:12px;color:#dc2626;display:flex;align-items:center;gap:4px;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>
+            เริ่มใหม่
+          </button>
         </div>
       </div>
 
@@ -823,8 +830,8 @@
     const D = window.SAMPLE_DATA;
 
     /* ---------- State ---------- */
-    const BOQ_STATE_KEY = 'procurement:uploaded-boq:v1';
-    const COMPARE_MODE_KEY = 'procurement:compare-mode:v1';
+    const BOQ_STATE_KEY = 'procurement:uploaded-boq:v2';
+    const COMPARE_MODE_KEY = 'procurement:compare-mode:v2';
     const MAX_BOQ_BYTES = 4 * 1024 * 1024; // 4MB — localStorage safety
 
     function persistBOQ() {
@@ -2241,6 +2248,37 @@
     });
 
     /* ---------- Init ---------- */
+    // Reset all state — ปุ่ม "เริ่มใหม่" ที่ topbar เรียกใช้
+    function resetAllState() {
+      if (!confirm('ล้าง state ทั้งหมด (BOQ, comparison, terms, signatures, mode) ?\n\nหลังจากนี้จะต้องอัปโหลด BOQ ใหม่')) return;
+      try {
+        // ลบ keys ทั้งหมดที่เกี่ยวข้อง
+        localStorage.removeItem(BOQ_STATE_KEY);
+        localStorage.removeItem(COMPARE_MODE_KEY);
+        localStorage.removeItem('procurement:uploaded-boq:v1'); // legacy
+        localStorage.removeItem('procurement:compare-mode:v1'); // legacy
+        localStorage.removeItem('procurement:supplier-compare:v1'); // legacy
+        // ลบ keys อื่นๆ ที่อาจตกค้าง
+        ['uploaded-boq','compare-mode','supplier-compare'].forEach(name => {
+          for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key && key.startsWith('procurement:') && key.includes(name)) localStorage.removeItem(key);
+          }
+        });
+      } catch (e) { console.warn('[resetAllState]', e); }
+      // รีเซ็ต controller
+      if (window.SupplierCompareController && window.SupplierCompareController.clear) {
+        try { window.SupplierCompareController.clear(); } catch (e) {}
+      }
+      uploadedBOQ = null;
+      // re-render
+      renderUploadSection();
+      const cm = document.getElementById('comparisonSection');
+      if (cm) cm.style.display = 'none';
+      switchCompareMode('history');
+      showToast('ล้าง state เรียบร้อย — เริ่มต้นใหม่', 'success');
+    }
+
     // Restore: uploadedBOQ + mode จาก localStorage (กัน state หายตอนสลับหน้า)
     const _restoredBOQ = restoreBOQ();
     if (_restoredBOQ) {
