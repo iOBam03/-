@@ -1,0 +1,13 @@
+// config.local.js.example
+// Copy this file to `config.local.js` (gitignored) and fill in your values.
+// ไฟล์นี้จะถูก include ก่อน js/data.js ใน index.html และ alerts.html
+// หากไม่มีไฟล์ config.local.js ระบบจะยังทำงานได้ (จะเตือนใน console)
+
+window.LOCAL_CONFIG = {
+  // ตัวอย่าง: API key ส่วนตัว
+  // SAP_API_KEY: '...',
+  // SUPABASE_URL: '...',
+
+  // ปิด warning banner (ถ้าต้องการ)
+  // SILENT_LOCAL_CONFIG_MISSING: true
+};

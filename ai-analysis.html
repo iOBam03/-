@@ -62,6 +62,14 @@
             <span class="user-name">ฝ่ายจัดซื้อ</span>
           </div>
           <div id="demo-toggle-mount"></div>
+          <button class="btn btn-secondary" onclick="window.print()" title="พิมพ์ / บันทึกเป็น PDF" style="margin-left:8px;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;margin-right:4px;">
+              <polyline points="6 9 6 2 18 2 18 9"></polyline>
+              <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+              <rect x="6" y="14" width="12" height="8"></rect>
+            </svg>
+            พิมพ์ / PDF
+          </button>
         </div>
       </div>
 
@@ -230,6 +238,24 @@
       document.getElementById('confidence-num').textContent = f.confidence + '%';
       document.getElementById('confidence-bar').style.width = f.confidence + '%';
 
+      // คำนวณ forecast + confidence band ครั้งเดียว (ใช้ sample data เป็น actual หากไม่มีข้อมูลจริง)
+      const fcResult = (window.__forecastStats && window.__forecastStats.forecastWithConfidence)
+        ? window.__forecastStats.forecastWithConfidence(f.historical.actual.slice(), f.historical.predicted.length)
+        : { predicted: [] };
+      // แสดง R² ความแม่นยำของโมเดล (ถ้ามี)
+      if (fcResult.r2 !== undefined) {
+        const r2El = document.getElementById('confidence-num');
+        const barEl = document.getElementById('confidence-bar');
+        if (r2El) {
+          r2El.textContent = Math.round(fcResult.r2 * 100) + '%';
+          r2El.style.color = fcResult.r2 >= 0.7 ? '#16a34a' : fcResult.r2 >= 0.4 ? '#d97706' : '#dc2626';
+        }
+        if (barEl) barEl.style.width = Math.round(fcResult.r2 * 100) + '%';
+      }
+
+      const upperBand = fcResult.predicted.map(p => p.upper);
+      const lowerBand = fcResult.predicted.map(p => p.lower);
+
       new Chart(document.getElementById('forecast-chart'), {
         type: 'line',
         data: {
@@ -257,6 +283,28 @@
               pointHoverRadius: 4,
               tension: 0.3,
               fill: false
+            },
+            {
+              label: 'ช่วงความเชื่อมั่น 95% (บน)',
+              data: upperBand,
+              borderColor: 'rgba(22, 163, 74, 0.35)',
+              backgroundColor: 'transparent',
+              borderWidth: 1,
+              borderDash: [2, 3],
+              pointRadius: 0,
+              fill: '+1',
+              tension: 0.3
+            },
+            {
+              label: 'ช่วงความเชื่อมั่น 95% (ล่าง)',
+              data: lowerBand,
+              borderColor: 'rgba(22, 163, 74, 0.35)',
+              backgroundColor: 'rgba(22, 163, 74, 0.08)',
+              borderWidth: 1,
+              borderDash: [2, 3],
+              pointRadius: 0,
+              fill: false,
+              tension: 0.3
             }
           ]
         },
@@ -267,6 +315,28 @@
             y: {
               ...defaultChartOptions.scales.y,
               ticks: { ...defaultChartOptions.scales.y.ticks, callback: v => fmt.currency(v) }
+            }
+          },
+          plugins: {
+            ...defaultChartOptions.plugins,
+            legend: {
+              ...(defaultChartOptions.plugins && defaultChartOptions.plugins.legend),
+              labels: {
+                ...((defaultChartOptions.plugins && defaultChartOptions.plugins.legend && defaultChartOptions.plugins.legend.labels) || {}),
+                filter: (item) => {
+                  // ซ่อน "ความเชื่อมั่น (ล่าง)" ใน legend (มันซ้ำกับบน)
+                  return !/ล่าง/.test(item.text);
+                }
+              }
+            },
+            tooltip: {
+              ...(defaultChartOptions.plugins && defaultChartOptions.plugins.tooltip),
+              callbacks: {
+                label: (ctx) => {
+                  if (ctx.datasetIndex >= 2) return null; // ซ่อน band ใน tooltip เพื่อความชัดเจน
+                  return ctx.dataset.label + ': ' + fmt.currency(ctx.parsed.y);
+                }
+              }
             }
           }
         }
@@ -289,6 +359,76 @@
     // ---------- External Factors (live API via /api/factors) ----------
     const trendArrow = { up: '↑', down: '↓', flat: '→' };
     const trendColor = { up: '#dc2626', down: '#16a34a', flat: '#64748b' };
+
+    /* ============================================================
+       STATISTICAL FORECAST — Linear Regression + 95% Confidence Interval
+       ใช้กับข้อมูลจริงเมื่อมี purchase history ≥ 30 จุด
+       Fallback เป็น sample data เมื่อยังไม่มีข้อมูลจริง
+       ============================================================ */
+    function linearRegression(y) {
+      // y = array of numbers (time series)
+      // returns { slope, intercept, r2 } — สามารถใช้ทำนายจุดถัดไป
+      const n = y.length;
+      if (n < 2) return { slope: 0, intercept: y[0] || 0, r2: 0 };
+      const xs = Array.from({ length: n }, (_, i) => i);
+      const meanX = xs.reduce((a, b) => a + b, 0) / n;
+      const meanY = y.reduce((a, b) => a + b, 0) / n;
+      let num = 0, den = 0, ssTot = 0;
+      for (let i = 0; i < n; i++) {
+        num += (xs[i] - meanX) * (y[i] - meanY);
+        den += (xs[i] - meanX) ** 2;
+        ssTot += (y[i] - meanY) ** 2;
+      }
+      const slope = den === 0 ? 0 : num / den;
+      const intercept = meanY - slope * meanX;
+      // R²
+      let ssRes = 0;
+      for (let i = 0; i < n; i++) {
+        const pred = slope * xs[i] + intercept;
+        ssRes += (y[i] - pred) ** 2;
+      }
+      const r2 = ssTot === 0 ? 1 : 1 - ssRes / ssTot;
+      return { slope, intercept, r2 };
+    }
+
+    function forecastWithConfidence(actual, days = 30) {
+      // actual: array of historical values
+      // returns { predicted: [{day, value, lower, upper}], slope, r2, stdErr }
+      if (!Array.isArray(actual) || actual.length < 2) {
+        return { predicted: [], slope: 0, r2: 0, stdErr: 0 };
+      }
+      const { slope, intercept, r2 } = linearRegression(actual);
+      const n = actual.length;
+
+      // residual std error
+      let ssRes = 0;
+      for (let i = 0; i < n; i++) {
+        const pred = slope * i + intercept;
+        ssRes += (actual[i] - pred) ** 2;
+      }
+      const stdErr = Math.sqrt(ssRes / (n - 2));
+
+      // 95% CI multiplier (1.96 for normal distribution)
+      const ciMult = 1.96;
+
+      const predicted = [];
+      for (let d = 0; d < days; d++) {
+        const idx = n + d;
+        const value = slope * idx + intercept;
+        // confidence band widens with distance
+        const band = ciMult * stdErr * Math.sqrt(1 + 1 / n + ((idx - (n - 1) / 2) ** 2) / Math.max(1, ssRes / Math.max(1, n - 2)));
+        predicted.push({
+          day: d + 1,
+          value: value,
+          lower: Math.max(0, value - band),
+          upper: value + band
+        });
+      }
+      return { predicted, slope, r2, stdErr };
+    }
+
+    // expose for unit testing
+    window.__forecastStats = { linearRegression, forecastWithConfidence };
 
     function fmtFactorValue(f) {
       // number formatting per unit

@@ -1617,4 +1617,19 @@ select.form-control { cursor: pointer; }
     background: transparent !important;
     padding: 2px 0 !important;
   }
+
+  /* Print button — hide on print */
+  button[onclick="window.print()"] { display: none !important; }
+
+  /* AI Analysis page — preserve charts + factor cards */
+  .forecast-chart-wrap,
+  .factor-card,
+  canvas#forecast-chart,
+  canvas#external-factors-chart {
+    page-break-inside: avoid !important;
+  }
+  canvas { max-height: 280px !important; }
+  .factor-list { font-size: 10px !important; }
+  .factor-item { padding: 6px 8px !important; margin-bottom: 4px !important; }
+  .page-header { margin-bottom: 8px !important; padding-bottom: 6px !important; }
 }

@@ -34,10 +34,21 @@ const ctrlSrc = fs.readFileSync(path.join(__dirname, '..', 'js', 'supplier-compa
 eval(ctrlSrc);
 const SC = global.window.SupplierCompareController;
 
-// mock FileReader
+// mock FileReader — path configurable via CLI arg / env (default: BLESSINI ที่ bundled)
+const DEFAULT_TEST_FILE = path.join(__dirname, '..', 'ตารางเปรียบเทียบราคางานวงกบ-ประตู BLESSINI.xlsx');
+const TEST_FILE = process.env.REGRESSION_TEST_FILE || process.argv[2] || DEFAULT_TEST_FILE;
+
+if (!fs.existsSync(TEST_FILE)) {
+  console.error('❌ ไม่พบไฟล์ทดสอบ: ' + TEST_FILE);
+  console.error('  กรุณาระบุ path:');
+  console.error('    node tools/regression-blessini.js <path-to-xlsx>');
+  console.error('    หรือ: REGRESSION_TEST_FILE=<path> node tools/regression-blessini.js');
+  process.exit(1);
+}
+
 global.FileReader.prototype.readAsArrayBuffer = function () {
   const self = this;
-  const buf = fs.readFileSync(path.join(__dirname, '..', 'ตารางเปรียบเทียบราคางานวงกบ-ประตู BLESSINI.xlsx'));
+  const buf = fs.readFileSync(TEST_FILE);
   const ab = new ArrayBuffer(buf.length);
   new Uint8Array(ab).set(buf);
   setImmediate(() => { if (self.onload) self.onload({ target: { result: ab } }); });
