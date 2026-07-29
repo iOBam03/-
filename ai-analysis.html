@@ -172,23 +172,25 @@
             </div>
           </div>
 
-          <div class="card mb-4">
-            <div class="card-header">
-              <div>
-                <h3>ปัจจัยภายนอก (ราคาโลก)</h3>
-                <div class="sub">ทองคำ · น้ำมัน · แร่มีค่า · ดอกเบี้ยธนาคาร (BOT → BBL) — ดึงจาก API สาธารณะผ่าน Vercel proxy</div>
-              </div>
-              <div style="font-size:11.5px;color:#94a3b8;" id="factors-meta">กำลังโหลด…</div>
+        </div>
+      </main>
+
+      <main class="content" style="margin-top:0;">
+        <div class="card mb-4">
+          <div class="card-header">
+            <div>
+              <h3>ปัจจัยภายนอก (ราคาโลก) — Live</h3>
+              <div class="sub">ทองคำ · น้ำมัน · แร่มีค่า · ดอกเบี้ยธนาคาร (BOT → BBL) — ดึงจาก API สาธารณะผ่าน Vercel proxy</div>
             </div>
-            <div class="card-body">
-              <div id="external-factors-list" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;">
-                <div style="grid-column:1/-1;text-align:center;padding:24px;color:#94a3b8;font-size:13px;">
-                  ⏳ กำลังดึงข้อมูลจาก API…
-                </div>
+            <div style="font-size:11.5px;color:#94a3b8;" id="factors-meta">กำลังโหลด…</div>
+          </div>
+          <div class="card-body">
+            <div id="external-factors-list" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;">
+              <div style="grid-column:1/-1;text-align:center;padding:24px;color:#94a3b8;font-size:13px;">
+                ⏳ กำลังดึงข้อมูลจาก API…
               </div>
             </div>
           </div>
-
         </div>
       </main>
 
@@ -353,8 +355,11 @@
       `).join('');
 
       // ดึงปัจจัยภายนอก (ทอง/น้ำมัน/แร่/ดอกเบี้ย BBL) จาก /api/factors
-      renderExternalFactors();
+      // (เรียกจากด้านล่างแทน เพื่อให้โหลดเสมอแม้ demo mode ปิด)
     }
+
+    // ดึงปัจจัยภายนอก (live API) — เรียกเสมอ ไม่ขึ้นกับ demo mode
+    renderExternalFactors();
 
     // ---------- External Factors (live API via /api/factors) ----------
     const trendArrow = { up: '↑', down: '↓', flat: '→' };
