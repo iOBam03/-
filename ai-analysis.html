@@ -458,28 +458,8 @@
       const el = document.getElementById('external-factors-list');
       const metaEl = document.getElementById('factors-meta');
 
-      // timeout 8s — ถ้า API ไม่ตอบ ใช้ fallback
-      const ctl = new AbortController();
-      const timeout = setTimeout(() => ctl.abort(), 8000);
-
-      let data = null;
-      let apiReached = false;
-      try {
-        const r = await fetch('/api/factors', { signal: ctl.signal });
-        if (r.ok) {
-          data = await r.json();
-          apiReached = true;
-        } else {
-          throw new Error('HTTP ' + r.status);
-        }
-      } catch (e) {
-        console.warn('[renderExternalFactors] using client fallback:', e && e.message);
-        data = FACTORS_FALLBACK;
-      } finally {
-        clearTimeout(timeout);
-      }
-
-      try {
+      // 🔄 Step 1: render fallback ทันที (ไม่ต้องรอ API)
+      const renderFactors = (data) => {
         const factors = data.factors || [];
         el.innerHTML = factors.map(f => `
           <div style="padding:14px;border:1px solid var(--color-border);border-radius:var(--radius-md);background:var(--color-surface);">
@@ -495,9 +475,10 @@
             <div style="font-size:10.5px;color:#94a3b8;margin-top:6px;">📡 ${f.source}</div>
           </div>
         `).join('');
+      };
 
-        // meta info
-        if (apiReached && data.meta) {
+      const renderMeta = (data, apiReached) => {
+        if (apiReached && data.meta && !data.meta.isClientFallback) {
           const ts = data.meta.timestamp ? new Date(data.meta.timestamp) : new Date();
           const status = data.meta.apiStatus || {};
           const liveCount = Object.values(status).filter(s => s === 'live').length;
@@ -508,16 +489,30 @@
             : '<span style="color:#d97706;">● Mixed (' + liveCount + ' live, ' + fallbackCount + ' fallback)</span>';
           metaEl.innerHTML = `${statusLabel} · อัปเดต: ${tsStr}`;
         } else {
-          metaEl.innerHTML = '<span style="color:#d97706;">● Snapshot fallback</span> · API ไม่ตอบ (timeout/network)';
+          metaEl.innerHTML = '<span style="color:#d97706;">● Snapshot</span> · ใช้ค่า fallback (API ไม่ตอบ)';
+        }
+      };
+
+      // แสดง fallback ก่อนเลย ไม่ต้องรอ
+      renderFactors(FACTORS_FALLBACK);
+      renderMeta(FACTORS_FALLBACK, false);
+
+      // 🔄 Step 2: พยายามดึง API จริง ถ้าสำเร็จค่อยทับ (timeout 5s)
+      const ctl = new AbortController();
+      const timeout = setTimeout(() => ctl.abort(), 5000);
+
+      try {
+        const r = await fetch('/api/factors', { signal: ctl.signal });
+        if (r.ok) {
+          const liveData = await r.json();
+          renderFactors(liveData);
+          renderMeta(liveData, true);
         }
       } catch (e) {
-        el.innerHTML = `
-          <div style="grid-column:1/-1;text-align:center;padding:24px;color:#dc2626;font-size:13px;">
-            ❌ โหลดปัจจัยภายนอกไม่สำเร็จ: ${e.message}<br>
-            <span style="font-size:11.5px;color:#94a3b8;">ลอง refresh หน้าอีกครั้ง หรือติดต่อผู้ดูแลระบบ</span>
-          </div>`;
-        metaEl.textContent = 'โหลดไม่สำเร็จ';
-        console.warn('[renderExternalFactors]', e);
+        // เงียบไว้ — ค่า fallback ที่ render ไปแล้วยังอยู่
+        console.info('[renderExternalFactors] API unreachable, fallback retained:', e && e.message);
+      } finally {
+        clearTimeout(timeout);
       }
     }
   </script>
