@@ -442,14 +442,44 @@
       return f.current.toLocaleString('en-US', { maximumFractionDigits: 2 });
     }
 
+    // ---------- Fallback snapshot (กรณี /api/factors ไม่ตอบ / Vercel ยังไม่ deploy) ----------
+    // ข้อมูลค่าเดียวกับ admin snapshot ใน api/factors.js SNAPSHOT block
+    const FACTORS_FALLBACK = {
+      factors: [
+        { key:'gold',        label:'ทองคำ (Gold Spot)',        current:2380.00, unit:'USD/oz',     trend:'up',   impact:'กระทบบวก (ทองขึ้น → เหล็ก/ทองแดงแพง)', asOf:'2026-07-01', source:'fallback seed (API unavailable)', isFallback:true },
+        { key:'oil',         label:'น้ำมันดิบ (WTI)',           current:78.00,   unit:'USD/barrel', trend:'flat', impact:'กระทบลบ (น้ำมันลง → ค่าขนส่ง/พลาสติกลด)', asOf:'2026-07-01', source:'fallback seed (API unavailable)', isFallback:true },
+        { key:'minerals',    label:'แร่มีค่า (LME Index)',       current:4200.00, unit:'index',     trend:'flat', impact:'เป็นกลาง', asOf:'2026-07-01', source:'fallback seed (API unavailable)', isFallback:true },
+        { key:'bblInterest', label:'ดอกเบี้ยอ้างอิง (BOT MLR → BBL)', current:6.50, unit:'% ต่อปี', trend:'flat', impact:'กระทบบวก (ดอกเบี้ยสูง → ต้นทุนกู้ยืมสูง)', asOf:'2026-07-01', source:'fallback seed (API unavailable)', isFallback:true }
+      ],
+      meta: { timestamp: null, isClientFallback: true }
+    };
+
     async function renderExternalFactors() {
       const el = document.getElementById('external-factors-list');
       const metaEl = document.getElementById('factors-meta');
-      try {
-        const r = await fetch('/api/factors');
-        if (!r.ok) throw new Error('HTTP ' + r.status);
-        const data = await r.json();
 
+      // timeout 8s — ถ้า API ไม่ตอบ ใช้ fallback
+      const ctl = new AbortController();
+      const timeout = setTimeout(() => ctl.abort(), 8000);
+
+      let data = null;
+      let apiReached = false;
+      try {
+        const r = await fetch('/api/factors', { signal: ctl.signal });
+        if (r.ok) {
+          data = await r.json();
+          apiReached = true;
+        } else {
+          throw new Error('HTTP ' + r.status);
+        }
+      } catch (e) {
+        console.warn('[renderExternalFactors] using client fallback:', e && e.message);
+        data = FACTORS_FALLBACK;
+      } finally {
+        clearTimeout(timeout);
+      }
+
+      try {
         const factors = data.factors || [];
         el.innerHTML = factors.map(f => `
           <div style="padding:14px;border:1px solid var(--color-border);border-radius:var(--radius-md);background:var(--color-surface);">
@@ -467,15 +497,19 @@
         `).join('');
 
         // meta info
-        const ts = data.meta && data.meta.timestamp ? new Date(data.meta.timestamp) : new Date();
-        const status = data.meta && data.meta.apiStatus || {};
-        const liveCount = Object.values(status).filter(s => s === 'live').length;
-        const fallbackCount = Object.values(status).filter(s => s === 'fallback').length;
-        const tsStr = ts.toLocaleString('th-TH', { dateStyle: 'medium', timeStyle: 'short' });
-        const statusLabel = liveCount === 4
-          ? '<span style="color:#16a34a;">● Live</span>'
-          : '<span style="color:#d97706;">● Mixed (live ' + liveCount + ', fallback ' + fallbackCount + ')</span>';
-        metaEl.innerHTML = `${statusLabel} · อัปเดต: ${tsStr}`;
+        if (apiReached && data.meta) {
+          const ts = data.meta.timestamp ? new Date(data.meta.timestamp) : new Date();
+          const status = data.meta.apiStatus || {};
+          const liveCount = Object.values(status).filter(s => s === 'live').length;
+          const fallbackCount = Object.values(status).filter(s => s === 'fallback').length;
+          const tsStr = ts.toLocaleString('th-TH', { dateStyle: 'medium', timeStyle: 'short' });
+          const statusLabel = liveCount === 4
+            ? '<span style="color:#16a34a;">● Live</span>'
+            : '<span style="color:#d97706;">● Mixed (' + liveCount + ' live, ' + fallbackCount + ' fallback)</span>';
+          metaEl.innerHTML = `${statusLabel} · อัปเดต: ${tsStr}`;
+        } else {
+          metaEl.innerHTML = '<span style="color:#d97706;">● Snapshot fallback</span> · API ไม่ตอบ (timeout/network)';
+        }
       } catch (e) {
         el.innerHTML = `
           <div style="grid-column:1/-1;text-align:center;padding:24px;color:#dc2626;font-size:13px;">
