@@ -19,7 +19,7 @@ procurement-system/
 ├── dashboard.html          → ภาพรวมโปรเจค + ใบสั่งซื้อ
 ├── ai-analysis.html        → วิเคราะห์แนวโน้มราคาวัสดุ + คาดการณ์ + ปัจจัยภายนอก
 ├── site-materials.html     → วัสดุ & การสั่งซื้อ (Lead Time & Reorder Control)
-├── alerts.html             → เปรียบเทียบราคาวัสดุ (BOQ vs ประวัติการซื้อจริง / vs ผู้ขาย)
+├── alerts.html             → เปรียบเทียบราคาผู้ขาย (จัดทำใบเสนอราคา · terms + signatures + export Excel)
 ├── reports.html            → รายงาน + Pareto + YoY + Bottleneck Analysis
 ├── api/
 │   └── factors.js          → Vercel Serverless: ปัจจัยภายนอก (ทอง/น้ำมัน/แร่/ดอกเบี้ย)
@@ -29,7 +29,6 @@ procurement-system/
 │   ├── data.js             → ข้อมูลตัวอย่าง (โปรเจค วัสดุ ผู้ขาย ราคา)
 │   ├── demo.js             → ตัวควบคุมโหมดตัวอย่าง + กราฟ
 │   ├── compare-excel-export.js → Export ตารางเปรียบเทียบเป็น .xlsx (ExcelJS)
-│   ├── purchase-history-sap.js → Mock ประวัติการซื้อจาก SAP
 │   └── supplier-comparison.js  → ตารางเปรียบเทียบผู้ขาย + terms + signatures
 ├── tools/
 │   ├── lint-no-time.js     → Guard: ห้ามเพิ่ม time-tracking features
@@ -55,10 +54,10 @@ procurement-system/
 
 ### State persistence (localStorage)
 
-- ข้อมูล BOQ ที่ upload, การเลือกผู้ชนะ, terms ที่กรอก, mode (history/supplier) — **เก็บใน localStorage อัตโนมัติ**
+- ข้อมูล BOQ ที่ upload, การเลือกผู้ชนะ, terms ที่กรอก — **เก็บใน localStorage อัตโนมัติ**
 - เมื่อสลับหน้าแล้วกลับมา ข้อมูลยังอยู่ (ไม่ต้อง upload ใหม่)
 - ถ้า state > 4MB → save metadata only + toast แจ้งให้ upload ใหม่
-- keys: `procurement:uploaded-boq:v1`, `procurement:supplier-compare:v1`, `procurement:compare-mode:v1`
+- keys: `procurement:uploaded-boq:v2`, `procurement:supplier-compare:v2`
 
 ### External Factors API (`/api/factors`)
 
@@ -127,7 +126,7 @@ curl https://<your-domain>.vercel.app/api/factors
 2. **Dashboard** — ภาพรวมโปรเจค + ใบสั่งซื้อ
 3. **วิเคราะห์แนวโน้มราคาวัสดุ** — กราฟคาดการณ์ + ปัจจัยภายใน + ปัจจัยภายนอก (live API) + คำแนะนำ
 4. **วัสดุ & การสั่งซื้อ** — Lead Time & Reorder Control: ระบบเตือนล่วงหน้าให้สั่งของถูกจังหวะ (ต้องสั่งภายใน = วันที่ต้องใช้ − Lead Time − Safety Buffer 3 วัน) + สต็อกวัสดุตาม Block/งวด + เลือก Supplier เปรียบเทียบ 2 เจ้า
-5. **เปรียบเทียบราคาวัสดุ** — แนบ BOQ → AI สแกนเอกสารกระดาษ → เทียบราคากับประวัติการซื้อจริง (ถูกกว่า/เท่ากัน/แพงกว่า) + Fuzzy Match + Unit Conversion + โหมดเปรียบเทียบราคาผู้ขาย (terms, conclusion, signatures, export Excel)
+5. **เปรียบเทียบราคาผู้ขาย** — แนบ BOQ (Excel/CSV) → เทียบราคาผู้ขายแบบ Apple-to-Apple → กรอก terms + เลือกผู้ชนะ → ลง signatures (preparer/reviewer/approver) → export ใบเสนอราคา .xlsx (ExcelJS)
 6. **รายงาน** — Pareto + YoY + Bottleneck + Top 10 + สรุปผู้บริหาร
 
 ## Testing & Quality
