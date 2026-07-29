@@ -150,6 +150,11 @@ try {
   assert(mainOutput && mainOutput.html.includes('action-bar'), 'contains action bar');
   // กัน fmt is not defined — เคย throw ตรงนี้
   assert(mainOutput && /[\d,.]+\s*(พัน|ล้าน|พันล้าน)/.test(mainOutput.html), 'contains Thai-formatted numbers (fmt.currencyShort works)');
+  // กัน qty cell ไม่ใช่แค่ "1" — ต้องมี × TYPE = total format
+  assert(mainOutput && /qty-mult/.test(mainOutput.html), 'qty cell uses qty-mult span');
+  assert(mainOutput && /qty-eq/.test(mainOutput.html), 'qty cell uses qty-eq span');
+  // BLESSINI มี TYPE S=36, M=29, L=20, TWIN=76 — อย่างน้อยต้องเจอ 1 × 36
+  assert(mainOutput && /1\s*<span[^>]*qty-mult[^>]*>\s*×\s*<\/span>\s*36/.test(mainOutput.html), 'contains "1 × 36" pattern (TYPE S)');
 
   if (fail === 0) {
     console.log(`\n✓✓✓ ALL PASSED (${pass}/${pass}) ✓✓✓`);

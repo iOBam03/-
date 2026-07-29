@@ -931,6 +931,16 @@ select.form-control { cursor: pointer; }
   font-size: 10.5px;
   color: var(--color-text-muted);
 }
+.data-row .qty-cell .qty-mult,
+.data-row .qty-cell .qty-eq {
+  color: var(--color-text-muted);
+  margin: 0 2px;
+  font-weight: 400;
+}
+.data-row .qty-cell strong {
+  color: var(--color-text);
+  font-weight: 700;
+}
 .data-row .boq-cell {
   background: var(--color-info-soft);
   font-weight: 600;

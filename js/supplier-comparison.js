@@ -858,6 +858,29 @@
     `;
   }
 
+  /**
+   * renderQtyCell — แสดงปริมาณแบบ 2 ระดับ: item.qty × TYPE groupQty = total
+   * - item.qty = จำนวนชิ้นต่อแถว (เช่น 1 ชิ้น/บาน)
+   * - item.groupQty = จำนวน TYPE นั้นๆ ในโครงการ (เช่น TYPE S = 36 แปลง)
+   * - total = item.qty × groupQty (เช่น 1 × 36 = 36 ชิ้น)
+   * Fallback: ถ้าไม่มี groupQty → แสดงแค่ item.qty
+   */
+  function renderQtyCell(item) {
+    const u = escapeHtml(item.unit || 'ชุด');
+    const q = Number(item.qty) || 0;
+    const g = Number(item.groupQty);
+    if (!g || g <= 0) {
+      return `${q} <span class="unit-label">${u}</span>`;
+    }
+    const total = q * g;
+    if (q === 1) {
+      // 1 × 36 = 36 ชิ้น (อ่านง่าย ไม่เยอะ)
+      return `${q} <span class="qty-mult">×</span> ${g} <span class="qty-eq">=</span> <strong>${total}</strong> <span class="unit-label">${u}</span>`;
+    }
+    // 2 × 36 = 72 ชิ้น (item.qty มากกว่า 1)
+    return `${q} <span class="qty-mult">×</span> ${g} <span class="qty-eq">=</span> <strong>${total}</strong> <span class="unit-label">${u}</span>`;
+  }
+
   function renderComparisonTable(items, suppliers) {
     const supplierHeaders = suppliers.map((s, i) =>
       `<th class="num supplier-col" data-supplier-idx="${i}" title="${escapeHtml(s.name)}">
@@ -902,7 +925,7 @@
         <tr class="data-row ${winnerSupplier ? 'winner-row' : ''}" data-item-idx="${itemIdx}">
           <td class="wd-cell"><span class="wd-pill">${escapeHtml(item.wd)}</span></td>
           <td class="item-name-cell">${escapeHtml(item.name)}</td>
-          <td class="num qty-cell">${item.qty} <span class="unit-label">${escapeHtml(item.unit)}</span></td>
+          <td class="num qty-cell">${renderQtyCell(item)}</td>
           <td class="num boq-cell">${item.boq > 0 ? fmt.currencyShort(item.boq) : '—'}</td>
           ${cells}
           <td class="winner-cell">
