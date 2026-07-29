@@ -123,6 +123,168 @@
   const stripSpaces = (s) => String(s || '').replace(/\s+/g, ' ').trim();
   const isSupplierHeader = (s) => /บริษัท|ห้าง|ร้าน|จำกัด|หจก/.test(s || '');
 
+  /* ---------- Toast (global helper — ใช้แทน showToast ที่หายไป) ---------- */
+  function showToast(message, variant) {
+    try {
+      const el = document.createElement('div');
+      el.className = 'toast' + (variant ? ' ' + variant : '');
+      el.textContent = message;
+      document.body.appendChild(el);
+      setTimeout(() => {
+        el.style.transition = 'opacity 0.25s';
+        el.style.opacity = '0';
+        setTimeout(() => el.remove(), 300);
+      }, variant === 'error' ? 4500 : 2800);
+    } catch (e) { console.warn('[toast]', e); }
+  }
+
+  /* ============================================================
+     AI SCAN — สแกนเอกสารกระดาษด้วย Gemini Vision API
+     รับ image/PDF → base64 → POST ไป Gemini → JSON → map เข้า state.sheets
+     ต้องตั้ง GEMINI_API_KEY ใน config.local.js (gitignored) ก่อนใช้งาน
+     ============================================================ */
+  const AI_SCAN_PROMPT = `คุณเป็น AI ที่อ่านเอกสาร BOQ เปรียบเทียบราคาผู้ขายจากภาพหรือ PDF
+กรุณาสกัดข้อมูลและตอบกลับเป็น JSON object เท่านั้น (ห้ามมีข้อความอื่นนอก JSON, ห้ามใส่ markdown code fence):
+
+{
+  "projectName": "ชื่อโครงการ",
+  "workName": "ชื่องาน (เช่น งานวงกบประตู)",
+  "threshold": "วงเงิน (เช่น วงเงินเกิน 500,000 ขึ้นไป)",
+  "suppliers": ["ชื่อบริษัท 1", "ชื่อบริษัท 2"],
+  "boqPrice": 1234.56,
+  "items": [
+    {
+      "wd": "1.1",
+      "name": "ชื่อรายการ",
+      "qty": 36,
+      "unit": "ชุด",
+      "prices": { "ชื่อบริษัท 1": 1150.00, "ชื่อบริษัท 2": 1180.00 }
+    }
+  ]
+}
+
+กฎ:
+- ถ้าไม่มี BOQ price ให้ใส่ boqPrice = null
+- ถ้ารายการไม่มี WD code ให้ใส่ wd = null
+- qty ต้องเป็นตัวเลข (ถ้าอ่านไม่ได้ใส่ 1)
+- unit ถ้าไม่ระบุให้ใส่ "ชุด"
+- prices ต้องมี key ครบทุก supplier ใน array suppliers (ถ้าไม่มีราคาใส่ 0)
+- อ่านเฉพาะ BOQ จริง ไม่ต้องเดา supplier ที่ไม่ปรากฏ`;
+
+  function getGeminiKey() {
+    try {
+      const k = window.LOCAL_CONFIG && window.LOCAL_CONFIG.GEMINI_API_KEY;
+      return (k && String(k).trim()) || null;
+    } catch (e) { return null; }
+  }
+
+  async function readFileAsBase64(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const result = reader.result;
+        // "data:<mime>;base64,<data>" → strip prefix
+        const commaIdx = String(result).indexOf(',');
+        resolve(commaIdx >= 0 ? String(result).slice(commaIdx + 1) : String(result));
+      };
+      reader.onerror = () => reject(new Error('อ่านไฟล์ไม่สำเร็จ'));
+      reader.readAsDataURL(file);
+    });
+  }
+
+  async function callGemini(apiKey, base64Data, mimeType) {
+    const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=' + encodeURIComponent(apiKey);
+    const r = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{
+          parts: [
+            { text: AI_SCAN_PROMPT },
+            { inline_data: { mime_type: mimeType, data: base64Data } },
+          ],
+        }],
+        generationConfig: { temperature: 0.1, maxOutputTokens: 8000 },
+      }),
+    });
+    if (!r.ok) {
+      let msg = r.statusText;
+      try {
+        const errBody = await r.json();
+        msg = (errBody && errBody.error && errBody.error.message) || msg;
+      } catch (_) { /* ignore parse error */ }
+      throw new Error('Gemini API ' + r.status + ': ' + msg);
+    }
+    return r.json();
+  }
+
+  function parseAiScanResponse(resp) {
+    const text = resp && resp.candidates && resp.candidates[0]
+      && resp.candidates[0].content && resp.candidates[0].content.parts
+      && resp.candidates[0].content.parts[0] && resp.candidates[0].content.parts[0].text;
+    if (!text) throw new Error('Gemini ตอบกลับว่างเปล่า');
+    // strip ```json ... ``` ถ้า AI ห่อมาให้
+    let cleaned = String(text).trim()
+      .replace(/^```(?:json)?\s*/i, '')
+      .replace(/\s*```\s*$/, '')
+      .trim();
+    // หา JSON object แรก (กัน AI ตอบนำหน้าด้วยข้อความ)
+    const start = cleaned.indexOf('{');
+    const end = cleaned.lastIndexOf('}');
+    if (start < 0 || end < 0 || end <= start) {
+      throw new Error('ไม่พบ JSON ในคำตอบของ Gemini');
+    }
+    cleaned = cleaned.slice(start, end + 1);
+    let data;
+    try { data = JSON.parse(cleaned); }
+    catch (e) { throw new Error('JSON ไม่ถูกต้อง: ' + e.message); }
+    if (!data || typeof data !== 'object') throw new Error('JSON ไม่ใช่ object');
+    if (!Array.isArray(data.items) || data.items.length === 0) {
+      throw new Error('ไม่พบรายการสินค้าในเอกสาร');
+    }
+    if (!Array.isArray(data.suppliers) || data.suppliers.length === 0) {
+      throw new Error('ไม่พบชื่อผู้ขายในเอกสาร');
+    }
+    return data;
+  }
+
+  function buildSheetsFromAiScan(data, fileName) {
+    const supplierNames = data.suppliers.map(s => String(s || '').trim()).filter(Boolean);
+    const items = data.items.map((it, idx) => {
+      const qty = num(it.qty) || 1;
+      const unit = String(it.unit || 'ชุด').trim() || 'ชุด';
+      const wd = it.wd ? String(it.wd).trim() : '';
+      const suppliers = supplierNames.map(s => {
+        const price = num((it.prices || {})[s]) || 0;
+        return {
+          name: s,
+          price: price,
+          total: price * qty,
+          isBOQ: false,
+        };
+      });
+      return {
+        idx: idx,
+        wd: wd,
+        name: String(it.name || `รายการที่ ${idx + 1}`).trim(),
+        qty: qty,
+        unit: unit,
+        boq: num(data.boqPrice) || 0,
+        suppliers: suppliers,
+        group: null, // ยังไม่มี grouping จาก AI
+      };
+    });
+    return [{
+      name: data.workName || 'ฉบับที่ 1',
+      projectLine: String(data.projectName || '').trim(),
+      workLine: String(data.workName || '').trim(),
+      supplierNames: supplierNames,
+      items: items,
+      isFinalShortlist: supplierNames.length <= 2,
+      hasBOQ: data.boqPrice != null && num(data.boqPrice) > 0,
+    }];
+  }
+
   /* ============================================================
      PARSER — แปลงไฟล์ XLSX เปรียบเทียบราคาผู้ขาย (จำนวน supplier ไม่ fix)
      ============================================================ */
@@ -398,6 +560,7 @@
   }
 
   function renderUploadPrompt() {
+    const hasKey = !!getGeminiKey();
     return `
       <div class="upload-card" id="supplierUploadCard">
         <div class="upload-icon">
@@ -413,7 +576,8 @@
           ระบบจะแสดงตารางเปรียบเทียบราคา แล้วให้ผู้จัดซื้อ <strong>เลือกผู้ชนะด้วยตัวเอง</strong>
         </p>
         <input type="file" id="supplierFileInput" accept=".xlsx" style="display:none" onchange="SupplierCompareController.handleFileUpload(event)">
-        <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">
+        <input type="file" id="aiScanFileInput" accept=".jpg,.jpeg,.png,.webp,.pdf" style="display:none" onchange="SupplierCompareController.handleAiScanFile(event)">
+        <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:6px;">
           <button class="btn btn-primary" onclick="document.getElementById('supplierFileInput').click()">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
@@ -421,9 +585,26 @@
             </svg>
             อัปโหลดไฟล์ .xlsx
           </button>
+          <button id="aiScanBtn" class="btn btn-secondary" onclick="document.getElementById('aiScanFileInput').click()" title="${hasKey ? 'สแกน BOQ จากภาพ/PDF ด้วย Gemini AI' : 'ต้องตั้ง GEMINI_API_KEY ใน config.local.js ก่อน'}">
+            <span class="ai-scan-spinner" style="display:none;align-items:center;gap:6px;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation:spin 1s linear infinite;">
+                <circle cx="12" cy="12" r="10" stroke-opacity="0.25"/>
+                <path d="M12 2a10 10 0 0 1 10 10" stroke-linecap="round"/>
+              </svg>
+              กำลังอ่าน...
+            </span>
+            <span class="ai-scan-label" style="display:inline-flex;align-items:center;gap:6px;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                <circle cx="12" cy="13" r="4"/>
+              </svg>
+              สแกนเอกสาร (AI)
+            </span>
+          </button>
         </div>
         <div class="file-types">
           <span>.xlsx</span>
+          <span>${hasKey ? '.jpg .png .pdf (AI)' : '.jpg .png .pdf (AI — ต้องตั้ง API key)'}</span>
         </div>
       </div>
     `;
@@ -1200,6 +1381,84 @@
     loadDemo() {
       // sample data removed — use actual XLSX file upload instead
       showToast('ไม่มีข้อมูลตัวอย่าง — กรุณาอัปโหลดไฟล์ .xlsx จริง', 'info');
+    },
+
+    async handleAiScanFile(event) {
+      const file = event.target.files && event.target.files[0];
+      if (!file) return;
+      // reset input เพื่อให้เลือกไฟล์เดิมซ้ำได้
+      event.target.value = '';
+
+      // 1. ตรวจ API key
+      const apiKey = getGeminiKey();
+      if (!apiKey) {
+        showToast('ยังไม่ได้ตั้งค่า GEMINI_API_KEY ใน config.local.js — ดูตัวอย่างใน config.local.js.example', 'error');
+        return;
+      }
+
+      // 2. ตรวจประเภทไฟล์
+      const allowed = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'application/pdf'];
+      const mime = (file.type || '').toLowerCase();
+      const allowedMime = allowed.includes(mime);
+      const ext = (file.name.split('.').pop() || '').toLowerCase();
+      const allowedExt = ['jpg', 'jpeg', 'png', 'webp', 'pdf'].includes(ext);
+      if (!allowedMime && !allowedExt) {
+        showToast('รองรับเฉพาะไฟล์ .jpg .jpeg .png .webp .pdf', 'error');
+        return;
+      }
+      const finalMime = mime || (ext === 'pdf' ? 'application/pdf' : 'image/' + ext);
+
+      // 3. ตรวจขนาด (Gemini inline_data จำกัด ~5MB inline, ถ้าใหญ่กว่าควรเตือน)
+      const maxBytes = 8 * 1024 * 1024;
+      if (file.size > maxBytes) {
+        showToast('ไฟล์ใหญ่เกิน 8MB — กรุณาย่อภาพหรือสแกนใหม่', 'error');
+        return;
+      }
+
+      // 4. แสดง loading
+      const btn = document.getElementById('aiScanBtn');
+      const btnLabel = btn ? btn.querySelector('.ai-scan-label') : null;
+      const btnSpinner = btn ? btn.querySelector('.ai-scan-spinner') : null;
+      if (btn) btn.disabled = true;
+      if (btnLabel) btnLabel.style.display = 'none';
+      if (btnSpinner) btnSpinner.style.display = 'inline-flex';
+      showToast('กำลังอ่านเอกสารด้วย AI (' + Math.round(file.size / 1024) + ' KB)...', 'info');
+
+      try {
+        // 5. อ่าน base64 + เรียก Gemini
+        const base64 = await readFileAsBase64(file);
+        const resp = await callGemini(apiKey, base64, finalMime);
+
+        // 6. parse + map state
+        const data = parseAiScanResponse(resp);
+        const sheets = buildSheetsFromAiScan(data, file.name);
+
+        // 7. ใส่ state + re-render
+        state.fileName = '[AI Scan] ' + file.name;
+        state.workName = sheets[0].workLine || state.workName;
+        state.thresholdLabel = data.threshold || state.thresholdLabel;
+        state.sheets = sheets;
+        state.activeSheetIdx = sheets.length - 1;
+        state.winnerByItem = {};
+        state.conclusionSupplier = '';
+        state.conclusionReason = '';
+        state._sheetsOmitted = false;
+        renderUploadCard();
+        renderComparisonView();
+        persistState();
+
+        const itemCount = sheets[0].items.length;
+        const supCount = sheets[0].supplierNames.length;
+        showToast('สแกน AI สำเร็จ: ' + itemCount + ' รายการ, ' + supCount + ' ผู้ขาย', 'success');
+      } catch (err) {
+        console.error('[AI scan]', err);
+        showToast('สแกน AI ไม่สำเร็จ: ' + (err && err.message ? err.message : err), 'error');
+      } finally {
+        // 8. คืนสถานะปุ่ม
+        if (btn) btn.disabled = false;
+        if (btnLabel) btnLabel.style.display = '';
+        if (btnSpinner) btnSpinner.style.display = 'none';
+      }
     },
 
     switchSheet(idx) {

@@ -126,7 +126,7 @@ curl https://<your-domain>.vercel.app/api/factors
 2. **Dashboard** — ภาพรวมโปรเจค + ใบสั่งซื้อ
 3. **วิเคราะห์แนวโน้มราคาวัสดุ** — กราฟคาดการณ์ + ปัจจัยภายใน + ปัจจัยภายนอก (live API) + คำแนะนำ
 4. **วัสดุ & การสั่งซื้อ** — Lead Time & Reorder Control: ระบบเตือนล่วงหน้าให้สั่งของถูกจังหวะ (ต้องสั่งภายใน = วันที่ต้องใช้ − Lead Time − Safety Buffer 3 วัน) + สต็อกวัสดุตาม Block/งวด + เลือก Supplier เปรียบเทียบ 2 เจ้า
-5. **เปรียบเทียบราคาผู้ขาย** — แนบ BOQ (Excel/CSV) → เทียบราคาผู้ขายแบบ Apple-to-Apple → กรอก terms + เลือกผู้ชนะ → ลง signatures (preparer/reviewer/approver) → export ใบเสนอราคา .xlsx (ExcelJS)
+5. **เปรียบเทียบราคาผู้ขาย** — แนบ BOQ (.xlsx) หรือ **สแกนเอกสารกระดาษด้วย AI (Gemini Vision)** → เทียบราคาผู้ขายแบบ Apple-to-Apple → กรอก terms + เลือกผู้ชนะ → ลง signatures (preparer/reviewer/approver) → export ใบเสนอราคา .xlsx (ExcelJS)
 6. **รายงาน** — Pareto + YoY + Bottleneck + Top 10 + สรุปผู้บริหาร
 
 ## Testing & Quality
@@ -140,7 +140,24 @@ node tools/regression-blessini.js
 
 # Smoke test — module/parser/exporter
 node tools/smoke-browser-export.js
+
+# AI scan unit tests — parseAiScanResponse + buildSheetsFromAiScan
+node tools/test-ai-scan.js
 ```
+
+## AI Scan (Gemini Vision)
+
+หน้า `alerts.html` มีปุ่ม **"สแกนเอกสาร (AI)"** ข้างๆ ปุ่มอัปโหลด — รับ `.jpg .png .webp .pdf` แล้วส่งไปยัง Gemini 2.5 Flash เพื่อสกัด BOQ อัตโนมัติ
+
+**Setup:**
+1. ขอ API key ฟรีที่ https://aistudio.google.com/apikey
+2. Copy `config.local.js.example` → `config.local.js` (gitignored)
+3. ใส่ `GEMINI_API_KEY: 'AIza...'`
+4. Reload หน้า alerts.html
+
+**Flow:** เลือกไฟล์ → base64 encode → POST Gemini Vision → parse JSON → map เข้า `state.sheets` → re-render ตาราง
+
+**Graceful fallback:** ถ้าไม่มี key → ปุ่มแสดง toast error แทน, ไม่ break flow
 
 ## หมายเหตุ
 

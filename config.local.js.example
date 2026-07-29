@@ -8,6 +8,11 @@ window.LOCAL_CONFIG = {
   // SAP_API_KEY: '...',
   // SUPABASE_URL: '...',
 
+  // ---------- AI Scan (สแกนเอกสารกระดาษเป็น BOQ ใน alerts.html) ----------
+  // ขอ key ฟรีได้ที่ https://aistudio.google.com/apikey
+  // ถ้าไม่ตั้ง — ปุ่ม "สแกนเอกสาร (AI)" จะแสดง toast error แทน
+  // GEMINI_API_KEY: 'AIza...',
+
   // ปิด warning banner (ถ้าต้องการ)
   // SILENT_LOCAL_CONFIG_MISSING: true
 };
