@@ -268,6 +268,241 @@
       display: flex; align-items: center; gap: 4px; flex-wrap: wrap;
     }
 
+    /* === AI Scan toast + spinner (handleAiScanFile ใน supplier-comparison.js) === */
+    .toast {
+      position: fixed; bottom: 24px; left: 50%;
+      transform: translateX(-50%);
+      background: #0f172a; color: #fff;
+      padding: 12px 20px; border-radius: 8px;
+      font-size: 13.5px; font-weight: 500;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+      z-index: 200;
+      max-width: 92vw;
+      font-family: inherit;
+      animation: toastIn 0.2s ease-out;
+    }
+    .toast.success { background: #166534; }
+    .toast.error   { background: #991b1b; }
+    .toast.info    { background: #0e7490; }
+    .toast .check { width: 18px; height: 18px; flex-shrink: 0; }
+    @keyframes toastIn {
+      from { opacity: 0; transform: translateX(-50%) translateY(20px); }
+      to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+    }
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to   { transform: rotate(360deg); }
+    }
+
+    /* AI Scan button (disabled state เมื่อไม่มี API key) */
+    #aiScanBtn:disabled,
+    #aiScanBtn[disabled] {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
+
+    /* ========== AI Scan Modal ========== */
+    .ai-scan-modal { width: 880px; }
+    .ai-scan-body { padding: 16px 20px 20px; }
+
+    .scan-stage {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 14px;
+    }
+    @media (max-width: 800px) { .scan-stage { grid-template-columns: 1fr; } }
+
+    .paper-preview {
+      padding: 18px;
+      background: #f8f9fa;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      min-height: 380px;
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+      color: #1e293b;
+      position: relative;
+      overflow: hidden;
+    }
+    .paper-preview::before {
+      content: '';
+      position: absolute;
+      left: 0; right: 0;
+      height: 18px;
+      background: linear-gradient(180deg,
+        rgba(22, 163, 74, 0) 0%,
+        rgba(22, 163, 74, 0.55) 50%,
+        rgba(22, 163, 74, 0) 100%);
+      box-shadow: 0 0 14px rgba(22, 163, 74, 0.6);
+      pointer-events: none;
+      display: none;
+    }
+    .paper-preview.scanning::before {
+      display: block;
+      animation: scanLine 2s linear infinite;
+    }
+    .paper-preview.image-mode {
+      padding: 0;
+      background: #1e293b;
+      align-items: center;
+      justify-content: center;
+      display: flex;
+    }
+    .paper-preview.image-mode > * { display: none; }
+    .paper-preview.image-mode img {
+      max-width: 100%;
+      max-height: 380px;
+      object-fit: contain;
+      display: block;
+    }
+    @keyframes scanLine {
+      0%   { top: -18px; }
+      100% { top: 100%; }
+    }
+    .paper-title {
+      font-weight: 700; text-align: center; font-size: 13px;
+      border-bottom: 1px dashed #94a3b8;
+      padding-bottom: 8px; margin-bottom: 10px;
+      line-height: 1.5;
+    }
+    .paper-row {
+      display: grid; grid-template-columns: 1.6fr 0.5fr 0.6fr 0.8fr;
+      gap: 6px; padding: 3px 0;
+      border-bottom: 1px dotted #cbd5e1;
+    }
+    .paper-row.header {
+      font-weight: 700; background: #e2e8f0;
+      padding: 4px 6px; margin: 0 -6px 4px;
+    }
+    .paper-row:last-child { border-bottom: 0; }
+    .paper-row .num { text-align: right; }
+
+    .scan-result {
+      padding: 16px;
+      background: #fff;
+      border: 1px solid #e3e8ef;
+      border-radius: 8px;
+      min-height: 380px;
+      display: flex; flex-direction: column;
+    }
+    .scan-status {
+      display: flex; align-items: center; gap: 10px;
+      padding: 12px;
+      background: #f0f9ff;
+      border-radius: 8px;
+      margin-bottom: 12px;
+    }
+    .scan-status .pulse {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      background: #16a34a;
+      flex-shrink: 0;
+      animation: pulseDot 1.2s infinite;
+    }
+    @keyframes pulseDot {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(1.4); }
+    }
+    .scan-status.processing { background: #fef3c7; }
+    .scan-status.processing .pulse { background: #d97706; }
+    .scan-status.done {
+      background: #dcfce7;
+      color: #166534;
+    }
+    .scan-status.done svg { flex-shrink: 0; }
+    .scan-status .lbl { font-weight: 600; font-size: 13px; }
+    .scan-status .sub { font-size: 11px; color: #64748b; margin-top: 2px; }
+
+    .extracted-list {
+      flex: 1;
+      max-height: 220px;
+      overflow-y: auto;
+      margin-top: 6px;
+    }
+    .extracted-item {
+      padding: 8px 10px;
+      border-bottom: 1px solid #f1f5f9;
+      font-size: 12px;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+      align-items: center;
+    }
+    .extracted-item:last-child { border-bottom: 0; }
+    .extracted-item .name { color: #0f172a; font-weight: 500; }
+    .extracted-item .meta {
+      color: #64748b; font-size: 11px; margin-top: 2px;
+      font-family: 'Courier New', monospace;
+    }
+    .extracted-item .qty {
+      font-weight: 700; color: #1e3a5f;
+      white-space: nowrap;
+    }
+
+    .scan-actions {
+      display: flex; gap: 8px; justify-content: flex-end;
+      margin-top: 14px; padding-top: 14px;
+      border-top: 1px solid #e3e8ef;
+    }
+
+    /* ========== API Key bar (Gemini) ========== */
+    .api-key-bar {
+      display: flex; align-items: center; gap: 10px;
+      padding: 9px 12px;
+      background: #fffbeb;
+      border: 1px solid #fde68a;
+      border-radius: 8px;
+      margin-bottom: 8px;
+    }
+    .api-key-bar.connected {
+      background: #f0fdf4;
+      border-color: #bbf7d0;
+    }
+    .api-key-status {
+      display: flex; align-items: center; gap: 6px;
+      flex: 1;
+      font-size: 12px;
+      color: #92400e;
+      font-weight: 500;
+    }
+    .api-key-bar.connected .api-key-status {
+      color: #166534;
+    }
+    .api-key-status .ico {
+      width: 16px; height: 16px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .api-key-input {
+      padding: 10px 12px;
+      background: #f8fafc;
+      border: 1px solid #e3e8ef;
+      border-radius: 8px;
+      margin-bottom: 12px;
+    }
+    .api-key-input input {
+      flex: 1;
+      font-family: 'Courier New', monospace;
+      font-size: 13px;
+    }
+
+    /* Scan trigger button */
+    .scan-trigger-btn {
+      width: 100%;
+      justify-content: center;
+      padding: 10px;
+      margin-bottom: 10px;
+      background: linear-gradient(135deg, #1e3a5f 0%, #2563eb 100%);
+      border: none;
+      color: #fff;
+      font-weight: 600;
+    }
+    .scan-trigger-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    .scan-trigger-btn:not(:disabled):hover {
+      background: linear-gradient(135deg, #163050 0%, #1d4ed8 100%);
+    }
+
     /* Mapping modal (picker) */
     .mapping-list {
       display: flex; flex-direction: column; gap: 6px;
@@ -396,6 +631,96 @@
     </div>
   </div>
 
+  <!-- ========== Modal: AI Scan ========== -->
+  <div class="modal-overlay" id="ai-scan-modal" onclick="if(event.target===this) closeAIScan()">
+    <div class="modal-card ai-scan-modal">
+      <div class="modal-header">
+        <h3>AI สแกนเอกสาร BOQ จากกระดาษ</h3>
+        <button class="modal-close" onclick="closeAIScan()" type="button">&times;</button>
+      </div>
+      <div class="ai-scan-body">
+        <div style="font-size:12.5px;color:#64748b;margin-bottom:12px;">
+          ระบบ AI จะอ่านเอกสาร BOQ ที่เป็นกระดาษ/ไฟล์สแกน แล้วแปลงเป็นข้อมูลดิจิทัลโดยอัตโนมัติ
+          — ไม่ต้องพิมพ์ข้อมูลวัสดุเอง
+        </div>
+
+        <!-- API key status bar -->
+        <div class="api-key-bar" id="api-key-bar">
+          <div class="api-key-status">
+            <span class="ico">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
+            </span>
+            <span id="api-key-status-text">ยังไม่ได้ตั้งค่า Gemini API Key</span>
+          </div>
+          <button class="btn btn-sm" id="api-key-toggle-btn" onclick="toggleApiKeyInput()">ตั้งค่า</button>
+        </div>
+
+        <!-- API key input (collapsible) -->
+        <div class="api-key-input" id="api-key-input" style="display:none;">
+          <div style="font-size:11.5px;color:#64748b;margin-bottom:8px;">
+            รับ API Key ฟรีได้ที่
+            <a href="https://aistudio.google.com/app/apikey" target="_blank" style="color:#2563eb;">Google AI Studio</a>
+            · Key จะถูกเก็บใน <code>localStorage</code> ของเบราว์เซอร์เครื่องนี้เท่านั้น
+          </div>
+          <div style="display:flex;gap:6px;">
+            <input type="password" id="gemini-key-input" class="lookup" placeholder="AIzaSy..." style="flex:1;">
+            <button class="btn btn-primary" onclick="saveApiKey()">บันทึก</button>
+            <button class="btn" onclick="clearApiKey()">ลบ</button>
+          </div>
+        </div>
+
+        <!-- Source selector -->
+        <div style="margin:14px 0 6px;font-size:12px;color:#475569;font-weight:600;">เลือกเอกสาร:</div>
+        <div class="source-selector" id="source-selector">
+          <input type="file" id="boq-image-input" accept="image/*,.pdf" style="display:none" onchange="handlePaperUpload(event)">
+          <button class="source-btn" id="source-upload-btn" onclick="document.getElementById('boq-image-input').click()">
+            <span class="ico">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+            </span>
+            อัปโหลดภาพ/สแกน
+          </button>
+          <div id="source-samples" style="display:contents;"></div>
+        </div>
+
+        <div class="scan-stage">
+          <!-- ฝั่งซ้าย: เอกสารกระดาษ -->
+          <div class="paper-preview" id="paper-preview">
+            <div class="paper-title">บิลล์ออฟควอนทิตี้ (BOQ)<br><span id="paper-project">— เลือกเอกสารเพื่อเริ่มสแกน —</span></div>
+            <div class="paper-row header"><div>รายการ</div><div class="num">จำนวน</div><div class="num">หน่วย</div><div class="num">ราคา</div></div>
+            <div id="paper-rows"></div>
+          </div>
+
+          <!-- ฝั่งขวา: ผลลัพธ์ที่ดึงออกมา -->
+          <div class="scan-result">
+            <div class="scan-status" id="scan-status">
+              <div class="pulse" id="scan-status-pulse"></div>
+              <div>
+                <div class="lbl" id="scan-status-lbl">พร้อมสแกน</div>
+                <div class="sub" id="scan-detail">เลือกเอกสารแล้วกดปุ่ม "สแกนด้วย AI"</div>
+              </div>
+            </div>
+            <button class="scan-trigger-btn" id="scan-trigger-btn" onclick="runAIScan()" disabled>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+              สแกนด้วย AI
+            </button>
+            <div style="font-size:11.5px;color:#64748b;margin-bottom:6px;">ข้อมูลที่ดึงออกมาได้:</div>
+            <div class="extracted-list" id="extracted-list">
+              <div style="padding:24px;text-align:center;color:#94a3b8;font-size:12px;">
+                รอการสแกน...
+              </div>
+            </div>
+            <div class="scan-actions">
+              <button class="btn" onclick="closeAIScan()">ยกเลิก</button>
+              <button class="btn btn-primary" id="scan-confirm-btn" disabled onclick="confirmAIScan()">
+                นำเข้าข้อมูล
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script src="config.local.js" onerror="console.warn('[config.local.js] ไม่พบไฟล์ — หากต้องการใช้ API key ส่วนตัว ให้ copy config.local.js.example เป็น config.local.js (gitignored)')"></script>
   <script src="vendor/exceljs.min.js"></script>
   <script src="js/compare-excel-export.js"></script>
@@ -430,6 +755,282 @@
     if (window.SupplierCompareController) {
       window.SupplierCompareController.init();
     }
+  </script>
+
+  <!-- ============================================================
+       AI SCAN MODAL — Inline JS
+       เรียก SupplierCompareController.runAiScan(file) + importAiScanData(data, fileName)
+       จัดการ localStorage key, paper preview, scan UI states
+       ============================================================ -->
+  <script>
+    (function () {
+      'use strict';
+
+      const GEMINI_KEY_STORAGE = 'cp_gemini_api_key';
+
+      // ===== API key helpers (เก็บ key ฝั่ง client ใน localStorage) =====
+      function getGeminiKey() {
+        try { return localStorage.getItem(GEMINI_KEY_STORAGE) || ''; }
+        catch (_) { return ''; }
+      }
+      function setGeminiKey(k) {
+        try { localStorage.setItem(GEMINI_KEY_STORAGE, k); } catch (_) {}
+      }
+      function clearGeminiKey() {
+        try { localStorage.removeItem(GEMINI_KEY_STORAGE); } catch (_) {}
+      }
+
+      function updateApiKeyBar() {
+        const hasKey = !!getGeminiKey();
+        const bar = document.getElementById('api-key-bar');
+        const txt = document.getElementById('api-key-status-text');
+        const btn = document.getElementById('api-key-toggle-btn');
+        if (!bar) return;
+        bar.classList.toggle('connected', hasKey);
+        txt.textContent = hasKey
+          ? 'เชื่อมต่อ Gemini API แล้ว · พร้อมสแกนเอกสารจริง'
+          : 'ยังไม่ได้ตั้งค่า Gemini API Key — กรุณาตั้งก่อนสแกน';
+        btn.textContent = hasKey ? 'เปลี่ยน Key' : 'ตั้งค่า';
+      }
+
+      window.toggleApiKeyInput = function () {
+        const inp = document.getElementById('api-key-input');
+        const isOpen = inp.style.display !== 'none';
+        inp.style.display = isOpen ? 'none' : 'block';
+        if (!isOpen) {
+          const cur = getGeminiKey();
+          document.getElementById('gemini-key-input').value = cur;
+          setTimeout(() => document.getElementById('gemini-key-input').focus(), 50);
+        }
+      };
+
+      window.saveApiKey = function () {
+        const v = (document.getElementById('gemini-key-input').value || '').trim();
+        if (!v) { showToast('กรุณากรอก API Key', 'error'); return; }
+        if (v.length < 20) {
+          showToast('API Key สั้นเกินไป (ต้องยาวกว่า 20 ตัวอักษร)', 'error');
+          return;
+        }
+        setGeminiKey(v);
+        document.getElementById('api-key-input').style.display = 'none';
+        updateApiKeyBar();
+        showToast('บันทึก Gemini API Key เรียบร้อย', 'success');
+      };
+
+      window.clearApiKey = function () {
+        clearGeminiKey();
+        document.getElementById('gemini-key-input').value = '';
+        document.getElementById('api-key-input').style.display = 'none';
+        updateApiKeyBar();
+        showToast('ลบ Gemini API Key แล้ว', 'success');
+      };
+
+      // ===== Modal state =====
+      let _aiScanFile = null;  // File object ที่ user เลือก
+      let _aiScanData = null;  // parsed data object (จาก Gemini)
+      let _aiScanFileName = '';
+
+      window.openAIScan = function () {
+        _aiScanFile = null;
+        _aiScanData = null;
+        _aiScanFileName = '';
+
+        // reset paper-preview (text mode = ปกติ)
+        const preview = document.getElementById('paper-preview');
+        preview.classList.remove('image-mode', 'scanning');
+        const oldImg = preview.querySelector('img');
+        if (oldImg) oldImg.remove();
+        document.getElementById('paper-project').textContent = '— เลือกเอกสารเพื่อเริ่มสแกน —';
+        document.getElementById('paper-rows').innerHTML = '';
+
+        // reset scan state
+        document.getElementById('scan-status').className = 'scan-status';
+        document.getElementById('scan-status-pulse').style.display = '';
+        document.getElementById('scan-status-lbl').textContent = 'พร้อมสแกน';
+        document.getElementById('scan-status-lbl').style.color = '';
+        document.getElementById('scan-detail').textContent = 'เลือกเอกสารแล้วกดปุ่ม "สแกนด้วย AI"';
+        document.getElementById('scan-trigger-btn').disabled = true;
+        document.getElementById('extracted-list').innerHTML = `
+          <div style="padding:24px;text-align:center;color:#94a3b8;font-size:12px;">รอการสแกน...</div>
+        `;
+        document.getElementById('scan-confirm-btn').disabled = true;
+
+        // reset source buttons (highlight upload button ไม่ค้าง)
+        document.querySelectorAll('.source-btn').forEach(b => b.classList.remove('active'));
+
+        updateApiKeyBar();
+        document.getElementById('ai-scan-modal').classList.add('open');
+      };
+
+      window.closeAIScan = function () {
+        document.getElementById('ai-scan-modal').classList.remove('open');
+        _aiScanFile = null;
+        _aiScanData = null;
+        _aiScanFileName = '';
+      };
+
+      window.handlePaperUpload = function (event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        // reset input เพื่อให้เลือกไฟล์เดิมซ้ำได้
+        event.target.value = '';
+
+        _aiScanFile = file;
+        _aiScanFileName = file.name;
+        _aiScanData = null;
+
+        // แสดง paper preview เป็นภาพ
+        const preview = document.getElementById('paper-preview');
+        preview.classList.remove('scanning');
+        preview.classList.add('image-mode');
+        const oldImg = preview.querySelector('img');
+        if (oldImg) oldImg.remove();
+        const img = document.createElement('img');
+        img.src = URL.createObjectURL(file);
+        preview.appendChild(img);
+        document.getElementById('paper-project').textContent = file.name;
+        document.getElementById('paper-rows').innerHTML = '';
+
+        // highlight source button
+        document.querySelectorAll('.source-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById('source-upload-btn').classList.add('active');
+
+        // reset scan state → ready
+        document.getElementById('scan-status').className = 'scan-status';
+        document.getElementById('scan-status-pulse').style.display = '';
+        document.getElementById('scan-status-lbl').textContent = 'พร้อมสแกน';
+        document.getElementById('scan-status-lbl').style.color = '';
+        document.getElementById('scan-detail').textContent = 'กดปุ่ม "สแกนด้วย AI" เพื่อเริ่มอ่านเอกสาร';
+        document.getElementById('scan-trigger-btn').disabled = false;
+        document.getElementById('extracted-list').innerHTML = `
+          <div style="padding:24px;text-align:center;color:#94a3b8;font-size:12px;">รอการสแกน...</div>
+        `;
+        document.getElementById('scan-confirm-btn').disabled = true;
+      };
+
+      window.runAIScan = async function () {
+        if (!_aiScanFile) return;
+
+        // ตรวจ API key ก่อน
+        if (!getGeminiKey()) {
+          toggleApiKeyInput();
+          showToast('กรุณาตั้งค่า Gemini API Key ก่อน', 'error');
+          return;
+        }
+
+        const preview = document.getElementById('paper-preview');
+        const status = document.getElementById('scan-status');
+        const lbl = document.getElementById('scan-status-lbl');
+        const sub = document.getElementById('scan-detail');
+        const trigger = document.getElementById('scan-trigger-btn');
+
+        preview.classList.add('scanning');
+        status.className = 'scan-status processing';
+        lbl.textContent = 'กำลังส่งไปยัง Gemini AI...';
+        lbl.style.color = '';
+        sub.textContent = 'gemini-2.5-flash กำลังอ่านเอกสาร';
+        trigger.disabled = true;
+        document.getElementById('scan-confirm-btn').disabled = true;
+
+        try {
+          const t0 = Date.now();
+          const result = await SupplierCompareController.runAiScan(_aiScanFile);
+          const ms = Date.now() - t0;
+          _aiScanData = result.data;
+
+          preview.classList.remove('scanning');
+          status.className = 'scan-status done';
+          document.getElementById('scan-status-pulse').style.display = 'none';
+          lbl.textContent = 'สแกนสำเร็จ';
+          lbl.style.color = '#166534';
+          const items = result.data.items || [];
+          const suppliers = result.data.suppliers || [];
+          sub.textContent = `พบ ${items.length} รายการ · ${suppliers.length} ผู้ขาย · ใช้เวลา ${(ms / 1000).toFixed(1)} วินาที`;
+
+          // render extracted list (preview summary ของแต่ละ item)
+          const listEl = document.getElementById('extracted-list');
+          if (items.length === 0) {
+            listEl.innerHTML = `<div style="padding:24px;text-align:center;color:#94a3b8;font-size:12px;">ไม่พบรายการในเอกสาร</div>`;
+          } else {
+            listEl.innerHTML = items.map((it, idx) => {
+              const prices = it.prices || {};
+              const priceArr = Object.keys(prices).map(s => `${shortSupplierName(s)}: ${fmtNum(prices[s] || 0)}`);
+              return `
+                <div class="extracted-item">
+                  <div>
+                    <div class="name">${escapeHtml(it.name || ('รายการที่ ' + (idx + 1)))}</div>
+                    <div class="meta">${escapeHtml(priceArr.join(' · '))}</div>
+                  </div>
+                  <div class="qty">${fmtNum(it.qty || 0)} ${escapeHtml(it.unit || '')}</div>
+                </div>
+              `;
+            }).join('');
+          }
+
+          document.getElementById('scan-confirm-btn').disabled = items.length === 0;
+        } catch (e) {
+          preview.classList.remove('scanning');
+          status.className = 'scan-status';
+          lbl.textContent = 'สแกนไม่สำเร็จ';
+          lbl.style.color = '#dc2626';
+          sub.textContent = e.message || String(e);
+          trigger.disabled = false;
+          showToast(e.message || 'สแกนไม่สำเร็จ', 'error');
+        }
+      };
+
+      window.confirmAIScan = function () {
+        if (!_aiScanData || !_aiScanFileName) return;
+        try {
+          const result = SupplierCompareController.importAiScanData(_aiScanData, _aiScanFileName);
+          closeAIScan();
+          showToast(`นำเข้าข้อมูลจาก AI (${result.itemCount} รายการ, ${result.supplierCount} ผู้ขาย)`, 'success');
+        } catch (e) {
+          showToast('นำเข้าไม่สำเร็จ: ' + (e.message || e), 'error');
+        }
+      };
+
+      // ===== Helpers (modal-scoped) =====
+      function shortSupplierName(s) {
+        return String(s || '')
+          .replace(/^บริษัท\s+/, '')
+          .replace(/\s+จำกัด$/, '')
+          .trim();
+      }
+      function fmtNum(n) {
+        const v = Number(n) || 0;
+        return v.toLocaleString('th-TH', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+      }
+      function escapeHtml(s) {
+        return String(s || '')
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;');
+      }
+      function showToast(message, variant) {
+        const el = document.createElement('div');
+        el.className = 'toast' + (variant === 'success' ? ' success' : variant === 'error' ? ' error' : '');
+        el.innerHTML = `
+          <svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+          <span>${escapeHtml(message)}</span>`;
+        document.body.appendChild(el);
+        setTimeout(() => {
+          el.style.transition = 'opacity 0.3s, transform 0.3s';
+          el.style.opacity = '0';
+          el.style.transform = 'translateX(-50%) translateY(10px)';
+        }, variant === 'error' ? 4500 : 3500);
+        setTimeout(() => el.remove(), variant === 'error' ? 5000 : 3900);
+      }
+
+      // ===== Escape key: close modal =====
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') {
+          const modal = document.getElementById('ai-scan-modal');
+          if (modal && modal.classList.contains('open')) closeAIScan();
+        }
+      });
+    })();
   </script>
 </body>
 </html>

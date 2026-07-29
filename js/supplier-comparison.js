@@ -604,7 +604,6 @@
           ระบบจะแสดงตารางเปรียบเทียบราคา แล้วให้ผู้จัดซื้อ <strong>เลือกผู้ชนะด้วยตัวเอง</strong>
         </p>
         <input type="file" id="supplierFileInput" accept=".xlsx" style="display:none" onchange="SupplierCompareController.handleFileUpload(event)">
-        <input type="file" id="aiScanFileInput" accept=".jpg,.jpeg,.png,.webp,.pdf" style="display:none" onchange="SupplierCompareController.handleAiScanFile(event)">
         <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:6px;">
           <button class="btn btn-primary" onclick="document.getElementById('supplierFileInput').click()">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -613,26 +612,17 @@
             </svg>
             อัปโหลดไฟล์ .xlsx
           </button>
-          <button id="aiScanBtn" class="btn btn-secondary" onclick="document.getElementById('aiScanFileInput').click()" title="${hasKey ? 'สแกน BOQ จากภาพ/PDF ด้วย Gemini AI' : 'ต้องตั้ง GEMINI_API_KEY ใน config.local.js ก่อน'}">
-            <span class="ai-scan-spinner" style="display:none;align-items:center;gap:6px;">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation:spin 1s linear infinite;">
-                <circle cx="12" cy="12" r="10" stroke-opacity="0.25"/>
-                <path d="M12 2a10 10 0 0 1 10 10" stroke-linecap="round"/>
-              </svg>
-              กำลังอ่าน...
-            </span>
-            <span class="ai-scan-label" style="display:inline-flex;align-items:center;gap:6px;">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
-                <circle cx="12" cy="13" r="4"/>
-              </svg>
-              สแกนเอกสาร (AI)
-            </span>
+          <button id="aiScanBtn" class="btn btn-secondary" onclick="openAIScan()" title="สแกน BOQ จากภาพ/PDF ด้วย Gemini AI">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+              <circle cx="12" cy="13" r="4"/>
+            </svg>
+            สแกนเอกสาร (AI)
           </button>
         </div>
         <div class="file-types">
           <span>.xlsx</span>
-          <span>${hasKey ? '.jpg .png .pdf (AI)' : '.jpg .png .pdf (AI — ต้องตั้ง API key)'}</span>
+          <span>.jpg .png .pdf (AI)</span>
         </div>
       </div>
     `;
@@ -1427,82 +1417,67 @@
       showToast('ไม่มีข้อมูลตัวอย่าง — กรุณาอัปโหลดไฟล์ .xlsx จริง', 'info');
     },
 
-    async handleAiScanFile(event) {
-      const file = event.target.files && event.target.files[0];
-      if (!file) return;
-      // reset input เพื่อให้เลือกไฟล์เดิมซ้ำได้
-      event.target.value = '';
-
-      // 1. ตรวจ API key
+    /**
+     * Public: เรียกจาก AI Scan modal (alerts.html inline script)
+     * - รับ File object + ตรวจสอบ MIME/size/API key + เรียก Gemini
+     * - คืน parsed data (ให้ modal แสดง extracted list preview)
+     * throws on error
+     */
+    async runAiScan(file) {
+      // 1) ตรวจ API key
       const apiKey = getGeminiKey();
       if (!apiKey) {
-        showToast('ยังไม่ได้ตั้งค่า GEMINI_API_KEY ใน config.local.js — ดูตัวอย่างใน config.local.js.example', 'error');
-        return;
+        throw new Error('ยังไม่ได้ตั้งค่า GEMINI_API_KEY — กรุณาคลิก "ตั้งค่า" ในแถบ API Key ด้านบน');
       }
 
-      // 2. ตรวจประเภทไฟล์
+      // 2) ตรวจ MIME/ext
       const allowed = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'application/pdf'];
       const mime = (file.type || '').toLowerCase();
-      const allowedMime = allowed.includes(mime);
       const ext = (file.name.split('.').pop() || '').toLowerCase();
+      const allowedMime = allowed.includes(mime);
       const allowedExt = ['jpg', 'jpeg', 'png', 'webp', 'pdf'].includes(ext);
       if (!allowedMime && !allowedExt) {
-        showToast('รองรับเฉพาะไฟล์ .jpg .jpeg .png .webp .pdf', 'error');
-        return;
+        throw new Error('รองรับเฉพาะไฟล์ .jpg .jpeg .png .webp .pdf');
       }
       const finalMime = mime || (ext === 'pdf' ? 'application/pdf' : 'image/' + ext);
 
-      // 3. ตรวจขนาด (Gemini inline_data จำกัด ~5MB inline, ถ้าใหญ่กว่าควรเตือน)
+      // 3) ตรวจขนาด
       const maxBytes = 8 * 1024 * 1024;
       if (file.size > maxBytes) {
-        showToast('ไฟล์ใหญ่เกิน 8MB — กรุณาย่อภาพหรือสแกนใหม่', 'error');
-        return;
+        throw new Error('ไฟล์ใหญ่เกิน 8MB — กรุณาย่อภาพหรือสแกนใหม่');
       }
 
-      // 4. แสดง loading
-      const btn = document.getElementById('aiScanBtn');
-      const btnLabel = btn ? btn.querySelector('.ai-scan-label') : null;
-      const btnSpinner = btn ? btn.querySelector('.ai-scan-spinner') : null;
-      if (btn) btn.disabled = true;
-      if (btnLabel) btnLabel.style.display = 'none';
-      if (btnSpinner) btnSpinner.style.display = 'inline-flex';
-      showToast('กำลังอ่านเอกสารด้วย AI (' + Math.round(file.size / 1024) + ' KB)...', 'info');
+      // 4) อ่าน base64 + เรียก Gemini + parse
+      const base64 = await readFileAsBase64(file);
+      const resp = await callGemini(apiKey, base64, finalMime);
+      const data = parseAiScanResponse(resp);
+      return { data, fileName: file.name, mime: finalMime, size: file.size };
+    },
 
-      try {
-        // 5. อ่าน base64 + เรียก Gemini
-        const base64 = await readFileAsBase64(file);
-        const resp = await callGemini(apiKey, base64, finalMime);
+    /**
+     * Public: เรียกหลังจาก modal กด "นำเข้าข้อมูล"
+     * - รับ parsed data object + fileName → build sheets + set state + re-render
+     */
+    importAiScanData(data, fileName) {
+      const sheets = buildSheetsFromAiScan(data, fileName);
 
-        // 6. parse + map state
-        const data = parseAiScanResponse(resp);
-        const sheets = buildSheetsFromAiScan(data, file.name);
+      state.fileName = '[AI Scan] ' + fileName;
+      state.workName = sheets[0].workLine || state.workName;
+      state.thresholdLabel = data.threshold || state.thresholdLabel;
+      state.sheets = sheets;
+      state.activeSheetIdx = sheets.length - 1;
+      state.winnerByItem = {};
+      state.conclusionSupplier = '';
+      state.conclusionReason = '';
+      state._sheetsOmitted = false;
+      renderUploadCard();
+      renderComparisonView();
+      persistState();
 
-        // 7. ใส่ state + re-render
-        state.fileName = '[AI Scan] ' + file.name;
-        state.workName = sheets[0].workLine || state.workName;
-        state.thresholdLabel = data.threshold || state.thresholdLabel;
-        state.sheets = sheets;
-        state.activeSheetIdx = sheets.length - 1;
-        state.winnerByItem = {};
-        state.conclusionSupplier = '';
-        state.conclusionReason = '';
-        state._sheetsOmitted = false;
-        renderUploadCard();
-        renderComparisonView();
-        persistState();
-
-        const itemCount = sheets[0].items.length;
-        const supCount = sheets[0].supplierNames.length;
-        showToast('สแกน AI สำเร็จ: ' + itemCount + ' รายการ, ' + supCount + ' ผู้ขาย', 'success');
-      } catch (err) {
-        console.error('[AI scan]', err);
-        showToast('สแกน AI ไม่สำเร็จ: ' + (err && err.message ? err.message : err), 'error');
-      } finally {
-        // 8. คืนสถานะปุ่ม
-        if (btn) btn.disabled = false;
-        if (btnLabel) btnLabel.style.display = '';
-        if (btnSpinner) btnSpinner.style.display = 'none';
-      }
+      return {
+        itemCount: sheets[0].items.length,
+        supplierCount: sheets[0].supplierNames.length,
+      };
     },
 
     switchSheet(idx) {
