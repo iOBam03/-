@@ -810,11 +810,14 @@
   <script src="vendor/exceljs.min.js"></script>
   <script src="vendor/pdf.min.js" onerror="console.warn('[pdf.min.js] ไม่พบไฟล์ — ฟีเจอร์อัปโหลด BOQ จาก PDF จะถูก disable')"></script>
   <script src="js/compare-excel-export.js"></script>
-  <script src="js/supplier-comparison.js"></script>
+  <!-- ต้องโหลด multi-boq.js ก่อน supplier-comparison.js — เพราะ supplier-comparison.js
+       เรียกใช้ window.MultiBOQ.* ตอน init() (renderUploadCard สำหรับ multi-BOQ mode)
+       ถ้าโหลดผิดลำดับ init() จะ fallback ไป renderUploadPrompt() เดิม (hero เก่า) -->
   <script src="js/purchase-history-sap.js" onerror="console.warn('[purchase-history-sap.js] ไม่พบไฟล์ — ฟีเจอร์ SAP avg/min/max จะถูก disable')"></script>
   <script src="js/fuzzy-match-sap.js" onerror="console.warn('[fuzzy-match-sap.js] ไม่พบไฟล์ — ฟีเจอร์ SAP avg/min/max จะถูก disable')"></script>
   <script src="js/pdf-table-extract.js" onerror="console.warn('[pdf-table-extract.js] ไม่พบไฟล์ — ฟีเจอร์อัปโหลด BOQ จาก PDF จะถูก disable')"></script>
   <script src="js/multi-boq.js" onerror="console.warn('[multi-boq.js] ไม่พบไฟล์ — โหมดหลาย BOQ จะถูก disable')"></script>
+  <script src="js/supplier-comparison.js"></script>
   <script>
     // Demo mode toggle — guarded (js/demo.js ถูกลบไปแล้ว ถ้าไม่มีก็ข้าม)
     try {
