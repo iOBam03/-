@@ -657,6 +657,8 @@
                 value="${escapeHtml(slot.supplierName)}" placeholder="ตั้งชื่อล่วงหน้า"
                 oninput="SupplierCompareController.updateSlotSupplierName(${slotIdx}, this.value)">
             ` : ''}
+            <button class="slot-remove slot-remove-empty" title="ลบช่องว่างนี้"
+              onclick="SupplierCompareController.removeSupplierSlot(${slotIdx})">×</button>
           </div>
         `;
       }

@@ -467,6 +467,15 @@ console.log('\n[renderSlotGrid markup — empty state]');
   check('มีปุ่มเพิ่มช่อง', /slot-add-card/.test(html));
   check('มี drop zone text', /ลากไฟล์/.test(html));
   check('มี hint ตอน empty ทั้งหมด', /ลากไฟล์ BOQ/.test(html));
+  // ปุ่ม × ลบช่องว่าง (เพิ่มให้ undo เผื่อกด "+" เกิน)
+  check('มีปุ่ม × ลบช่อง (slot-remove-empty) ใน empty drop zone',
+    /class="slot-remove slot-remove-empty"/.test(html));
+  check('ปุ่ม × ลบช่องมี title="ลบช่องว่างนี้"',
+    /title="ลบช่องว่างนี้"/.test(html));
+  check('empty slot ทั้ง 2 ช่องต่างก็มีปุ่ม × ลบ',
+    (html.match(/slot-remove-empty/g) || []).length === 2);
+  check('ปุ่ม × ลบช่องเรียก removeSupplierSlot handler',
+    /removeSupplierSlot\(0\)[\s\S]*slot-remove-empty[\s\S]*removeSupplierSlot\(1\)|removeSupplierSlot\(1\)[\s\S]*slot-remove-empty[\s\S]*removeSupplierSlot\(0\)/.test(html));
 }
 
 console.log('\n[renderSlotGrid markup — filled state]');

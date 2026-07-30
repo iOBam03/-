@@ -2232,8 +2232,12 @@
       const slot = state.multiBOQ.slots[slotIdx];
       if (!slot) return;
       const hasFile = !!slot.fileId;
-      const label = hasFile ? `ลบ "${slot.supplierName || 'ผู้ขาย ' + (slotIdx + 1)}" พร้อมไฟล์?` : 'ลบช่องนี้?';
-      if (!confirm(label)) return;
+      // ช่องว่าง (ยังไม่มีไฟล์) → ลบได้ทันที ไม่ต้องถาม (เผลอกด "+" แล้วอยาก undo)
+      // ช่องที่มีไฟล์แล้ว → ถาม confirm เพราะจะลบข้อมูลไปด้วย
+      if (hasFile) {
+        const label = `ลบ "${slot.supplierName || 'ผู้ขาย ' + (slotIdx + 1)}" พร้อมไฟล์?`;
+        if (!confirm(label)) return;
+      }
       window.MultiBOQ.removeSlot(state, slotIdx);
       window.MultiBOQ.syncSlotsToFiles(state);
       renderUploadCard();
