@@ -1205,15 +1205,7 @@
             <h3>ตารางเปรียบเทียบราคา — ${escapeHtml(state.workName || 'งาน')}</h3>
             <div class="sub">
               แสดง ${items.length} รายการ · ${suppliers.length} ผู้ขาย
-              · <span style="color:var(--color-success);font-weight:600;">ถูกสุด</span> = ราคาต่ำสุดในแถว (visual cue เท่านั้น — ท่านเลือกผู้ชนะเอง)
             </div>
-          </div>
-          <div class="card-header-actions">
-            <label class="sort-toggle" title="เรียงแถวจากราคาถูกสุดไปแพงสุด (สำหรับผู้บริหารดูง่าย)">
-              <input type="checkbox" id="sortByCheapestChk" ${state.sortByCheapest ? 'checked' : ''}
-                     onchange="SupplierCompareController.setSortByCheapest(this.checked)">
-              <span>เรียงถูก→แพง</span>
-            </label>
           </div>
         </div>
         <div class="card-body no-pad">
