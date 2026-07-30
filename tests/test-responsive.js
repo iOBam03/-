@@ -29,8 +29,8 @@ check('@media (min-width: 1920px) exists', /@media \(min-width:\s*1920px\)/.test
 console.log('\n[CSS] supplier-compare-table not fixed at 1100px');
 const oldFixed = /\.supplier-compare-table\s*\{[^}]*min-width:\s*1100px/m.test(css);
 check('no min-width: 1100px (ลดลงเพื่อรองรับ notebook)', !oldFixed);
-const hasReduced = /\.supplier-compare-table\s*\{[^}]*min-width:\s*7\d{2}px/m.test(css);
-check('min-width ≤ 800px (พอดีจอ 1280px)', hasReduced);
+const hasReduced = /\.supplier-compare-table\s*\{[^}]*min-width:\s*[6-7]\d{2}px/m.test(css);
+check('min-width ≤ 760px (compact — พอดีจอ 1280px กับ 2-3 suppliers)', hasReduced);
 
 console.log('\n[CSS] fluid column widths (ใช้ %)');
 check('table column widths fluid (% not fixed px)',

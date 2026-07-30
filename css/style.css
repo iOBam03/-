@@ -851,8 +851,24 @@ select.form-control { cursor: pointer; }
 
 /* ── Notebook (1280-1440px) — ลด padding/font เพื่อให้ content พอดี ── */
 @media (max-width: 1440px) {
-  .supplier-compare-table { font-size: 0.88em; }
-  .supplier-cell { padding: 7px 5px; }
+  .supplier-compare-table { font-size: 0.86em; }
+  .supplier-cell { padding: 6px 4px; }
+  .supplier-compare-table thead th { padding: 8px 5px; }
+  /* ลด min-width ของคอลัมน์ที่ไม่จำเป็น เพื่อให้จอ notebook 1280px พอดี */
+  .supplier-compare-table th.wd-col,
+  .supplier-compare-table td.wd-cell        { min-width: 50px; }
+  .supplier-compare-table th.name-col,
+  .supplier-compare-table td.item-name-cell { min-width: 140px; }
+  .supplier-compare-table th.qty-col,
+  .supplier-compare-table td.qty-cell       { min-width: 64px; }
+  .supplier-compare-table th.boq-col,
+  .supplier-compare-table td.boq-cell       { min-width: 76px; }
+  .supplier-compare-table th.sap-col,
+  .supplier-compare-table td.sap-cell       { min-width: 108px; }
+  .supplier-compare-table th.winner-col,
+  .supplier-compare-table td.winner-cell    { min-width: 92px; }
+  .supplier-compare-table th.supplier-col,
+  .supplier-compare-table td.supplier-cell  { min-width: 88px; }
   .signature-grid { grid-template-columns: repeat(2, 1fr); }
   .terms-grid { grid-template-columns: repeat(2, 1fr); }
 }
@@ -866,7 +882,9 @@ select.form-control { cursor: pointer; }
   .terms-grid { grid-template-columns: repeat(2, 1fr); }
   .conclusion-fields { grid-template-columns: 1fr; }
   /* ตารางเปรียบเทียบ: scroll ตามแนวนอน พร้อม shadow hint */
-  .supplier-compare-table { font-size: 0.85em; }
+  .supplier-compare-table { font-size: 0.82em; }
+  .supplier-compare-table { min-width: 600px; }
+  .supplier-cell { padding: 5px 3px; }
 }
 
 @media (max-width: 800px) {
@@ -910,34 +928,42 @@ select.form-control { cursor: pointer; }
   background-color: var(--color-surface);
 }
 .supplier-compare-table {
-  /* min-width เดิม 1100px บังคับให้ scroll ที่จอแคบเกินไป — ลดลงเหลือ 760px เพื่อให้
-     table พอดีกับจอ notebook 1280px (หลังหัก sidebar 240px + padding ~32px = ~1008px)
-     ส่วนจอที่เล็กกว่าจริงๆ (< 1000px) จะ scroll แต่มี shadow hint บอกตำแหน่ง */
-  min-width: 760px;
+  /* compact column widths — ลดพื้นที่ว่างใน cell แต่ละคอลัมน์
+     - min-width 680px: จอ notebook 1280px (content ~984px) ใส่ 2-3 suppliers ได้พอดี
+     - table-layout: auto — คอลัมน์ขยายตาม min-width เมื่อ supplier 4+ ราย
+     - font-variant-numeric: tabular-nums ทั้งตาราง → ตัวเลขจัดแนวตรงกัน ไม่ดัน cell */
+  min-width: 680px;
   font-size: 0.93em;
   width: 100%;
   table-layout: auto;
+  font-variant-numeric: tabular-nums;
 }
-/* Fluid column widths — scale ตาม viewport แทน fixed px */
+/* Fluid column widths — compact กว่าเดิม เพื่อไม่ให้ cell กินพื้นที่ว่าง */
 .supplier-compare-table th.wd-col,
-.supplier-compare-table td.wd-cell        { width: 7%;  min-width: 56px; }
+.supplier-compare-table td.wd-cell        { width: 6%;   min-width: 60px;  text-align: center; }
 .supplier-compare-table th.name-col,
-.supplier-compare-table td.item-name-cell { width: 26%; min-width: 180px; }
+.supplier-compare-table td.item-name-cell { width: 21%;  min-width: 160px; text-align: left; }
 .supplier-compare-table th.qty-col,
-.supplier-compare-table td.qty-cell       { width: 8%;  min-width: 70px; }
+.supplier-compare-table td.qty-cell       { width: 7%;   min-width: 72px;  text-align: center; }
 .supplier-compare-table th.boq-col,
-.supplier-compare-table td.boq-cell       { width: 9%;  min-width: 80px; }
+.supplier-compare-table td.boq-cell       { width: 8%;   min-width: 84px;  text-align: center; }
 .supplier-compare-table th.supplier-col,
-.supplier-compare-table td.supplier-cell  { width: auto; min-width: 110px; }
+.supplier-compare-table td.supplier-cell  { width: auto; min-width: 96px;  text-align: center; }
 .supplier-compare-table th.sap-col,
-.supplier-compare-table td.sap-cell       { width: 13%; min-width: 130px; }
+.supplier-compare-table td.sap-cell       { width: 12%;  min-width: 120px; text-align: center; }
 .supplier-compare-table th.winner-col,
-.supplier-compare-table td.winner-cell    { width: 11%; min-width: 120px; }
+.supplier-compare-table td.winner-cell    { width: 10%;  min-width: 104px; text-align: center; }
 .supplier-compare-table thead th {
   background: var(--color-surface-alt);
   font-weight: 600;
   white-space: nowrap;
-  padding: 10px 8px;
+  padding: 9px 6px;
+  text-align: center;          /* header ตรงกับ td (เดิมจัดซ้าย ทำให้ดูเหมือนมี padding ซ้ายเยอะ) */
+  font-variant-numeric: normal; /* header ไม่ใช่ตัวเลข */
+}
+/* Name column header — คง text-align: left ให้ตรงกับ cell */
+.supplier-compare-table thead th.name-col {
+  text-align: left;
 }
 .supplier-compare-table thead th.supplier-col {
   background: #f8fafc;
@@ -981,6 +1007,12 @@ select.form-control { cursor: pointer; }
   font-size: 12px;
   line-height: 1.35;
   color: var(--color-text);
+  vertical-align: middle;
+  padding: 7px 8px;
+}
+.data-row .qty-cell {
+  vertical-align: middle;
+  padding: 7px 4px;
 }
 .data-row .qty-cell .unit-label {
   font-size: 10.5px;
@@ -1000,15 +1032,37 @@ select.form-control { cursor: pointer; }
   background: var(--color-info-soft);
   font-weight: 600;
   color: var(--color-info);
+  vertical-align: middle;
+  padding: 7px 4px;
+}
+.data-row .sap-cell {
+  vertical-align: middle;
+  padding: 7px 5px;
+}
+.data-row .wd-cell {
+  vertical-align: middle;
+  padding: 6px 4px;
+}
+.data-row .wd-cell .wd-pill {
+  display: inline-block;
+  padding: 2px 7px;
+  font-size: 10.5px;
+  font-weight: 600;
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+  border-radius: 999px;
+  white-space: nowrap;
 }
 
 /* Supplier cells */
 .supplier-cell {
   position: relative;
-  padding: 8px 6px;
+  padding: 7px 5px;
   border-left: 1px solid var(--color-border);
-  vertical-align: top;
+  vertical-align: middle;      /* จัดตัวเลขราคาให้อยู่กลาง cell → ไม่เหลือพื้นที่ว่างข้างบน/ล่าง */
+  text-align: center;
 }
+.supplier-cell > * { text-align: center; }   /* ลูกทุกตัวจัดกลาง (ราคา + บรรทัด "รวม xxx" + ป้าย "ถูกสุด") */
 .supplier-cell.empty {
   color: var(--color-text-muted);
 }
@@ -1026,22 +1080,27 @@ select.form-control { cursor: pointer; }
 }
 .supplier-cell .supplier-cell-price {
   font-variant-numeric: tabular-nums;
+  white-space: nowrap;        /* กันตัวเลขตัดบรรทัด */
+  font-weight: 600;
+  display: inline-block;
 }
 .supplier-cell .supplier-cell-total {
   font-size: 10.5px;
   color: var(--color-text-muted);
   margin-top: 2px;
+  white-space: nowrap;
 }
 .cheapest-tag {
   display: inline-block;
   margin-top: 3px;
-  padding: 1px 6px;
-  font-size: 9.5px;
+  padding: 1px 5px;
+  font-size: 9px;
   font-weight: 700;
   background: var(--color-success);
   color: white;
   border-radius: 999px;
   letter-spacing: 0.3px;
+  white-space: nowrap;
 }
 
 /* Winner row (manually picked) */
@@ -1053,23 +1112,26 @@ select.form-control { cursor: pointer; }
 }
 
 /* Winner radios */
-.winner-cell { padding: 6px 8px; }
+.winner-cell { padding: 6px 4px; vertical-align: middle; }
 .winner-radios {
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 2px;
+  align-items: center;         /* จัด radio ให้อยู่กลางคอลัมน์ */
 }
 .winner-radio {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
   cursor: pointer;
-  padding: 4px 6px;
+  padding: 3px 5px;
   border-radius: 4px;
-  font-size: 11.5px;
+  font-size: 11px;
   color: var(--color-text-secondary);
   transition: all 0.15s;
   border: 1px solid transparent;
+  width: 100%;                /* ให้ปุ่ม radio เต็มความกว้างคอลัมน์ ดูเป็นระเบียบ */
+  justify-content: center;
 }
 .winner-radio:hover {
   background: var(--color-surface-alt);
