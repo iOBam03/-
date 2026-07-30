@@ -346,23 +346,38 @@
    */
   function buildSheetsFromPdfRows(rows, fileName, quality) {
     const q = quality || {};
+    // ราคาจาก PDF เป็นของ "BOQ" ของผู้ขายที่ส่งมา → สร้าง supplier column เดียวชื่อ "BOQ (จาก PDF)"
+    // เพื่อให้ row render แสดงราคาในคอลัมน์ผู้ขายตามปกติ + สามารถเลือก winner ได้
+    const pdfSupplierName = '[PDF] ' + fileName;
     const items = (rows || []).map((r, idx) => {
       const qty = num(r.qty) || 1;
       const unit = String(r.unit || 'ชุด').trim() || 'ชุด';
-      const price = r.price != null ? num(r.price) : 0;
+      const unitPrice = r.price != null ? num(r.price) : null;
+      // total ถ้า PDF ไม่ให้มา → คำนวณจาก qty × unitPrice (กัน cell ว่าง)
+      const total = (r.total != null ? num(r.total) : null)
+                  ?? (unitPrice != null ? Math.round(unitPrice * qty * 100) / 100 : null);
       const wd = ''; // ยังไม่มี grouping จาก PDF
+      const suppliers = [];
+      if (unitPrice != null && unitPrice > 0) {
+        suppliers.push({
+          name: pdfSupplierName,
+          price: unitPrice,
+          total: total,
+          isBOQ: false,
+          _fromPDF: true,
+        });
+      }
       return {
         idx: idx,
         wd: wd,
         name: String(r.name || `รายการที่ ${idx + 1}`).trim(),
         qty: qty,
         unit: unit,
+        // boq = 0 ถ้าไม่มี supplier columns (เช่น PDF header row ที่ขาดราคา) — render "—"
+        // ถ้ามี supplier จาก PDF ให้ดูราคาใน suppliers[] แทน
         boq: 0,
-        // suppliers ว่าง — ไม่มีข้อมูลเปรียบเทียบจาก PDF
-        suppliers: [],
-        // เก็บ unit price จาก PDF ไว้ใน price hint (ใช้แสดงในตาราง)
-        _pdfUnitPrice: price > 0 ? price : null,
-        // flag ว่ามาจาก PDF
+        suppliers: suppliers,
+        // flag ว่ามาจาก PDF — ใช้ badge / label
         _source: 'pdf',
         group: null,
       };
@@ -372,7 +387,8 @@
       name: 'ฉบับจาก PDF',
       projectLine: '',
       workLine: '[PDF] ' + fileName,
-      supplierNames: [],
+      // supplierNames มีรายการเดียว — เป็นคอลัมน์ "BOQ (จาก PDF)" ที่ render ในตารางเปรียบเทียบ
+      supplierNames: items.some(it => it.suppliers.length > 0) ? [pdfSupplierName] : [],
       items: items,
       isFinalShortlist: true,
       hasBOQ: false,
