@@ -912,6 +912,293 @@ select.form-control { cursor: pointer; }
 /* Mode switcher tabs (already have .tabs / .tab / .tab.active — reuse) */
 #compareModeTabs { margin-top: 6px; }
 
+/* ─── Multi-BOQ slot grid (UI ใหม่ — slot ละผู้ขาย) ─── */
+.slot-grid-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  gap: 8px;
+}
+.slot-grid-title {
+  font-weight: 600;
+  color: var(--color-text);
+  font-size: 14px;
+}
+.slot-grid-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.supplier-slot-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+/* Base card */
+.supplier-slot {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 12px 10px;
+  border-radius: var(--radius-md, 8px);
+  background: var(--color-surface);
+  border: 1.5px solid var(--color-border);
+  min-height: 138px;
+  transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
+}
+/* เฉพาะ empty slot รับ drag-over สำหรับ highlight */
+.supplier-slot-empty.drag-over {
+  border-color: var(--color-primary);
+  background: var(--color-primary-soft);
+  box-shadow: 0 0 0 3px rgba(30, 58, 95, 0.12);
+}
+
+/* Filled — supplier loaded */
+.supplier-slot-filled {
+  border-color: var(--color-success);
+  background: linear-gradient(180deg, var(--color-success-soft) 0%, var(--color-surface) 60%);
+}
+.supplier-slot-filled:hover {
+  box-shadow: 0 2px 8px rgba(22, 163, 74, 0.12);
+}
+
+/* Slot number badge */
+.slot-num {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-secondary);
+}
+.slot-num.empty {
+  color: var(--color-text-muted);
+  font-weight: 500;
+}
+
+/* Supplier name input — inline, prominent when filled */
+.slot-supplier-name {
+  display: block;
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: 6px;
+  background: var(--color-surface);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text);
+  transition: border-color 0.15s;
+}
+.slot-supplier-name:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(30, 58, 95, 0.12);
+}
+.slot-supplier-name.readonly {
+  font-weight: 400;
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  border-style: dashed;
+}
+
+/* File info row — icon + filename (truncate) */
+.slot-file-info {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 22px;
+}
+.slot-file-icon { font-size: 14px; }
+.slot-file-name {
+  flex: 1;
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Meta row — item count + status */
+.slot-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+  color: var(--color-text-muted);
+  margin-top: auto;
+  padding-top: 6px;
+  border-top: 1px dashed var(--color-border);
+}
+.slot-status.ready { color: var(--color-success); font-weight: 600; }
+
+/* Remove button — top right corner */
+.slot-remove {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 1px solid var(--color-border-strong);
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0.5;
+  transition: opacity 0.15s, background 0.15s, color 0.15s;
+}
+.supplier-slot-filled:hover .slot-remove,
+.slot-remove:hover {
+  opacity: 1;
+  background: var(--color-danger, #dc2626);
+  color: #fff;
+  border-color: var(--color-danger, #dc2626);
+}
+
+/* Empty slot — drop zone */
+.supplier-slot-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  border-style: dashed;
+  cursor: pointer;
+  color: var(--color-text-secondary);
+  gap: 6px;
+  padding-top: 16px;
+}
+.supplier-slot-empty:hover {
+  border-color: var(--color-primary);
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+}
+.slot-drop-hint {
+  color: var(--color-text-muted);
+}
+.supplier-slot-empty:hover .slot-drop-hint { color: var(--color-primary); }
+.slot-drop-text {
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--color-text-secondary);
+}
+.slot-drop-text a {
+  color: var(--color-primary);
+  text-decoration: none;
+  font-weight: 600;
+}
+.slot-drop-text a:hover { text-decoration: underline; }
+
+/* "+ เพิ่มช่อง" card */
+.slot-add-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 6px;
+  border-style: dashed;
+  border-color: var(--color-border-strong);
+  background: var(--color-surface-alt);
+  cursor: pointer;
+  font-family: inherit;
+  color: var(--color-text-secondary);
+  padding: 16px 12px;
+  min-height: 138px;
+}
+.slot-add-card:hover {
+  border-color: var(--color-primary);
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+}
+.slot-add-icon {
+  font-size: 28px;
+  line-height: 1;
+  font-weight: 300;
+  color: var(--color-text-muted);
+}
+.slot-add-card:hover .slot-add-icon { color: var(--color-primary); }
+.slot-add-text {
+  font-size: 12px;
+  font-weight: 500;
+}
+.slot-add-text .muted { color: var(--color-text-muted); font-weight: 400; font-size: 11px; }
+
+/* ─── Compare trigger bar (inline below grid) ─── */
+.compare-trigger-bar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  padding: 14px 16px;
+  border-radius: var(--radius-md, 8px);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-alt);
+  margin-top: 4px;
+}
+.compare-trigger-bar .threshold-slider {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--color-text-secondary);
+}
+.compare-trigger-bar .threshold-slider input[type="range"] {
+  width: 180px;
+  accent-color: var(--color-primary);
+}
+.compare-trigger-bar .threshold-label { white-space: nowrap; }
+.compare-trigger-bar .btn-compare {
+  padding: 10px 18px;
+  font-size: 14px;
+  font-weight: 600;
+}
+.compare-trigger-bar .compare-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 22px;
+  margin-left: 8px;
+  padding: 0 6px;
+  border-radius: 11px;
+  background: rgba(255, 255, 255, 0.22);
+  font-size: 12px;
+  font-weight: 700;
+}
+.compare-trigger-bar-hint {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-style: dashed;
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-size: 13px;
+}
+.compare-trigger-bar-hint .muted {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Responsive — มือถือ/จอเล็ก */
+@media (max-width: 800px) {
+  .supplier-slot-grid {
+    grid-template-columns: 1fr;
+  }
+  .compare-trigger-bar {
+    padding: 10px 12px;
+  }
+  .compare-trigger-bar .threshold-slider input[type="range"] {
+    width: 120px;
+  }
+}
+
 /* File info bar (reused) — already has .file-info-bar, .file-icon, .file-meta */
 
 /* Supplier comparison scroll wrapper */

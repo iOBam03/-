@@ -10,9 +10,11 @@
        unitClass, parseSupplierFile, buildGroups, buildVendorPriceMatrix,
        pickCanonicalName, pickCommonUnit, pickCommonQty,
        runMatching, buildExportPayload, setSupplierName, removeFile,
+       MAX_SUPPLIERS, ensureSlots, addSlot, removeSlot,
+       setSlotSupplierName, syncSlotsToFiles,
 
        // DOM helpers (browser only)
-       renderUploadPrompt, renderFileList, renderGroupReview,
+       renderUploadPrompt, renderFileList, renderSlotGrid, renderGroupReview,
        renderModeTabs,
      }
 
@@ -184,6 +186,114 @@
     }
     // invalidate groups (จะต้อง re-match)
     m.groups = [];
+  }
+
+  /* ============================================================
+     Slots API — UI-facing ordered array (max MAX_SUPPLIERS)
+     slot = { id, supplierName, fileId } — fileId null = empty
+     Invariant: slots.filter(s => s.fileId).length === files.length
+     ============================================================ */
+  const MAX_SUPPLIERS = 6;
+
+  function _newSlotId() {
+    return 's' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+  }
+
+  function ensureSlots(state) {
+    const m = state.multiBOQ;
+    if (!m.slots) m.slots = [];
+    // rebuild from files เมื่อ migration (state เก่าไม่มี slots)
+    if (!m.slots.length && m.files && m.files.length) {
+      m.slots = m.files.map(f => ({
+        id: _newSlotId(),
+        supplierName: f.supplierName || '',
+        fileId: f.id || null,                       // expect id set at upload — fall back to legacy
+      }));
+      return;
+    }
+    // prune slots beyond cap + orphan slots ที่ fileId ไม่ match ไฟล์จริง
+    const validIds = new Set((m.files || []).map(f => f.id).filter(Boolean));
+    m.slots = m.slots
+      .filter(s => !s.fileId || validIds.has(s.fileId))
+      .slice(0, MAX_SUPPLIERS);
+    // ensure ≥2 slots so empty-state UI แสดง 2 ช่องว่างเสมอ
+    while (m.slots.length < 2) {
+      m.slots.push({ id: _newSlotId(), supplierName: '', fileId: null });
+    }
+  }
+
+  function addSlot(state) {
+    const m = state.multiBOQ;
+    if (m.slots.length >= MAX_SUPPLIERS) return false;
+    m.slots.push({ id: _newSlotId(), supplierName: '', fileId: null });
+    return true;
+  }
+
+  function removeSlot(state, slotIdx) {
+    const m = state.multiBOQ;
+    const slot = m.slots[slotIdx];
+    if (!slot) return false;
+    const removedSupplierName = slot.supplierName;
+    // detach file ถ้า slot มีไฟล์อยู่
+    if (slot.fileId) {
+      const fileIdx = m.files.findIndex(f => f.id === slot.fileId);
+      if (fileIdx >= 0) {
+        removeFile(state, fileIdx);
+      }
+    }
+    // ลบ slot — ตำแหน่ง slot ว่างทันที (renderSlotGrid จะแสดง empty drop zone)
+    m.slots.splice(slotIdx, 1);
+    // รักษา slot ว่าง ≥1 เพื่อให้ UI แสดง drop zone เสมอ
+    if (m.slots.length < 2) ensureSlots(state);
+    // ถ้า conclusionSupplier ชี้ไปที่ supplier ที่เพิ่งลบ → fallback
+    if (removedSupplierName && m.conclusionSupplier === removedSupplierName) {
+      m.conclusionSupplier = '';
+    }
+    // sync groups/vendorPrices if needed
+    syncSlotsToFiles(state);
+    return true;
+  }
+
+  function setSlotSupplierName(state, slotIdx, newName) {
+    const m = state.multiBOQ;
+    const slot = m.slots[slotIdx];
+    if (!slot) return;
+    const oldName = slot.supplierName;
+    slot.supplierName = newName;
+    // sync linked file.supplierName + fileOrder
+    if (slot.fileId) {
+      const f = m.files.find(x => x.id === slot.fileId);
+      if (f) f.supplierName = newName;
+      // update fileOrder entry
+      const ord = m.fileOrder.indexOf(oldName);
+      if (ord >= 0) m.fileOrder[ord] = newName;
+      // update conclusionSupplier reference
+      if (m.conclusionSupplier === oldName) m.conclusionSupplier = newName;
+    } else if (newName && !m.fileOrder.includes(newName)) {
+      // empty slot with name (rare) — keep fileOrder aligned
+      m.fileOrder.push(newName);
+    }
+  }
+
+  // reorder files[] ตาม slot order เพื่อให้ fileIdx ตรงกับลำดับคอลัมน์ในตาราง
+  function syncSlotsToFiles(state) {
+    const m = state.multiBOQ;
+    if (!m.slots || !m.files) return;
+    const filledSlots = m.slots.filter(s => s.fileId);
+    if (!filledSlots.length) return;
+    const fileMap = new Map(m.files.map(f => [f.id, f]));
+    const reordered = [];
+    for (const slot of filledSlots) {
+      const f = fileMap.get(slot.fileId);
+      if (f) reordered.push(f);
+    }
+    if (reordered.length !== m.files.length) {
+      // fallback — เก็บไฟล์ที่ไม่อยู่ใน slot ไว้ท้ายสุด (legacy)
+      const ids = new Set(reordered.map(f => f.id));
+      for (const f of m.files) if (!ids.has(f.id)) reordered.push(f);
+    }
+    m.files = reordered;
+    m.fileOrder = reordered.map(f => f.supplierName).filter(Boolean);
   }
 
   /* ============================================================
@@ -475,80 +585,144 @@
     `;
   }
 
-  function renderFileList() {
+  // ──────────────────────────────────────────────────────────────
+  // renderSlotGrid — UI ใหม่: 1 slot ต่อ 1 ผู้ขาย, drop zone เปล่าแทน list
+  // รองรับ 2-6 slots, auto-resize (เพิ่มได้ถึง MAX_SUPPLIERS)
+  //
+  // state shape: state.multiBOQ.slots = [{ id, supplierName, fileId|null }]
+  //               state.multiBOQ.files = [{ id, fileName, supplierName, items }]
+  // ──────────────────────────────────────────────────────────────
+  function renderSlotGrid() {
     const state = (typeof window !== 'undefined' && window.SupplierCompareState) || null;
-    // อ่าน state ผ่าน controller — pattern ที่ supplier-comparison.js expose ผ่าน window
-    // (เราจะอ่านจาก globalThis.__supplierState ใน supplier-comparison.js หลัง integrate)
-    const m = (window.__multiBOQState) || null;
-    if (!m || !m.files || !m.files.length) return renderUploadPrompt();
-    const fileRows = m.files.map((f, i) => `
-      <tr>
-        <td style="padding:8px 10px;border-bottom:1px solid #eee;">
-          📄 ${escapeHtml(f.fileName)}
-        </td>
-        <td style="padding:8px 10px;border-bottom:1px solid #eee;">
-          <input type="text" class="form-control" style="padding:4px 8px;font-size:13px;width:100%;"
-            value="${escapeHtml(f.supplierName)}"
-            onchange="SupplierCompareController.renameSupplierFile(${i}, this.value)">
-        </td>
-        <td style="padding:8px 10px;border-bottom:1px solid #eee;text-align:center;">${f.items.length}</td>
-        <td style="padding:8px 10px;border-bottom:1px solid #eee;text-align:center;color:#2a7a2a;">✓ พร้อม</td>
-        <td style="padding:8px 10px;border-bottom:1px solid #eee;text-align:center;">
-          <button class="btn-icon" title="ลบไฟล์นี้"
-            onclick="SupplierCompareController.removeSupplierFile(${i})">×</button>
-        </td>
-      </tr>
-    `).join('');
-    const ready = m.files.length >= 2;
-    return `
-      <div class="file-info-bar" style="flex-direction:column;align-items:stretch;">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-          <div style="font-weight:600;">📑 ไฟล์ BOQ ที่อัปโหลด (${m.files.length} ไฟล์)</div>
-          <div style="display:flex;gap:8px;">
-            <input type="file" id="multiBoqFileInputMore" multiple accept=".xlsx" style="display:none"
-              onchange="SupplierCompareController.handleMultiFileUpload(event)">
-            <button class="btn" onclick="document.getElementById('multiBoqFileInputMore').click()">
-              + เพิ่มไฟล์
-            </button>
-            <button class="btn" onclick="SupplierCompareController.clear()">เริ่มใหม่</button>
+    if (!state || !state.multiBOQ) {
+      return renderUploadPrompt();
+    }
+    // ถ้ายังไม่มี slot เลย (legacy state) — fallback upload prompt
+    ensureSlots(state);
+    const m = state.multiBOQ;
+    const slots = m.slots || [];
+    const fileById = new Map((m.files || []).map(f => [f.id, f]));
+
+    // ── slot cards ──
+    const slotCards = slots.map((slot, idx) => {
+      const file = slot.fileId ? fileById.get(slot.fileId) : null;
+      const slotIdx = idx;
+      if (file) {
+        // ── filled: แสดงชื่อไฟล์ + editable supplier name + item count + remove ──
+        const displayName = slot.supplierName || file.fileName || `ผู้ขาย ${slotIdx + 1}`;
+        return `
+          <div class="supplier-slot supplier-slot-filled" data-slot-id="${escapeHtml(slot.id)}">
+            <div class="slot-num">ผู้ขาย ${slotIdx + 1}</div>
+            <input type="text" class="slot-supplier-name" title="ชื่อผู้ขาย (แก้ไขได้)"
+              value="${escapeHtml(displayName)}"
+              placeholder="ตั้งชื่อผู้ขาย"
+              oninput="SupplierCompareController.updateSlotSupplierName(${slotIdx}, this.value)">
+            <div class="slot-file-info">
+              <div class="slot-file-icon">📄</div>
+              <div class="slot-file-name" title="${escapeHtml(file.fileName)}">${escapeHtml(file.fileName)}</div>
+            </div>
+            <div class="slot-meta">
+              <span class="slot-item-count">${file.items.length} รายการ</span>
+              <span class="slot-status ready">✓ พร้อม</span>
+            </div>
+            <button class="slot-remove" title="ลบผู้ขายนี้ (พร้อมไฟล์)"
+              onclick="SupplierCompareController.removeSupplierSlot(${slotIdx})">×</button>
           </div>
-        </div>
-        <table style="width:100%;border-collapse:collapse;font-size:13px;">
-          <thead>
-            <tr style="background:#f6f7f9;text-align:left;">
-              <th style="padding:8px 10px;">ไฟล์</th>
-              <th style="padding:8px 10px;">ชื่อผู้ขาย (แก้ไขได้)</th>
-              <th style="padding:8px 10px;text-align:center;">รายการ</th>
-              <th style="padding:8px 10px;text-align:center;">สถานะ</th>
-              <th style="padding:8px 10px;text-align:center;"></th>
-            </tr>
-          </thead>
-          <tbody>${fileRows}</tbody>
-        </table>
-        <div style="margin-top:16px;display:flex;gap:14px;align-items:center;flex-wrap:wrap;">
-          <label style="display:flex;align-items:center;gap:8px;font-size:13px;">
-            เกณฑ์จับคู่ (≥ ${(m.matchThreshold || 0.62).toFixed(2)}):
-            <input type="range" min="0.50" max="0.95" step="0.01" style="width:160px;"
-              value="${m.matchThreshold || 0.62}"
-              oninput="SupplierCompareController.updateMatchThreshold(parseFloat(this.value)); this.previousElementSibling.textContent='เกณฑ์จับคู่ (≥ ' + this.value.toFixed(2) + '):';">
-          </label>
-          <button class="btn btn-primary" ${ready ? '' : 'disabled style="opacity:0.5;cursor:not-allowed;"'}
-            onclick="SupplierCompareController.runMatching()">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M16 3h5v5"/><path d="M8 21H3v-5"/>
-              <path d="M21 3l-7 7"/><path d="M3 21l7-7"/>
-            </svg>
-            จับคู่รายการอัตโนมัติ
+        `;
+      } else {
+        // ── empty: drop zone ──
+        return `
+          <div class="supplier-slot supplier-slot-empty" data-slot-idx="${slotIdx}">
+            <div class="slot-num empty">ช่องว่าง ${slotIdx + 1}</div>
+            <div class="slot-drop-hint">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <path d="M14 2v6h6"/>
+                <path d="M12 18v-6"/><polyline points="9 15 12 18 15 15"/>
+              </svg>
+            </div>
+            <div class="slot-drop-text">ลากไฟล์ .xlsx มาวาง<br>หรือ<a href="#" onclick="event.preventDefault();SupplierCompareController.openSlotFilePicker(${slotIdx})">คลิกเพื่อเลือก</a></div>
+            ${slot.supplierName ? `
+              <input type="text" class="slot-supplier-name readonly" title="ตั้งชื่อผู้ขายไว้ก่อนได้"
+                value="${escapeHtml(slot.supplierName)}" placeholder="ตั้งชื่อล่วงหน้า"
+                oninput="SupplierCompareController.updateSlotSupplierName(${slotIdx}, this.value)">
+            ` : ''}
+          </div>
+        `;
+      }
+    }).join('');
+
+    // ── "+ เพิ่มช่อง" card (เฉพาะเมื่อยังไม่ถึง MAX_SUPPLIERS) ──
+    const canAddMore = slots.length < MAX_SUPPLIERS;
+    const addCard = canAddMore ? `
+      <button class="supplier-slot slot-add-card" type="button"
+        onclick="SupplierCompareController.addSupplierSlot()">
+        <div class="slot-add-icon">+</div>
+        <div class="slot-add-text">เพิ่มช่องผู้ขาย<br><span class="muted">(${slots.length}/${MAX_SUPPLIERS})</span></div>
+      </button>
+    ` : '';
+
+    // ── inline compare bar (เฉพาะเมื่อ ≥2 slots ready) ──
+    const filledCount = slots.filter(s => s.fileId).length;
+    const showCompareBar = filledCount >= 2;
+    const compareBar = showCompareBar ? `
+      <div class="compare-trigger-bar">
+        <label class="threshold-slider">
+          <span class="threshold-label">เกณฑ์จับคู่ (≥ <span id="thresholdValue">${(m.matchThreshold || 0.62).toFixed(2)}</span>):</span>
+          <input type="range" min="0.50" max="0.95" step="0.01"
+            value="${m.matchThreshold || 0.62}"
+            oninput="SupplierCompareController.updateMatchThreshold(parseFloat(this.value)); document.getElementById('thresholdValue').textContent = this.value; document.getElementById('thresholdValueText').textContent = '≥ ' + this.value;">
+        </label>
+        <button class="btn btn-primary btn-compare" onclick="SupplierCompareController.runMatching()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M16 3h5v5"/><path d="M8 21H3v-5"/>
+            <path d="M21 3l-7 7"/><path d="M3 21l7-7"/>
+          </svg>
+          ทำการเปรียบเทียบราคา <span class="compare-count">${filledCount}/${slots.length}</span>
+        </button>
+        ${(m.groups && m.groups.length) ? `
+          <button class="btn btn-secondary" onclick="SupplierCompareController.toggleGroupReview()">
+            ดูกลุ่มที่จับคู่ (${m.groups.length})
           </button>
-          ${m.groups && m.groups.length ? `
-            <button class="btn" onclick="SupplierCompareController.toggleGroupReview()">
-              ดูกลุ่มที่จับคู่ (${m.groups.length})
-            </button>
+        ` : ''}
+      </div>
+    ` : (filledCount === 1 ? `
+      <div class="compare-trigger-bar compare-trigger-bar-hint">
+        <span class="muted">⚠ อัปโหลดอีกอย่างน้อย 1 ไฟล์ เพื่อเริ่มเปรียบเทียบราคา</span>
+      </div>
+    ` : `
+      <div class="compare-trigger-bar compare-trigger-bar-hint">
+        <span class="muted">📥 ลากไฟล์ BOQ (.xlsx) มาวางในช่องว่างอย่างน้อย 2 ช่อง</span>
+      </div>
+    `);
+
+    // ── header row: count + clear button ──
+    const header = `
+      <div class="slot-grid-header">
+        <div class="slot-grid-title">📑 ช่องผู้ขาย (${filledCount} ไฟล์ / ${slots.length} ช่อง)</div>
+        <div class="slot-grid-actions">
+          <input type="file" id="multiBoqFileInputGrid" multiple accept=".xlsx" style="display:none"
+            onchange="SupplierCompareController.handleMultiFileUpload(event)">
+          ${filledCount > 0 ? `
+            <button class="btn btn-ghost" onclick="SupplierCompareController.openGridFilePicker()">+ เพิ่มไฟล์</button>
+            <button class="btn btn-ghost" onclick="SupplierCompareController.clear()">เริ่มใหม่</button>
           ` : ''}
         </div>
-        ${(!ready) ? '<div style="margin-top:8px;color:#aa6600;font-size:12px;">⚠ ต้องอัปโหลดอย่างน้อย 2 ไฟล์ก่อนจับคู่</div>' : ''}
       </div>
     `;
+
+    return `
+      <div class="supplier-slot-grid-wrapper">
+        ${header}
+        <div class="supplier-slot-grid">${slotCards}${addCard}</div>
+        ${compareBar}
+      </div>
+    `;
+  }
+
+  // back-compat — เก็บ renderFileList ไว้เป็น alias (เก่าเรียกจาก supplier-comparison.js)
+  function renderFileList() {
+    return renderSlotGrid();
   }
 
   function renderGroupReview() {
@@ -597,10 +771,16 @@
      ============================================================ */
   const api = {
     // pure helpers
+    MAX_SUPPLIERS,
     unitClass,
     parseSupplierFile,
     setSupplierName,
     removeFile,
+    ensureSlots,
+    addSlot,
+    removeSlot,
+    setSlotSupplierName,
+    syncSlotsToFiles,
     buildGroups,
     buildVendorPriceMatrix,
     pickCanonicalName,
@@ -612,6 +792,7 @@
     // DOM helpers
     renderUploadPrompt,
     renderFileList,
+    renderSlotGrid,
     renderGroupReview,
     escapeHtml,
   };

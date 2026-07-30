@@ -74,6 +74,7 @@
       conclusionReason: '',
       terms: {},                         // { vendorName: {key:value} }
       extraTermsVendors: [],
+      slots: [],                         // [{ id, supplierName, fileId|null }] — UI-facing ordering (max 6)
     },
   };
 
@@ -117,6 +118,10 @@
       // signatures: ถ้า saved ไม่มี/เสีย → restore default
       if (!state.signatures || typeof state.signatures !== 'object' || !state.signatures.preparer) {
         state.signatures = JSON.parse(JSON.stringify(DEFAULT_SIGNATURES));
+      }
+      // migrate legacy multiBOQ → ensure slots + ตรวจจำนวน ≤ MAX_SUPPLIERS
+      if (state.multiBOQ && window.MultiBOQ && window.MultiBOQ.ensureSlots) {
+        window.MultiBOQ.ensureSlots(state);
       }
       return true;
     } catch (e) {
@@ -805,17 +810,19 @@
     const c = document.getElementById('supplierComparisonUploadSection');
     if (!c) return;
 
-    // sync state → window.__multiBOQState (ให้ MultiBOQ.renderFileList อ่านได้)
+    // sync state → window.__multiBOQState (ให้ MultiBOQ DOM helpers อ่านได้)
     syncMultiBOQState();
+    if (window.MultiBOQ) {
+      // ลงทะเบียน state เข้า MultiBOQ — ให้ฟังก์ชันที่อ่าน state ตรงๆ ทำงานได้
+      window.MultiBOQ._stateRef = state;
+    }
 
-    // multi-boq mode
+    // multi-boq mode — slot grid (unified: empty + filled)
     if (state.mode === 'multi-boq') {
-      const hasData = (state.multiBOQ.files || []).length > 0;
-      if (hasData) {
-        c.innerHTML = window.MultiBOQ ? window.MultiBOQ.renderFileList() : renderUploadPrompt();
-      } else {
-        c.innerHTML = window.MultiBOQ ? window.MultiBOQ.renderUploadPrompt() : renderUploadPrompt();
+      if (window.MultiBOQ && window.MultiBOQ.ensureSlots) {
+        window.MultiBOQ.ensureSlots(state);
       }
+      c.innerHTML = window.MultiBOQ ? window.MultiBOQ.renderSlotGrid() : renderUploadPrompt();
       return;
     }
 
@@ -1928,6 +1935,7 @@
         matchThreshold: 0.62,
         conclusionSupplier: '', conclusionReason: '',
         terms: {}, extraTermsVendors: [],
+        slots: [],
       };
       syncMultiBOQState();
       renderUploadCard();
@@ -2075,7 +2083,9 @@
 
     /**
      * Multi-BOQ: handle multi-file upload
-     * รับ event จาก <input type="file" multiple> ทั้งใน upload prompt + file list
+     * รับ event จาก <input type="file" multiple> ทั้งใน upload prompt + slot drop zone + grid "+ เพิ่มไฟล์"
+     * ถ้ามี pendingSlotIdx (จาก openSlotFilePicker) — ผูกไฟล์แรกกับ slot นั้นโดยตรง
+     * ถ้าไม่มี — ใส่ในช่องว่างตามลำดับ
      */
     async handleMultiFileUpload(event) {
       if (!window.MultiBOQ) {
@@ -2087,11 +2097,37 @@
       // reset input value เพื่อให้เลือกไฟล์เดิมซ้ำได้
       try { event.target.value = ''; } catch (e) { /* ignore */ }
 
+      // ตรวจสอบ slots มีอยู่จริง
+      window.MultiBOQ.ensureSlots(state);
+      const slots = state.multiBOQ.slots;
+      const targetSlotIdx = (typeof this._pendingSlotIdx === 'number' && this._pendingSlotIdx >= 0)
+        ? this._pendingSlotIdx
+        : null;
+      this._pendingSlotIdx = null;
+
       let added = 0, failed = 0;
-      for (const file of files) {
-        if (state.multiBOQ.files.length >= 6) {
-          showToast('ไม่เกิน 6 ไฟล์ — ข้ามไฟล์ที่เกิน', 'info');
-          break;
+      let cursorSlotIdx = targetSlotIdx;
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        // ถ้ามี target slot จาก drop-zone → ใช้ index นั้น
+        // ถ้าไม่มี → หา slot ว่างตัวแรก
+        let slotIdx = cursorSlotIdx;
+        if (slotIdx == null) {
+          slotIdx = slots.findIndex(s => !s.fileId);
+          if (slotIdx < 0) {
+            if (i === 0) showToast('เพิ่มช่องไม่ได้แล้ว — ครบ 6 ช่อง', 'info');
+            break;
+          }
+        }
+        const slot = slots[slotIdx];
+        if (!slot) continue;
+        if (slot.fileId && i === 0) {
+          // slot มีไฟล์อยู่แล้ว → ลบก่อนแล้วแทนที่
+          window.MultiBOQ.removeSlot(state, slotIdx);
+          // removeSlot เรียก ensureSlots → slots array อาจเปลี่ยน
+          // re-locate ด้วย supplierName/ตำแหน่งเดิม
+          cursorSlotIdx = Math.min(slotIdx, state.multiBOQ.slots.length);
+          continue;
         }
         const ext = (file.name.split('.').pop() || '').toLowerCase();
         if (ext !== 'xlsx') {
@@ -2102,14 +2138,21 @@
           const buf = await file.arrayBuffer();
           const parsed = window.MultiBOQ.parseSupplierFile(buf, { fileName: file.name });
           parsed.id = 'f' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+          // auto default supplierName = ผู้ขาย N (ผู้ใช้แก้ใน slot ได้ทันที)
+          parsed.supplierName = parsed.supplierName || `ผู้ขาย ${slotIdx + 1}`;
           state.multiBOQ.files.push(parsed);
+          // ผูก slot → file
+          slot.fileId = parsed.id;
+          slot.supplierName = parsed.supplierName;
           added++;
+          cursorSlotIdx = null;  // หลังจากผูกช่องเฉพาะแล้ว ไฟล์ที่เหลือไป auto-fill
         } catch (err) {
           console.error('[multi-boq upload]', err);
           showToast(`อ่านไฟล์ ${file.name} ไม่สำเร็จ: ${err.message}`, 'error');
           failed++;
         }
       }
+      window.MultiBOQ.syncSlotsToFiles(state);
       if (added > 0) {
         // invalidate groups (ต้อง re-match)
         state.multiBOQ.groups = [];
@@ -2121,7 +2164,82 @@
     },
 
     /**
-     * เปลี่ยนชื่อ supplier ใน file list
+     * เปิด file picker สำหรับ slot เฉพาะ — ใช้ input เดียวกัน แต่ set pendingSlotIdx ก่อน
+     */
+    openSlotFilePicker(slotIdx) {
+      if (!window.MultiBOQ) return;
+      window.MultiBOQ.ensureSlots(state);
+      this._pendingSlotIdx = slotIdx;
+      // สร้าง input ชั่วคราวเพื่อรับไฟล์แบบ single (slot ละ 1 ไฟล์)
+      let input = document.getElementById('multiBoqSlotFileInput');
+      if (!input) {
+        input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.xlsx';
+        input.id = 'multiBoqSlotFileInput';
+        input.style.display = 'none';
+        input.onchange = (e) => this.handleMultiFileUpload(e);
+        document.body.appendChild(input);
+      }
+      input.value = '';
+      input.click();
+    },
+
+    /**
+     * เปิด file picker สำหรับ "เพิ่มทั้งหมด" — multi-select หลายไฟล์ไปยังช่องว่าง
+     */
+    openGridFilePicker() {
+      this._pendingSlotIdx = null;
+      const input = document.getElementById('multiBoqFileInputGrid');
+      if (input) { input.value = ''; input.click(); }
+    },
+
+    /**
+     * เพิ่ม slot ว่างใหม่ (สูงสุด MAX_SUPPLIERS=6)
+     */
+    addSupplierSlot() {
+      if (!window.MultiBOQ) return;
+      const ok = window.MultiBOQ.addSlot(state);
+      if (!ok) {
+        showToast(`เพิ่มช่องไม่ได้แล้ว — สูงสุด ${window.MultiBOQ.MAX_SUPPLIERS} ช่อง`, 'info');
+      } else {
+        renderUploadCard();
+        persistState();
+      }
+    },
+
+    /**
+     * ลบ slot (พร้อมไฟล์ที่ผูกอยู่) — empty slot ที่ลบแล้วจะถูกแทนด้วย empty ใหม่
+     */
+    removeSupplierSlot(slotIdx) {
+      if (!window.MultiBOQ) return;
+      const slot = state.multiBOQ.slots[slotIdx];
+      if (!slot) return;
+      const hasFile = !!slot.fileId;
+      const label = hasFile ? `ลบ "${slot.supplierName || 'ผู้ขาย ' + (slotIdx + 1)}" พร้อมไฟล์?` : 'ลบช่องนี้?';
+      if (!confirm(label)) return;
+      window.MultiBOQ.removeSlot(state, slotIdx);
+      window.MultiBOQ.syncSlotsToFiles(state);
+      renderUploadCard();
+      renderComparisonView();
+      persistState();
+    },
+
+    /**
+     * อัปเดตชื่อ supplier ใน slot (sync ลง file + fileOrder + conclusionSupplier)
+     */
+    updateSlotSupplierName(slotIdx, newName) {
+      if (!window.MultiBOQ) return;
+      window.MultiBOQ.setSlotSupplierName(state, slotIdx, newName);
+      // re-render ตารางถ้าจับคู่แล้ว
+      if (state.multiBOQ.groups && state.multiBOQ.groups.length) {
+        renderComparisonView();
+      }
+      persistState();
+    },
+
+    /**
+     * เปลี่ยนชื่อ supplier ใน file list — back-compat (เก็บไว้เผื่อ)
      */
     renameSupplierFile(fileIdx, newName) {
       if (!window.MultiBOQ) return;
@@ -2139,16 +2257,30 @@
         return;
       }
       window.MultiBOQ.setSupplierName(state, fileIdx, newName);
+      // sync ไปยัง slot ที่ผูกอยู่ด้วย
+      const m = state.multiBOQ;
+      if (m.slots) {
+        const s = m.slots.find(slot => slot.fileId === m.files[fileIdx].id);
+        if (s) s.supplierName = newName;
+      }
       renderUploadCard();
       renderComparisonView();
       persistState();
     },
 
     /**
-     * ลบไฟล์ supplier ออก
+     * ลบไฟล์ supplier ออก — back-compat: delegate ผ่าน slot API
      */
     removeSupplierFile(fileIdx) {
       if (!window.MultiBOQ) return;
+      const file = state.multiBOQ.files[fileIdx];
+      if (!file) return;
+      const slotIdx = file.id ? state.multiBOQ.slots.findIndex(s => s.fileId === file.id) : -1;
+      if (slotIdx >= 0) {
+        this.removeSupplierSlot(slotIdx);
+        return;
+      }
+      // fallback: ถ้าไม่พบ slot
       if (!confirm('ลบไฟล์นี้? (กลุ่มที่จับคู่ไว้จะถูก reset)')) return;
       window.MultiBOQ.removeFile(state, fileIdx);
       renderUploadCard();

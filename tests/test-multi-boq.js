@@ -259,6 +259,292 @@ console.log('\n[performance] 6 files × 30 items');
   console.log(`  → ${groups.length} groups in ${ms} ms`);
 }
 
+// ========== Slots API — UI ordering layer (max MAX_SUPPLIERS=6) ==========
+console.log('\n[MAX_SUPPLIERS constant]');
+{
+  check('MAX_SUPPLIERS = 6', MultiBOQ.MAX_SUPPLIERS === 6);
+}
+
+// helper: build minimal state for slot tests
+function mkState(initial) {
+  return {
+    multiBOQ: Object.assign({
+      workName: '', thresholdLabel: '',
+      files: [], groups: [], fileOrder: [],
+      matchThreshold: 0.62,
+      conclusionSupplier: '', conclusionReason: '',
+      terms: {}, extraTermsVendors: [],
+      slots: [],
+    }, initial || {}),
+  };
+}
+
+console.log('\n[ensureSlots — from empty state]');
+{
+  const state = mkState();
+  MultiBOQ.ensureSlots(state);
+  check('เพิ่มให้ ≥2 slots ตอนเริ่มต้น', state.multiBOQ.slots.length === 2);
+  check('slot ว่างมี id (s...)', state.multiBOQ.slots.every(s => /^s[a-z0-9]{4,}/i.test(s.id)));
+  check('empty slot.fileId = null', state.multiBOQ.slots.every(s => s.fileId === null));
+  check('empty slot.supplierName = ""', state.multiBOQ.slots.every(s => s.supplierName === ''));
+}
+
+console.log('\n[ensureSlots — migrate legacy files-only state]');
+{
+  // state เก่า: มี files แต่ไม่มี slots → ต้อง sync จาก files
+  const state = mkState({
+    files: [
+      { id: 'f1', fileName: 'a.xlsx', supplierName: 'A เก่า', items: [{ name: 'x', qty: 1, unit: 'ชุด', price: 1, total: 1 }] },
+      { id: 'f2', fileName: 'b.xlsx', supplierName: 'B เก่า', items: [] },
+    ],
+  });
+  MultiBOQ.ensureSlots(state);
+  check('migrated 2 slots', state.multiBOQ.slots.length === 2);
+  check('slot[0] ผูก file f1', state.multiBOQ.slots[0].fileId === 'f1');
+  check('slot[1] ผูก file f2', state.multiBOQ.slots[1].fileId === 'f2');
+  check('slot[0].supplierName = "A เก่า"', state.multiBOQ.slots[0].supplierName === 'A เก่า');
+}
+
+console.log('\n[ensureSlots — prune orphan slots ที่ fileId หายไปแล้ว]');
+{
+  const state = mkState({
+    files: [{ id: 'f1', fileName: 'a.xlsx', supplierName: 'A', items: [] }],
+    slots: [
+      { id: 's1', supplierName: 'A', fileId: 'f1' },
+      { id: 's2', supplierName: 'ghost', fileId: 'fGHOST' },  // orphan
+    ],
+  });
+  MultiBOQ.ensureSlots(state);
+  check('orphan slot ถูก prune', !state.multiBOQ.slots.some(s => s.fileId === 'fGHOST'));
+  check('filled slot ยังอยู่', state.multiBOQ.slots.some(s => s.fileId === 'f1'));
+}
+
+console.log('\n[ensureSlots — cap ที่ MAX_SUPPLIERS]');
+{
+  const files = [];
+  for (let i = 1; i <= 8; i++) files.push({ id: 'f' + i, fileName: i + '.xlsx', supplierName: 'S' + i, items: [] });
+  const slots = files.map(f => ({ id: 's' + f.id, supplierName: f.supplierName, fileId: f.id }));
+  const state = mkState({ files, slots });
+  MultiBOQ.ensureSlots(state);
+  check('slots.slice(MAX_SUPPLIERS)', state.multiBOQ.slots.length === 6);
+}
+
+console.log('\n[ensureSlots — pad empty จน ≥2 slots]');
+{
+  const state = mkState({
+    files: [{ id: 'f1', fileName: 'a.xlsx', supplierName: 'A', items: [] }],
+    slots: [{ id: 's1', supplierName: 'A', fileId: 'f1' }],
+  });
+  MultiBOQ.ensureSlots(state);
+  check('เพิ่ม empty slot จนครบ 2', state.multiBOQ.slots.length === 2);
+  check('slot[0] filled', state.multiBOQ.slots[0].fileId === 'f1');
+  check('slot[1] empty', state.multiBOQ.slots[1].fileId === null);
+}
+
+console.log('\n[addSlot]');
+{
+  const state = mkState();
+  MultiBOQ.ensureSlots(state);
+  const before = state.multiBOQ.slots.length;
+  const ok = MultiBOQ.addSlot(state);
+  check('addSlot คืน true', ok === true);
+  check('slots +1', state.multiBOQ.slots.length === before + 1);
+  check('slot ใหม่มี id', !!state.multiBOQ.slots[before].id);
+  check('slot ใหม่ empty', state.multiBOQ.slots[before].fileId === null);
+}
+
+console.log('\n[addSlot — cap]');
+{
+  // สร้าง state 6 slots เต็ม
+  const slots = [];
+  for (let i = 0; i < 6; i++) slots.push({ id: 's' + i, supplierName: 'S' + i, fileId: null });
+  const state = mkState({ slots });
+  const ok = MultiBOQ.addSlot(state);
+  check('addSlot คืน false เมื่อครบ MAX', ok === false);
+  check('slots ไม่เพิ่ม', state.multiBOQ.slots.length === 6);
+}
+
+console.log('\n[removeSlot — empty]');
+{
+  const state = mkState();
+  MultiBOQ.ensureSlots(state);
+  const before = state.multiBOQ.slots.length;
+  MultiBOQ.removeSlot(state, 0);  // ลบ empty slot
+  // หลังลบ empty + ensureSlots pad ถึง ≥2 → ผลลัพธ์ควรยังเป็น ≥2
+  check('slots ยังมีอย่างน้อย 2 หลังลบ empty', state.multiBOQ.slots.length >= 2);
+}
+
+console.log('\n[removeSlot — filled (ลบ file ที่ผูกด้วย)]');
+{
+  const state = mkState({
+    files: [
+      { id: 'f1', fileName: 'a.xlsx', supplierName: 'A', items: [{ name: 'x', qty: 1, unit: 'ชุด', price: 1, total: 1 }] },
+      { id: 'f2', fileName: 'b.xlsx', supplierName: 'B', items: [] },
+    ],
+    slots: [
+      { id: 's1', supplierName: 'A', fileId: 'f1' },
+      { id: 's2', supplierName: 'B', fileId: 'f2' },
+    ],
+  });
+  MultiBOQ.removeSlot(state, 0);
+  check('files เหลือ 1', state.multiBOQ.files.length === 1);
+  check('file ที่เหลือ = f2', state.multiBOQ.files[0].id === 'f2');
+  check('fileOrder ลบ A ออก', !state.multiBOQ.fileOrder.includes('A'));
+  check('fileOrder ยังมี B', state.multiBOQ.fileOrder.includes('B'));
+  check('groups ถูก reset', state.multiBOQ.groups.length === 0);
+}
+
+console.log('\n[removeSlot — clear conclusionSupplier ที่ชี้ไป supplier ที่เพิ่งลบ]');
+{
+  const state = mkState({
+    files: [{ id: 'f1', fileName: 'a.xlsx', supplierName: 'บริษัท A', items: [] }],
+    fileOrder: ['บริษัท A'],
+    conclusionSupplier: 'บริษัท A',
+    slots: [{ id: 's1', supplierName: 'บริษัท A', fileId: 'f1' }],
+  });
+  MultiBOQ.removeSlot(state, 0);
+  check('conclusionSupplier ถูก clear', state.multiBOQ.conclusionSupplier === '');
+}
+
+console.log('\n[setSlotSupplierName — filled slot]');
+{
+  const state = mkState({
+    files: [{ id: 'f1', fileName: 'a.xlsx', supplierName: 'A เก่า', items: [] }],
+    fileOrder: ['A เก่า'],
+    conclusionSupplier: 'A เก่า',
+    slots: [{ id: 's1', supplierName: 'A เก่า', fileId: 'f1' }],
+  });
+  MultiBOQ.setSlotSupplierName(state, 0, 'A ใหม่');
+  check('slot.supplierName updated', state.multiBOQ.slots[0].supplierName === 'A ใหม่');
+  check('file.supplierName updated', state.multiBOQ.files[0].supplierName === 'A ใหม่');
+  check('fileOrder updated', state.multiBOQ.fileOrder[0] === 'A ใหม่');
+  check('conclusionSupplier updated', state.multiBOQ.conclusionSupplier === 'A ใหม่');
+}
+
+console.log('\n[setSlotSupplierName — empty slot (กรณีตั้งชื่อล่วงหน้า)]');
+{
+  const state = mkState({
+    slots: [{ id: 's1', supplierName: '', fileId: null }],
+  });
+  MultiBOQ.setSlotSupplierName(state, 0, 'บริษัท X');
+  check('slot.supplierName = "บริษัท X"', state.multiBOQ.slots[0].supplierName === 'บริษัท X');
+  check('fileOrder push "บริษัท X"', state.multiBOQ.fileOrder.includes('บริษัท X'));
+}
+
+console.log('\n[syncSlotsToFiles — reorder files ตาม slot]');
+{
+  const state = mkState({
+    // files มาก่อน slot (ลำดับสลับ)
+    files: [
+      { id: 'fB', fileName: 'b.xlsx', supplierName: 'B', items: [] },
+      { id: 'fA', fileName: 'a.xlsx', supplierName: 'A', items: [] },
+    ],
+    slots: [
+      { id: 's1', supplierName: 'A', fileId: 'fA' },
+      { id: 's2', supplierName: 'B', fileId: 'fB' },
+    ],
+  });
+  MultiBOQ.syncSlotsToFiles(state);
+  check('files[0] = fA ตาม slot order', state.multiBOQ.files[0].id === 'fA');
+  check('files[1] = fB', state.multiBOQ.files[1].id === 'fB');
+  check('fileOrder = [A, B]', JSON.stringify(state.multiBOQ.fileOrder) === '["A","B"]');
+}
+
+// ========== renderSlotGrid markup — ตรวจ HTML output ==========
+console.log('\n[renderSlotGrid markup — empty state]');
+{
+  const state = mkState();
+  MultiBOQ.ensureSlots(state);
+  // renderSlotGrid อ่านจาก window.__multiBOQState ในโหมด legacy หรือ window.SupplierCompareState
+  // ใน node environment — เลียนแบบโดยส่ง state ผ่าน window.SupplierCompareState
+  globalThis.SupplierCompareState = state;
+  const html = MultiBOQ.renderSlotGrid();
+  check('มี .supplier-slot-grid', /class="supplier-slot-grid"/.test(html));
+  check('มี 2 empty drop zones', (html.match(/supplier-slot-empty/g) || []).length === 2);
+  check('มีปุ่มเพิ่มช่อง', /slot-add-card/.test(html));
+  check('มี drop zone text', /ลากไฟล์/.test(html));
+  check('มี hint ตอน empty ทั้งหมด', /ลากไฟล์ BOQ/.test(html));
+}
+
+console.log('\n[renderSlotGrid markup — filled state]');
+{
+  const state = mkState({
+    files: [
+      { id: 'f1', fileName: 'a.xlsx', supplierName: 'บริษัท A', items: [{ name: 'x', qty: 1, unit: 'ชุด', price: 1, total: 1 }] },
+      { id: 'f2', fileName: 'b.xlsx', supplierName: 'บริษัท B', items: [] },
+    ],
+    slots: [
+      { id: 's1', supplierName: 'บริษัท A', fileId: 'f1' },
+      { id: 's2', supplierName: 'บริษัท B', fileId: 'f2' },
+    ],
+  });
+  globalThis.SupplierCompareState = state;
+  const html = MultiBOQ.renderSlotGrid();
+  check('มี 2 filled slots', (html.match(/supplier-slot-filled/g) || []).length === 2);
+  check('ไม่มี empty drop zone (filled ครบ)', !/supplier-slot-empty/.test(html));
+  check('มี compare button', /ทำการเปรียบเทียบราคา/.test(html));
+  check('มี threshold slider', /type="range"/.test(html));
+  check('count 2/2 ใน compare button', /compare-count"[^>]*>2\/2/.test(html));
+  check('มี runMatching handler ใน compare button', /runMatching\(\)/.test(html));
+}
+
+console.log('\n[renderSlotGrid markup — partial (1 filled, 1 empty)]');
+{
+  const state = mkState({
+    files: [{ id: 'f1', fileName: 'a.xlsx', supplierName: 'บริษัท A', items: [{ name: 'x', qty: 1, unit: 'ชุด', price: 1, total: 1 }] }],
+    slots: [
+      { id: 's1', supplierName: 'บริษัท A', fileId: 'f1' },
+      { id: 's2', supplierName: '', fileId: null },
+    ],
+  });
+  globalThis.SupplierCompareState = state;
+  const html = MultiBOQ.renderSlotGrid();
+  check('1 filled', (html.match(/supplier-slot-filled/g) || []).length === 1);
+  check('1 empty', (html.match(/supplier-slot-empty/g) || []).length === 1);
+  check('hint แทน compare button (เพราะ < 2 filled)', /อัปโหลดอีกอย่างน้อย 1/.test(html));
+  check('ไม่มีปุ่ม ทำการเปรียบเทียบราคา (disabled)', !/ทำการเปรียบเทียบราคา/.test(html));
+}
+
+console.log('\n[renderSlotGrid markup — cap ที่ MAX_SUPPLIERS = 6]');
+{
+  const slots = [];
+  for (let i = 0; i < 6; i++) slots.push({ id: 's' + i, supplierName: 'S' + i, fileId: null });
+  const state = mkState({ slots });
+  globalThis.SupplierCompareState = state;
+  const html = MultiBOQ.renderSlotGrid();
+  check('6 empty slots', (html.match(/supplier-slot-empty/g) || []).length === 6);
+  check('ไม่มีปุ่มเพิ่มช่อง (ครบ MAX)', !/slot-add-card/.test(html));
+}
+
+console.log('\n[renderSlotGrid markup — has click handlers ผูก controller methods]');
+{
+  const state = mkState({
+    files: [{ id: 'f1', fileName: 'a.xlsx', supplierName: 'A', items: [] }],
+    slots: [
+      { id: 's1', supplierName: 'A', fileId: 'f1' },
+      { id: 's2', supplierName: '', fileId: null },
+    ],
+  });
+  globalThis.SupplierCompareState = state;
+  const html = MultiBOQ.renderSlotGrid();
+  check('removeSupplierSlot(0) handler', /removeSupplierSlot\(0\)/.test(html));
+  check('openSlotFilePicker(1) handler', /openSlotFilePicker\(1\)/.test(html));
+  check('updateSlotSupplierName(0, ...) handler', /updateSlotSupplierName\(0, this\.value\)/.test(html));
+  check('addSupplierSlot handler', /addSupplierSlot\(\)/.test(html));
+}
+
+// ========== compatibility: legacy renderFileList still works ==========
+console.log('\n[renderFileList = renderSlotGrid (alias)]');
+{
+  // renderFileList ถูกเก็บเป็น alias เพื่อ back-compat — ต้อง return ผลเดียวกัน
+  // ทดสอบโดยเรียกทั้ง 2 ตัวด้วย state เดียวกัน
+  globalThis.SupplierCompareState = mkState();
+  MultiBOQ.ensureSlots(globalThis.SupplierCompareState);
+  const a = MultiBOQ.renderFileList();
+  const b = MultiBOQ.renderSlotGrid();
+  check('renderFileList === renderSlotGrid', a === b);
+}
+
 console.log(`\n${'='.repeat(50)}`);
 console.log(`Result: ${pass} passed, ${fail} failed`);
 process.exit(fail > 0 ? 1 : 0);
