@@ -1183,13 +1183,13 @@
             <table class="data-table supplier-compare-table">
               <thead>
                 <tr>
-                  <th style="width:64px;">WD</th>
-                  <th>รายการ</th>
-                  <th class="num" style="width:70px;">ปริมาณ</th>
-                  <th class="num" style="width:80px;background:var(--color-info-soft);">BOQ</th>
+                  <th class="wd-col">WD</th>
+                  <th class="name-col">รายการ</th>
+                  <th class="num qty-col">ปริมาณ</th>
+                  <th class="num boq-col" style="background:var(--color-info-soft);">BOQ</th>
                   ${supplierHeaders}
-                  <th style="width:160px;background:var(--color-warning-soft,#FFF4E5);" title="ราคาเฉลี่ยจาก SAP Purchase History (51,075 records)">SAP avg / min / max</th>
-                  <th style="width:140px;background:var(--color-primary-soft);">เลือกผู้ชนะ</th>
+                  <th class="sap-col" style="background:var(--color-warning-soft,#FFF4E5);" title="ราคาเฉลี่ยจาก SAP Purchase History (51,075 records)">SAP avg / min / max</th>
+                  <th class="winner-col" style="background:var(--color-primary-soft);">เลือกผู้ชนะ</th>
                 </tr>
               </thead>
               <tbody>${rows}</tbody>

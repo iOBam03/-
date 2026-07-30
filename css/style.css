@@ -48,7 +48,8 @@
 
 html, body {
   font-family: 'Sarabun', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  font-size: 14px;
+  /* Fluid font: 13.5px (notebook ~1280) → 14px (1440) → 15px (1920+) */
+  font-size: clamp(13.5px, 0.6vw + 11.8px, 15px);
   line-height: 1.5;
   color: var(--color-text);
   background: var(--color-bg);
@@ -847,17 +848,43 @@ select.form-control { cursor: pointer; }
 }
 
 /* Responsive */
+
+/* ── Notebook (1280-1440px) — ลด padding/font เพื่อให้ content พอดี ── */
+@media (max-width: 1440px) {
+  .supplier-compare-table { font-size: 0.88em; }
+  .supplier-cell { padding: 7px 5px; }
+  .signature-grid { grid-template-columns: repeat(2, 1fr); }
+  .terms-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* ── Tablet / small laptop (1100px) — ยุบ 2 col → 1 col ── */
 @media (max-width: 1100px) {
   .grid-2, .split-2 { grid-template-columns: 1fr; }
   .factor-list { grid-template-columns: repeat(2, 1fr); }
   .grid-3 { grid-template-columns: repeat(2, 1fr); }
+  .signature-grid { grid-template-columns: repeat(2, 1fr); }
+  .terms-grid { grid-template-columns: repeat(2, 1fr); }
+  .conclusion-fields { grid-template-columns: 1fr; }
+  /* ตารางเปรียบเทียบ: scroll ตามแนวนอน พร้อม shadow hint */
+  .supplier-compare-table { font-size: 0.85em; }
 }
+
 @media (max-width: 800px) {
   .app-shell { grid-template-columns: 1fr; }
   .sidebar { display: none; }
   .kpi-grid { grid-template-columns: repeat(2, 1fr); }
   .login-shell { grid-template-columns: 1fr; }
   .login-panel-left { padding: 36px 28px; }
+  .signature-grid { grid-template-columns: 1fr; }
+  .terms-grid { grid-template-columns: 1fr; }
+}
+
+/* ── Desktop (1920px+) — ขยาย spacing เพื่อใช้พื้นที่ ── */
+@media (min-width: 1920px) {
+  .supplier-compare-table { font-size: 1em; }
+  .supplier-cell { padding: 10px 8px; }
+  .card-body { padding: 22px; }
+  .supplier-compare-table thead th { padding: 12px 10px; }
 }
 
 /* ==========================================================================
@@ -873,11 +900,39 @@ select.form-control { cursor: pointer; }
 .supplier-compare-scroll {
   overflow-x: auto;
   max-width: 100%;
+  /* visual cue เมื่อ table กว้างเกิน viewport (เลื่อนซ้าย-ขวาได้) */
+  background:
+    linear-gradient(90deg, var(--color-surface) 30%, rgba(255,255,255,0)) left center / 24px 100% no-repeat local,
+    linear-gradient(-90deg, var(--color-surface) 30%, rgba(255,255,255,0)) right center / 24px 100% no-repeat local,
+    radial-gradient(farthest-side at 0 50%, rgba(15,23,42,0.12), rgba(0,0,0,0)) left center / 24px 100% no-repeat local,
+    radial-gradient(farthest-side at 100% 50%, rgba(15,23,42,0.12), rgba(0,0,0,0)) right center / 24px 100% no-repeat local;
+  background-attachment: local, local, scroll, scroll;
+  background-color: var(--color-surface);
 }
 .supplier-compare-table {
-  min-width: 1100px;
-  font-size: 12.5px;
+  /* min-width เดิม 1100px บังคับให้ scroll ที่จอแคบเกินไป — ลดลงเหลือ 760px เพื่อให้
+     table พอดีกับจอ notebook 1280px (หลังหัก sidebar 240px + padding ~32px = ~1008px)
+     ส่วนจอที่เล็กกว่าจริงๆ (< 1000px) จะ scroll แต่มี shadow hint บอกตำแหน่ง */
+  min-width: 760px;
+  font-size: 0.93em;
+  width: 100%;
+  table-layout: auto;
 }
+/* Fluid column widths — scale ตาม viewport แทน fixed px */
+.supplier-compare-table th.wd-col,
+.supplier-compare-table td.wd-cell        { width: 7%;  min-width: 56px; }
+.supplier-compare-table th.name-col,
+.supplier-compare-table td.item-name-cell { width: 26%; min-width: 180px; }
+.supplier-compare-table th.qty-col,
+.supplier-compare-table td.qty-cell       { width: 8%;  min-width: 70px; }
+.supplier-compare-table th.boq-col,
+.supplier-compare-table td.boq-cell       { width: 9%;  min-width: 80px; }
+.supplier-compare-table th.supplier-col,
+.supplier-compare-table td.supplier-cell  { width: auto; min-width: 110px; }
+.supplier-compare-table th.sap-col,
+.supplier-compare-table td.sap-cell       { width: 13%; min-width: 130px; }
+.supplier-compare-table th.winner-col,
+.supplier-compare-table td.winner-cell    { width: 11%; min-width: 120px; }
 .supplier-compare-table thead th {
   background: var(--color-surface-alt);
   font-weight: 600;
@@ -1491,17 +1546,6 @@ select.form-control { cursor: pointer; }
   margin-top: 20px;
   padding-top: 16px;
   border-top: 1px solid var(--color-border);
-}
-
-/* Responsive: signature grid collapses */
-@media (max-width: 1100px) {
-  .signature-grid { grid-template-columns: repeat(2, 1fr); }
-  .terms-grid { grid-template-columns: repeat(2, 1fr); }
-  .conclusion-fields { grid-template-columns: 1fr; }
-}
-@media (max-width: 700px) {
-  .signature-grid { grid-template-columns: 1fr; }
-  .terms-grid { grid-template-columns: 1fr; }
 }
 
 /* ==========================================================================
