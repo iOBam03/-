@@ -687,6 +687,21 @@
     const items = getActiveItems();
     const suppliers = getActiveSuppliers();
 
+    // Attach SAP historical price match (avg/min/max) to each item (additive)
+    if (window.FuzzyMatchSAP && window.PURCHASE_HISTORY_SAP && window.PURCHASE_HISTORY_SAP.records) {
+      // Init index lazily (idempotent)
+      const _sapReady = window.FuzzyMatchSAP.getStats();
+      if (!_sapReady.isReady) {
+        try { window.FuzzyMatchSAP.init(window.PURCHASE_HISTORY_SAP.records); } catch (e) { console.warn('[fuzzy init]', e); }
+      }
+      for (const it of items) {
+        try {
+          const r = window.FuzzyMatchSAP.match(it.name || '', { boqUnit: it.unit || '', boqName: it.name || '' });
+          it.sap = (r && r.matchStatus !== 'none') ? r : null;
+        } catch (e) { it.sap = null; }
+      }
+    }
+
     sec.innerHTML = `
       ${renderWinnerBanner(items, suppliers)}
       ${renderValidationWarnings(items)}
@@ -930,6 +945,7 @@
           <td class="num qty-cell">${renderQtyCell(item)}</td>
           <td class="num boq-cell">${item.boq > 0 ? fmt.currencyShort(item.boq) : '—'}</td>
           ${cells}
+          <td class="sap-cell">${renderSapCell(item)}</td>
           <td class="winner-cell">
             ${renderWinnerRadios(item, itemIdx)}
           </td>
@@ -965,6 +981,7 @@
                   <th class="num" style="width:70px;">ปริมาณ</th>
                   <th class="num" style="width:80px;background:var(--color-info-soft);">BOQ</th>
                   ${supplierHeaders}
+                  <th style="width:160px;background:var(--color-warning-soft,#FFF4E5);" title="ราคาเฉลี่ยจาก SAP Purchase History (51,075 records)">SAP avg / min / max</th>
                   <th style="width:140px;background:var(--color-primary-soft);">เลือกผู้ชนะ</th>
                 </tr>
               </thead>
@@ -1008,6 +1025,44 @@
       .replace(/\s+จำกัด$/, '')
       .replace(/\s*\(.*?\)\s*/g, '')
       .trim();
+  }
+
+  function fmtNum(n, curr) {
+    if (typeof n !== 'number' || !isFinite(n) || n <= 0) return '—';
+    if (curr && curr !== 'THB') return n.toLocaleString('en-US', { maximumFractionDigits: 2 }) + ' ' + curr;
+    return n.toLocaleString('th-TH', { maximumFractionDigits: 2 });
+  }
+
+  function renderSapCell(item) {
+    const s = item.sap;
+    if (!s || !s.priceStats) {
+      return `<span style="color:var(--color-text-muted);font-size:11px;">— ไม่พบประวัติ</span>`;
+    }
+    const ps = s.priceStats;
+    const avg = fmtNum(ps.avgNetPrice, ps.currency);
+    const min = fmtNum(ps.minNetPrice, ps.currency);
+    const max = fmtNum(ps.maxNetPrice, ps.currency);
+    const cnt = ps.recordCount;
+    const chipLabel = (s.chip && s.chip.label) ? s.chip.label : '';
+    const chipKind = (s.chip && s.chip.kind) || 'fuzzy';
+    // ถ้า proposedPrice ที่เสนอสูงกว่า max → แดง, ต่ำกว่า min → เขียว
+    const proposed = (item.suppliers && item.suppliers.length && item.suppliers[0] && item.suppliers[0].price) || 0;
+    let hint = '';
+    if (proposed > 0 && ps.maxNetPrice > 0 && proposed > ps.maxNetPrice * 1.05) {
+      hint = `<div style="font-size:10px;color:#c0392b;margin-top:2px;">⚠ เกิน max ${Math.round((proposed/ps.maxNetPrice-1)*100)}%</div>`;
+    } else if (proposed > 0 && ps.minNetPrice > 0 && proposed < ps.minNetPrice * 0.85) {
+      hint = `<div style="font-size:10px;color:#16a34a;margin-top:2px;">✓ ต่ำกว่า min ${Math.round((1-proposed/ps.minNetPrice)*100)}%</div>`;
+    }
+    return `
+      <div style="font-size:12px;line-height:1.45;text-align:left;">
+        <div style="font-weight:600;">${avg}<span style="font-size:10px;color:var(--color-text-muted);font-weight:400;"> / PO ${cnt} รายการ</span></div>
+        <div style="font-size:10px;color:var(--color-text-muted);">
+          min ${min} · max ${max}
+        </div>
+        ${chipLabel ? `<span class="match-chip ${chipKind}" style="display:inline-block;padding:1px 6px;border-radius:8px;font-size:9px;background:#f3f4f6;color:#374151;margin-top:2px;">${escapeHtml(chipLabel)}</span>` : ''}
+        ${hint}
+      </div>
+    `;
   }
 
   function renderConclusionBlock(suppliers) {
