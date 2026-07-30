@@ -11,8 +11,13 @@
    ========================================================================== */
 
 (function (root, factory) {
-  const lib = typeof ExcelJS !== 'undefined' ? ExcelJS
-    : (typeof require === 'function' ? require('exceljs') : null);
+  let lib = typeof ExcelJS !== 'undefined' ? ExcelJS : null;
+  if (!lib && typeof require === 'function') {
+    try { lib = require('exceljs'); }
+    catch (e) {
+      try { lib = require('../vendor/exceljs.min.js'); } catch (_) { lib = null; }
+    }
+  }
   const api = factory(lib);
   if (typeof module === 'object' && module.exports) module.exports = api;
   else root.CompareExcelExport = api;
@@ -253,11 +258,21 @@
       ws.mergeCells(`B${r}:${colLetter(COL.itemEnd)}${r}`);
       const gc = ws.getCell(`B${r}`);
       gc.value = group.title || '';
-      styleCell(gc, { size: 20, bold: true, align: { vertical: 'middle' } });
-      styleCell(ws.getCell(`A${r}`), { border: { left: M } });
+      styleCell(gc, {
+        size: 20, bold: true, fill: FILL.white, align: { vertical: 'middle' },
+        border: { top: H, bottom: H },
+      });
+      styleCell(ws.getCell(`A${r}`), {
+        fill: FILL.white, border: { left: M, top: H, bottom: H },
+      });
+      ['H', 'I'].forEach((L) => {
+        styleCell(ws.getCell(`${L}${r}`), {
+          fill: FILL.white, border: { top: H, bottom: H },
+        });
+      });
       ctx.layout.forEach((col) => {
-        styleCell(ws.getCell(`${colLetter(col.price)}${r}`), { fill: FILL.white });
-        styleCell(ws.getCell(`${colLetter(col.total)}${r}`), { fill: FILL.white, border: { right: M } });
+        styleCell(ws.getCell(`${colLetter(col.price)}${r}`), { fill: FILL.white, border: priceBorder });
+        styleCell(ws.getCell(`${colLetter(col.total)}${r}`), { fill: FILL.white, border: totalBorder });
       });
       r++;
 
@@ -268,26 +283,37 @@
         // แถวหัวข้อย่อย WD
         ws.getRow(r).height = 25.5;
         styleCell(ws.getCell(`A${r}`), {
-          size: 20, align: { horizontal: 'center', vertical: 'middle' }, border: { left: M },
+          size: 20, fill: FILL.white, align: { horizontal: 'center', vertical: 'middle' },
+          border: { left: M, top: H, bottom: H },
         });
         ws.getCell(`A${r}`).value = section.no || '';
-        ws.mergeCells(`B${r}:C${r}`);
+        ws.mergeCells(`B${r}:${colLetter(COL.itemEnd)}${r}`);
         const sc = ws.getCell(`B${r}`);
         sc.value = section.title || '';
-        styleCell(sc, { size: 20, bold: true, align: { vertical: 'middle' } });
+        styleCell(sc, {
+          size: 20, bold: true, fill: FILL.white, align: { vertical: 'middle' },
+          border: { top: H, bottom: H },
+        });
+        ['H', 'I'].forEach((L) => {
+          styleCell(ws.getCell(`${L}${r}`), {
+            fill: FILL.white, border: { top: H, bottom: H },
+          });
+        });
         ctx.layout.forEach((col) => {
           const p = ws.getCell(`${colLetter(col.price)}${r}`);
-          styleCell(p, { size: 20, red: col.isBOQ, numFmt: true, border: priceBorder });
+          styleCell(p, { size: 20, fill: FILL.white, red: col.isBOQ, numFmt: true, border: priceBorder });
           const t = ws.getCell(`${colLetter(col.total)}${r}`);
           t.value = 0;
-          styleCell(t, { size: 20, red: col.isBOQ, numFmt: true, border: totalBorder });
+          styleCell(t, { size: 20, fill: FILL.white, red: col.isBOQ, numFmt: true, border: totalBorder });
         });
         r++;
 
         (section.items || []).forEach((item) => {
           ws.getRow(r).height = 25.5;
           if (firstDataRow < 0) firstDataRow = r;
-          styleCell(ws.getCell(`A${r}`), { fill: FILL.white, border: { left: M } });
+          styleCell(ws.getCell(`A${r}`), {
+            fill: FILL.white, border: { left: M, top: H, bottom: H },
+          });
 
           ws.mergeCells(`B${r}:${colLetter(COL.itemEnd)}${r}`);
           const nc = ws.getCell(`B${r}`);
@@ -330,11 +356,15 @@
 
       // แถวรวมย่อยของกลุ่ม (พื้นเทา) — SUM ตั้งแต่แถวแรกของกลุ่มถึงแถวก่อนหน้า
       ws.getRow(r).height = 25.5;
-      styleCell(ws.getCell(`A${r}`), { fill: FILL.grey, border: { left: M } });
+      styleCell(ws.getCell(`A${r}`), { fill: FILL.grey, border: { left: M, top: H, bottom: H } });
       ws.mergeCells(`B${r}:${colLetter(COL.itemEnd)}${r}`);
-      styleCell(ws.getCell(`B${r}`), { size: 20, bold: true, fill: FILL.grey });
+      styleCell(ws.getCell(`B${r}`), {
+        size: 20, bold: true, fill: FILL.grey, border: { top: H, bottom: H },
+      });
       ws.getCell(`B${r}`).value = `รวม ${group.title || ''}`.trim();
-      ['H', 'I'].forEach((L) => styleCell(ws.getCell(`${L}${r}`), { fill: FILL.grey }));
+      ['H', 'I'].forEach((L) => styleCell(ws.getCell(`${L}${r}`), {
+        fill: FILL.grey, border: { top: H, bottom: H },
+      }));
 
       const subtotalRow = r;
       ctx.layout.forEach((col) => {
@@ -377,7 +407,7 @@
       nc.value = i + 1;
       styleCell(nc, { size: 20, align: { horizontal: 'center', vertical: 'middle' }, border: { left: M, top: H, bottom: H } });
 
-      ws.mergeCells(`B${r}:C${r}`);
+      ws.mergeCells(`B${r}:${colLetter(COL.itemEnd)}${r}`);
       const tc = ws.getCell(`B${r}`);
       tc.value = g.title.replace(/^สำหรับ/, '');
       styleCell(tc, { size: 20, align: { vertical: 'middle' }, border: { top: H, bottom: H } });
@@ -435,11 +465,16 @@
           border: { left: M, top: M, bottom: M },
         });
       } else {
-        styleCell(ws.getCell(`A${rowIdx}`), { fill: FILL.green, border: { left: M } });
+        styleCell(ws.getCell(`A${rowIdx}`), {
+          fill: FILL.green, border: { left: M, top: M, bottom: M },
+        });
         ws.mergeCells(`B${rowIdx}:I${rowIdx}`);
         const c = ws.getCell(`B${rowIdx}`);
         c.value = label;
-        styleCell(c, { size: 20, bold: !!o.bold, fill: FILL.green, align: { vertical: 'middle' } });
+        styleCell(c, {
+          size: 20, bold: !!o.bold, fill: FILL.green, align: { vertical: 'middle' },
+          border: { top: M, bottom: M },
+        });
       }
 
       ctx.layout.forEach((col) => {
@@ -499,10 +534,10 @@
     ws.mergeCells(`A${r}:I${r}`);
     const h = ws.getCell(`A${r}`);
     h.value = 'รายละเอียดประกอบการเสนอราคา';
-    styleCell(h, { size: 20, bold: true, align: { vertical: 'middle' }, border: { left: M, top: M } });
+    styleCell(h, { size: 20, bold: true, align: { vertical: 'middle' }, border: { left: M, top: M, bottom: M } });
     ctx.layout.forEach((col) => {
-      styleCell(ws.getCell(`${colLetter(col.price)}${r}`), { border: { top: M } });
-      styleCell(ws.getCell(`${colLetter(col.total)}${r}`), { border: { top: M, right: M } });
+      styleCell(ws.getCell(`${colLetter(col.price)}${r}`), { border: { top: M, bottom: M } });
+      styleCell(ws.getCell(`${colLetter(col.total)}${r}`), { border: { top: M, bottom: M, right: M } });
     });
     r++;
 
@@ -510,12 +545,12 @@
       ws.getRow(r).height = 25.5;
       const nc = ws.getCell(`A${r}`);
       nc.value = i + 1;
-      styleCell(nc, { size: 20, align: { horizontal: 'center', vertical: 'middle' }, border: { left: M } });
+      styleCell(nc, { size: 20, align: { horizontal: 'center', vertical: 'middle' }, border: { left: M, top: H, bottom: H } });
 
       ws.mergeCells(`B${r}:I${r}`);
       const lc = ws.getCell(`B${r}`);
       lc.value = def.label;
-      styleCell(lc, { size: 20, align: { vertical: 'middle' } });
+      styleCell(lc, { size: 20, align: { vertical: 'middle' }, border: { top: H, bottom: H } });
 
       ctx.layout.forEach((col, ci) => {
         const pL = colLetter(col.price), tL = colLetter(col.total);
@@ -525,7 +560,7 @@
         c.value = col.isBOQ ? '' : String(((ctx.data.vendors[ci] || {}).terms || {})[def.key] || '');
         styleCell(c, {
           size: 20, align: { vertical: 'middle', wrapText: true },
-          border: { left: T, right: M },
+          border: { left: T, right: M, top: H, bottom: H },
         });
       });
       r++;
@@ -543,10 +578,10 @@
     ws.mergeCells(`A${r}:I${r}`);
     const h = ws.getCell(`A${r}`);
     h.value = 'หมายเหตุ:-';
-    styleCell(h, { size: 20, bold: true, align: { vertical: 'middle' }, border: { left: M, top: M } });
+    styleCell(h, { size: 20, bold: true, align: { vertical: 'middle' }, border: { left: M, top: M, bottom: M } });
     ctx.layout.forEach((col) => {
-      styleCell(ws.getCell(`${colLetter(col.price)}${r}`), { border: { top: M } });
-      styleCell(ws.getCell(`${colLetter(col.total)}${r}`), { border: { top: M, right: M } });
+      styleCell(ws.getCell(`${colLetter(col.price)}${r}`), { border: { top: M, bottom: M } });
+      styleCell(ws.getCell(`${colLetter(col.total)}${r}`), { border: { top: M, bottom: M, right: M } });
     });
     r++;
 
@@ -554,8 +589,11 @@
     ws.mergeCells(`B${r}:${colLetter(ctx.lastCol)}${r}`);
     const c = ws.getCell(`B${r}`);
     c.value = ctx.data.conclusionText || '';
-    styleCell(c, { size: 20, bold: true, red: true, align: { vertical: 'middle' } });
-    styleCell(ws.getCell(`A${r}`), { border: { left: M } });
+    styleCell(c, {
+      size: 20, bold: true, red: true, align: { vertical: 'middle' },
+      border: { top: H, bottom: H, right: M },
+    });
+    styleCell(ws.getCell(`A${r}`), { border: { left: M, top: H, bottom: H } });
     r++;
 
     return r;
@@ -657,6 +695,7 @@
           align: { horizontal: 'center', vertical: 'middle' },
           border: {
             left: M, right: M,
+            top: M,
             bottom: k === 2 ? M : undefined,
           },
         });
