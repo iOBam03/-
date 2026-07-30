@@ -124,11 +124,21 @@
     const sheetName = wb.SheetNames[0];
     const aoa = XLSX.utils.sheet_to_json(wb.Sheets[sheetName], { header: 1, defval: '' });
 
-    // parseSimpleBOQ เป็น global function (จาก supplier-comparison.js)
-    if (typeof parseSimpleBOQ !== 'function') {
+    // parseSimpleBOQ มาจาก supplier-comparison.js
+    // multi-boq.js โหลดก่อน supplier-comparison.js (alerts.html script order) ดังนั้น
+    // ตอนนี้ parseSimpleBOQ ยังไม่อยู่ใน global scope — ต้อง resolve ผ่าน window.SupplierCompareHelpers
+    // (เพราะ supplier-comparison.js expose ผ่าน SupplierCompareHelpers.parseSimpleBOQ)
+    // ตอนเรียกใช้ runtime (user drop ไฟล์) supplier-comparison.js โหลดเสร็จแล้ว
+    const parseSimpleBOQFn =
+      (typeof parseSimpleBOQ === 'function' && parseSimpleBOQ)
+      || (typeof window !== 'undefined'
+          && window.SupplierCompareHelpers
+          && window.SupplierCompareHelpers.parseSimpleBOQ)
+      || null;
+    if (typeof parseSimpleBOQFn !== 'function') {
       throw new Error('parseSimpleBOQ ไม่พร้อมใช้งาน');
     }
-    const parsed = parseSimpleBOQ(aoa, sheetName);
+    const parsed = parseSimpleBOQFn(aoa, sheetName);
     if (!parsed) {
       throw new Error('ไม่พบ header BOQ ในไฟล์ (ต้องมีคอลัมน์ ลำดับ/รายการ/จำนวน/หน่วย/ราคา)');
     }

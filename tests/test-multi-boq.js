@@ -587,6 +587,60 @@ console.log('\n[renderSlotGrid — fallback resolution ลำดับสำค�
   if (globalThis.MultiBOQ) globalThis.MultiBOQ._stateRef = undefined;
 }
 
+// ========== parseSupplierFile — parseSimpleBOQ lookup ==========
+// ตรวจว่า resolve parseSimpleBOQ ได้จากทั้ง 2 แหล่ง (multi-boq.js โหลดก่อน supplier-comparison.js)
+console.log('\n[parseSupplierFile] resolve parseSimpleBOQ fallback ลำดับสำคัญ');
+{
+  // mock XLSX ให้ผ่าน check sheet แล้วไปถึง parseSimpleBOQ
+  const XLSXmock = {
+    read: () => ({ SheetNames: ['Sheet1'], Sheets: { Sheet1: {} } }),
+    utils: { sheet_to_json: () => [[]] },
+  };
+
+  // helper: assert error matches
+  const expectError = (label, fn, pattern) => {
+    let err = null;
+    try { fn(); } catch (e) { err = e; }
+    check(label, !!err && pattern.test(err.message),
+      err ? `got: ${err.message}` : 'no error thrown');
+  };
+
+  // 1) ไม่มี parseSimpleBOQ ทั้ง 2 path → throw "parseSimpleBOQ ไม่พร้อมใช้งาน"
+  globalThis.SupplierCompareHelpers = undefined;
+  globalThis.parseSimpleBOQ = undefined;
+  globalThis.XLSX = XLSXmock;
+  expectError('ไม่มี parseSimpleBOQ → throw error ที่ชัดเจน',
+    () => MultiBOQ.parseSupplierFile(new ArrayBuffer(0), { fileName: 't.xlsx' }),
+    /parseSimpleBOQ ไม่พร้อมใช้งาน/);
+
+  // 2) มีแค่ window.SupplierCompareHelpers.parseSimpleBOQ → resolve ได้
+  globalThis.SupplierCompareHelpers = {
+    parseSimpleBOQ: () => { throw new Error('mock parse reached via Helpers'); },
+  };
+  globalThis.parseSimpleBOQ = undefined;
+  expectError('SupplierCompareHelpers.parseSimpleBOQ ถูกเรียก (mock throw ตอน parse)',
+    () => MultiBOQ.parseSupplierFile(new ArrayBuffer(0), { fileName: 't.xlsx' }),
+    /mock parse reached via Helpers/);
+
+  // 3) มีแค่ globalThis.parseSimpleBOQ → ก็ resolve ได้
+  globalThis.SupplierCompareHelpers = {};
+  globalThis.parseSimpleBOQ = () => { throw new Error('via bare global'); };
+  expectError('bare globalThis.parseSimpleBOQ ก็ถูก resolve',
+    () => MultiBOQ.parseSupplierFile(new ArrayBuffer(0), { fileName: 't.xlsx' }),
+    /via bare global/);
+
+  // 4) XLSX ไม่โหลด → throw "XLSX library"
+  globalThis.XLSX = undefined;
+  expectError('XLSX ไม่โหลด → throw',
+    () => MultiBOQ.parseSupplierFile(new ArrayBuffer(0), { fileName: 't.xlsx' }),
+    /XLSX library/);
+
+  // cleanup
+  globalThis.SupplierCompareHelpers = undefined;
+  globalThis.parseSimpleBOQ = undefined;
+  globalThis.XLSX = XLSX;
+}
+
 console.log(`\n${'='.repeat(50)}`);
 console.log(`Result: ${pass} passed, ${fail} failed`);
 process.exit(fail > 0 ? 1 : 0);

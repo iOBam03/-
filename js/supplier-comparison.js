@@ -475,6 +475,8 @@
   if (typeof window !== 'undefined') {
     window.SupplierCompareHelpers = window.SupplierCompareHelpers || {};
     window.SupplierCompareHelpers.shouldSkipBoqRow = shouldSkipBoqRow;
+    // expose parseSimpleBOQ ให้ multi-boq.js (โหลดก่อน supplier-comparison.js) เรียกใช้ได้
+    window.SupplierCompareHelpers.parseSimpleBOQ = parseSimpleBOQ;
   }
 
   function parseSimpleBOQ(aoa, sheetName) {
