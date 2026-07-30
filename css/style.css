@@ -942,7 +942,7 @@ select.form-control { cursor: pointer; }
 .supplier-compare-table th.wd-col,
 .supplier-compare-table td.wd-cell        { width: 6%;   min-width: 60px;  text-align: center; }
 .supplier-compare-table th.name-col,
-.supplier-compare-table td.item-name-cell { width: 21%;  min-width: 160px; text-align: left; }
+.supplier-compare-table td.item-name-cell { width: 22%;  min-width: 160px; text-align: left; }
 .supplier-compare-table th.qty-col,
 .supplier-compare-table td.qty-cell       { width: 7%;   min-width: 72px;  text-align: center; }
 .supplier-compare-table th.boq-col,
@@ -952,7 +952,7 @@ select.form-control { cursor: pointer; }
 .supplier-compare-table th.sap-col,
 .supplier-compare-table td.sap-cell       { width: 12%;  min-width: 120px; text-align: center; }
 .supplier-compare-table th.winner-col,
-.supplier-compare-table td.winner-cell    { width: 10%;  min-width: 104px; text-align: center; }
+.supplier-compare-table td.winner-cell    { width: 9%;   min-width: 96px;  text-align: left; }
 .supplier-compare-table thead th {
   background: var(--color-surface-alt);
   font-weight: 600;
@@ -962,7 +962,8 @@ select.form-control { cursor: pointer; }
   font-variant-numeric: normal; /* header ไม่ใช่ตัวเลข */
 }
 /* Name column header — คง text-align: left ให้ตรงกับ cell */
-.supplier-compare-table thead th.name-col {
+.supplier-compare-table thead th.name-col,
+.supplier-compare-table thead th.winner-col {
   text-align: left;
 }
 .supplier-compare-table thead th.supplier-col {
@@ -1112,26 +1113,26 @@ select.form-control { cursor: pointer; }
 }
 
 /* Winner radios */
-.winner-cell { padding: 6px 4px; vertical-align: middle; }
+.winner-cell { padding: 6px 4px 6px 6px; vertical-align: middle; text-align: left; }
 .winner-radios {
   display: flex;
   flex-direction: column;
   gap: 2px;
-  align-items: center;         /* จัด radio ให้อยู่กลางคอลัมน์ */
+  align-items: flex-start;     /* ชิดซ้าย — จุดเลือกผู้ชนะเรียงเป็นแนวเดียวกัน */
 }
 .winner-radio {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 5px;
   cursor: pointer;
-  padding: 3px 5px;
+  padding: 3px 6px;
   border-radius: 4px;
   font-size: 11px;
   color: var(--color-text-secondary);
   transition: all 0.15s;
   border: 1px solid transparent;
-  width: 100%;                /* ให้ปุ่ม radio เต็มความกว้างคอลัมน์ ดูเป็นระเบียบ */
-  justify-content: center;
+  width: auto;                /* ไม่ต้องเต็มความกว้าง — ให้ radio + label ชิดซ้ายแคบๆ */
+  justify-content: flex-start;
 }
 .winner-radio:hover {
   background: var(--color-surface-alt);
