@@ -418,6 +418,44 @@
      (เช่น BOQ master จากวิศวกร/ผู้ออกแบบ)
      → สร้าง 1 "BOQ" supplier entry จากราคากลาง
      ============================================================ */
+  // ---------- shouldSkipBoqRow ----------
+  // ตรวจว่า row นี้ "ไม่ใช่รายการสินค้า" → ควรข้าม
+  // เช่น section header ("หมวดที่ 1"), สรุปให้ (สรุปให้ __ เป็นผู้ดำเนินการ),
+  // ลายเซ็น/ผู้อนุมัติ, VAT/รวมภาษี, บรรทัดว่าง/มีแต่ _
+  // expose ผ่าน window.SupplierCompareHelpers.shouldSkipBoqRow เพื่อ test ใน Node
+  function shouldSkipBoqRow(name, qty, price, total) {
+    const n = String(name || '').trim();
+    if (!n) return true;  // ghost row
+    const SKIP_PATTERNS = [
+      /^สรุปให้/,
+      /^สรุป(?![เ-ไ]?ให้)/,
+      /^รวมทั้งสิ้น/, /^รวมเงิน/, /^ราคารวม/, /^รวม\b/,
+      /^หมวดที่/, /^หมวด\b/, /^หัวข้อ/,
+      /^หมายเหตุเพิ่มเติม/, /^หมายเหตุ/,
+      /ผู้ดำเนินการ/, /อนุมัติ/, /ลงชื่อ/, /ผู้จัดทำ/, /ลายเซ็น/,
+      /ส่วนลด/, /ภาษีมูลค่าเพิ่ม/, /รวมภาษี/,
+      /\bVAT\b/i, /^Sub[.\s-]?Total$/i, /^Grand[.\s-]?Total$/i, /^Total$/i,
+      /^[\d,]+(\.[\d]+)?\s*(บาท|฿|%|เปอร์เซ็นต์|percent)?$/,
+      /^[\d]+(\.[\d]+)?\s*%\s*$/,
+      /^[\d,]+(\.[\d]+)?\s*บาท\s*$/,
+      /^[\s\-–—._]+$/,
+      /\.{3,}\s*$/, /^\.{3,}$/,
+    ];
+    for (const re of SKIP_PATTERNS) {
+      if (re.test(n)) return true;
+    }
+    // Ghost row: มีชื่อ แต่ default qty=1 + ไม่มี price หรือ total
+    if ((qty === 1 || qty == null) && (price === 0 || price == null) && (total === 0 || total == null)) {
+      return true;
+    }
+    return false;
+  }
+  // expose for tests + reuse
+  if (typeof window !== 'undefined') {
+    window.SupplierCompareHelpers = window.SupplierCompareHelpers || {};
+    window.SupplierCompareHelpers.shouldSkipBoqRow = shouldSkipBoqRow;
+  }
+
   function parseSimpleBOQ(aoa, sheetName) {
     if (!aoa || aoa.length < 2) return null;
 
@@ -478,8 +516,8 @@
 
       // skip empty rows
       if (!name && qtyRaw == null && priceRaw == null) continue;
-      // skip summary rows
-      if (/^รวม|ราคารวม|รวมทั้งสิ้น|^Sub.?total/i.test(name)) continue;
+      // skip non-item rows (section header, summary, signatures, VAT, ghost, …)
+      if (shouldSkipBoqRow(name, qtyRaw, priceRaw, totalRaw)) continue;
 
       const qty = qtyRaw != null && qtyRaw > 0 ? qtyRaw : 1;
       const price = priceRaw != null && priceRaw > 0 ? priceRaw : 0;
