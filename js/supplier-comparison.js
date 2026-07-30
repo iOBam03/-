@@ -308,6 +308,48 @@
     }];
   }
 
+  /**
+   * Build sheets from PDF-extracted rows
+   * ไม่มี supplier columns (PDF ปกติมีแค่ BOQ list)
+   * - rows: [{no, name, qty, unit, price, page, _raw}]
+   * - quality: {score, hasHeader, rowCount, ...}
+   */
+  function buildSheetsFromPdfRows(rows, fileName, quality) {
+    const q = quality || {};
+    const items = (rows || []).map((r, idx) => {
+      const qty = num(r.qty) || 1;
+      const unit = String(r.unit || 'ชุด').trim() || 'ชุด';
+      const price = r.price != null ? num(r.price) : 0;
+      const wd = ''; // ยังไม่มี grouping จาก PDF
+      return {
+        idx: idx,
+        wd: wd,
+        name: String(r.name || `รายการที่ ${idx + 1}`).trim(),
+        qty: qty,
+        unit: unit,
+        boq: 0,
+        // suppliers ว่าง — ไม่มีข้อมูลเปรียบเทียบจาก PDF
+        suppliers: [],
+        // เก็บ unit price จาก PDF ไว้ใน price hint (ใช้แสดงในตาราง)
+        _pdfUnitPrice: price > 0 ? price : null,
+        // flag ว่ามาจาก PDF
+        _source: 'pdf',
+        group: null,
+      };
+    });
+
+    return [{
+      name: 'ฉบับจาก PDF',
+      projectLine: '',
+      workLine: '[PDF] ' + fileName,
+      supplierNames: [],
+      items: items,
+      isFinalShortlist: true,
+      hasBOQ: false,
+      _pdfMeta: q, // เก็บ quality info ไว้ดูภายหลัง
+    }];
+  }
+
   /* ============================================================
      PARSER — แปลงไฟล์ XLSX เปรียบเทียบราคาผู้ขาย (จำนวน supplier ไม่ fix)
      ============================================================ */
@@ -605,10 +647,10 @@
         </div>
         <h3>แนบไฟล์เปรียบเทียบราคาผู้ขาย</h3>
         <p>
-          ลากไฟล์ .xlsx มาวาง หรือคลิกปุ่มด้านล่างเพื่อเลือกไฟล์<br>
+          ลากไฟล์ .xlsx หรือ .pdf มาวาง หรือคลิกปุ่มด้านล่างเพื่อเลือกไฟล์<br>
           ระบบจะแสดงตารางเปรียบเทียบราคา แล้วให้ผู้จัดซื้อ <strong>เลือกผู้ชนะด้วยตัวเอง</strong>
         </p>
-        <input type="file" id="supplierFileInput" accept=".xlsx" style="display:none" onchange="SupplierCompareController.handleFileUpload(event)">
+        <input type="file" id="supplierFileInput" accept=".xlsx,.pdf" style="display:none" onchange="SupplierCompareController.handleFileUpload(event)">
         <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:6px;">
           <button class="btn btn-primary" onclick="document.getElementById('supplierFileInput').click()">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -616,6 +658,14 @@
               <polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
             </svg>
             อัปโหลดไฟล์ .xlsx
+          </button>
+          <button id="pdfUploadBtn" class="btn btn-secondary" onclick="document.getElementById('supplierFileInput').click()" title="อัปโหลด BOQ จาก PDF — parse ตรงด้วย PDF.js (fallback ไป AI ถ้า parse ไม่สำเร็จ)">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <path d="M14 2v6h6"/>
+              <path d="M9 12h6M9 16h6"/>
+            </svg>
+            อัปโหลด BOQ (PDF)
           </button>
           <button id="aiScanBtn" class="btn btn-secondary" onclick="openAIScan()" title="สแกน BOQ จากภาพ/PDF ด้วย Gemini AI">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -627,7 +677,8 @@
         </div>
         <div class="file-types">
           <span>.xlsx</span>
-          <span>.jpg .png .pdf (AI)</span>
+          <span>.pdf (parse ตรง + AI fallback)</span>
+          <span>.jpg .png (AI)</span>
         </div>
       </div>
     `;
@@ -1443,6 +1494,15 @@
     handleFileUpload(event) {
       const file = event.target.files[0];
       if (!file) return;
+      const ext = (file.name.split('.').pop() || '').toLowerCase();
+      const mime = (file.type || '').toLowerCase();
+
+      // dispatch ตาม file type
+      if (ext === 'pdf' || mime === 'application/pdf') {
+        return this.handlePdfUpload(file);
+      }
+
+      // .xlsx path (เดิม)
       state.fileName = file.name;
       const reader = new FileReader();
       reader.onload = (e) => {
@@ -1470,6 +1530,70 @@
         }
       };
       reader.readAsArrayBuffer(file);
+    },
+
+    /**
+     * Handle PDF upload — parse ด้วย PDF.js ก่อน, ถ้า quality ต่ำ → fallback ไป AI scan modal
+     */
+    async handlePdfUpload(file) {
+      if (!window.PdfTableExtract) {
+        showToast('ไม่พบโมดูลอ่าน PDF — กรุณาใช้ปุ่ม "สแกนเอกสาร (AI)" แทน', 'error');
+        return;
+      }
+      showToast(`กำลังอ่าน PDF: ${file.name}...`, 'info');
+      try {
+        const result = await window.PdfTableExtract.extract(file);
+        const q = result.quality || {};
+        if (q.isAcceptable && q.rowCount >= 2) {
+          // quality OK → นำเข้าข้อมูลเลย
+          this.importPdfRows(result.rows, file.name, result.quality);
+          showToast(`ดึงข้อมูลจาก PDF สำเร็จ: ${result.rows.length} รายการ (คุณภาพ ${(q.score*100).toFixed(0)}%)`, 'success');
+        } else {
+          // quality ต่ำ → fallback ไป AI scan modal
+          console.warn('[PDF] Quality low:', q);
+          showToast(`อ่าน PDF ตรงๆ ไม่สำเร็จ (quality ${(q.score*100).toFixed(0)}%) — กำลังเปิด AI scan modal...`, 'info');
+          // เก็บไฟล์ไว้ใน state แล้วเปิด AI scan modal พร้อม preloaded file
+          if (typeof window._stagePdfForAiScan === 'function') {
+            window._stagePdfForAiScan(file);
+          } else if (typeof window.openAIScan === 'function') {
+            // fallback: ตั้ง file ผ่าน global var แล้วเปิด modal
+            window.openAIScan();
+            setTimeout(() => {
+              const inp = document.getElementById('boq-image-input');
+              if (inp) {
+                const dt = new DataTransfer();
+                dt.items.add(file);
+                inp.files = dt.files;
+                inp.dispatchEvent(new Event('change', { bubbles: true }));
+              }
+            }, 100);
+          }
+        }
+      } catch (err) {
+        console.error('[PDF upload]', err);
+        showToast('อ่าน PDF ไม่สำเร็จ: ' + (err.message || err), 'error');
+      }
+    },
+
+    /**
+     * Import extracted PDF rows → state.sheets
+     * ใช้รูปแบบเดียวกับ buildSheetsFromAiScan แต่ไม่มี supplier columns
+     */
+    importPdfRows(rows, fileName, quality) {
+      const sheets = buildSheetsFromPdfRows(rows, fileName, quality);
+      state.fileName = '[PDF] ' + fileName;
+      state.workName = sheets[0].workLine || state.workName;
+      state.thresholdLabel = '';
+      state.sheets = sheets;
+      state.activeSheetIdx = 0;
+      state.winnerByItem = {};
+      state.conclusionSupplier = '';
+      state.conclusionReason = '';
+      state._sheetsOmitted = false;
+      renderUploadCard();
+      renderComparisonView();
+      persistState();
+      return { itemCount: sheets[0].items.length };
     },
 
     loadDemo() {

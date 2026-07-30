@@ -740,10 +740,12 @@
 
   <script src="config.local.js" onerror="console.warn('[config.local.js] ไม่พบไฟล์ — หากต้องการใช้ API key ส่วนตัว ให้ copy config.local.js.example เป็น config.local.js (gitignored)')"></script>
   <script src="vendor/exceljs.min.js"></script>
+  <script src="vendor/pdf.min.js" onerror="console.warn('[pdf.min.js] ไม่พบไฟล์ — ฟีเจอร์อัปโหลด BOQ จาก PDF จะถูก disable')"></script>
   <script src="js/compare-excel-export.js"></script>
   <script src="js/supplier-comparison.js"></script>
   <script src="js/purchase-history-sap.js" onerror="console.warn('[purchase-history-sap.js] ไม่พบไฟล์ — ฟีเจอร์ SAP avg/min/max จะถูก disable')"></script>
   <script src="js/fuzzy-match-sap.js" onerror="console.warn('[fuzzy-match-sap.js] ไม่พบไฟล์ — ฟีเจอร์ SAP avg/min/max จะถูก disable')"></script>
+  <script src="js/pdf-table-extract.js" onerror="console.warn('[pdf-table-extract.js] ไม่พบไฟล์ — ฟีเจอร์อัปโหลด BOQ จาก PDF จะถูก disable')"></script>
   <script>
     // Demo mode toggle — guarded (js/demo.js ถูกลบไปแล้ว ถ้าไม่มีก็ข้าม)
     try {
@@ -923,6 +925,47 @@
         document.getElementById('scan-trigger-btn').disabled = false;
         document.getElementById('extracted-list').innerHTML = `
           <div style="padding:24px;text-align:center;color:#94a3b8;font-size:12px;">รอการสแกน...</div>
+        `;
+        document.getElementById('scan-confirm-btn').disabled = true;
+      };
+
+      /**
+       * เปิด AI scan modal พร้อม preloaded PDF file
+       * เรียกจาก handlePdfUpload() เมื่อ parse ตรงไม่ผ่าน
+       */
+      window._stagePdfForAiScan = function (file) {
+        if (!file) return;
+        // เปิด modal ก่อน
+        openAIScan();
+        // ตั้ง _aiScanFile โดยตรง + แสดง preview
+        _aiScanFile = file;
+        _aiScanFileName = file.name;
+        _aiScanData = null;
+
+        const preview = document.getElementById('paper-preview');
+        preview.classList.remove('scanning');
+        preview.classList.add('image-mode');
+        const oldImg = preview.querySelector('img');
+        if (oldImg) oldImg.remove();
+        const img = document.createElement('img');
+        img.src = URL.createObjectURL(file);
+        preview.appendChild(img);
+        document.getElementById('paper-project').textContent = file.name + ' (PDF — fallback)';
+        document.getElementById('paper-rows').innerHTML = '';
+        document.querySelectorAll('.source-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById('source-upload-btn').classList.add('active');
+
+        document.getElementById('scan-status').className = 'scan-status';
+        document.getElementById('scan-status-pulse').style.display = '';
+        document.getElementById('scan-status-lbl').textContent = 'พร้อมสแกน (PDF)';
+        document.getElementById('scan-status-lbl').style.color = '';
+        document.getElementById('scan-detail').textContent = 'Parse ตรงจาก PDF ไม่สำเร็จ — ใช้ AI scan แทน';
+        document.getElementById('scan-trigger-btn').disabled = false;
+        document.getElementById('extracted-list').innerHTML = `
+          <div style="padding:24px;text-align:center;color:#94a3b8;font-size:12px;">
+            <div style="font-size:32px;margin-bottom:6px;">📄</div>
+            ไฟล์ PDF พร้อมสแกน — กดปุ่ม "สแกนด้วย AI"
+          </div>
         `;
         document.getElementById('scan-confirm-btn').disabled = true;
       };
