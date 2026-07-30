@@ -365,7 +365,12 @@
       const ws = wb.Sheets[sheetName];
       const aoa = XLSX.utils.sheet_to_json(ws, { header: 1, raw: true, defval: '' });
 
-      const parsed = parseSheet(aoa, sheetName);
+      // primary: full Blessini layout (with supplier comparison columns)
+      let parsed = parseSheet(aoa, sheetName);
+      // fallback: simple BOQ (ลำดับ/รายการ/จำนวน/หน่วย/ราคา — ไม่มี supplier)
+      if (!parsed) {
+        parsed = parseSimpleBOQ(aoa, sheetName);
+      }
       if (parsed) sheets.push(parsed);
     }
 
@@ -379,6 +384,118 @@
       workName: workLine,
       thresholdLabel: projectLine,
       sheets: sheets,
+    };
+  }
+
+  /* ============================================================
+     PARSER (fallback) — Simple BOQ format (ลำดับ/รายการ/จำนวน/หน่วย/ราคา)
+     ใช้กรณี user upload mock BOQ ที่ไม่มี supplier comparison columns
+     (เช่น BOQ master จากวิศวกร/ผู้ออกแบบ)
+     → สร้าง 1 "BOQ" supplier entry จากราคากลาง
+     ============================================================ */
+  function parseSimpleBOQ(aoa, sheetName) {
+    if (!aoa || aoa.length < 2) return null;
+
+    // ---------- 1) หา header row + column positions ----------
+    const COL = { no: -1, name: -1, qty: -1, unit: -1, price: -1, total: -1 };
+    let headerRow = -1;
+    for (let r = 0; r < Math.min(8, aoa.length); r++) {
+      const row = aoa[r] || [];
+      let hits = 0;
+      const cFound = { ...COL };
+      for (let c = 0; c < row.length; c++) {
+        const cell = String(row[c] || '').trim();
+        if (!cell) continue;
+        if (cFound.no < 0 && /^(ลำดับ|ที่|ลําดับ|No\.?|#)$/i.test(cell)) { cFound.no = c; hits++; }
+        else if (cFound.name < 0 && /รายการ|รายละเอียด|Description/i.test(cell)) { cFound.name = c; hits++; }
+        else if (cFound.qty < 0 && /^(จำนวน|ปริมาณ|จํานวน|Quantity|Qty|qty\.?)$/i.test(cell)) { cFound.qty = c; hits++; }
+        else if (cFound.unit < 0 && /^(หน่วย|Unit)$/i.test(cell)) { cFound.unit = c; hits++; }
+        else if (cFound.price < 0 && /(ราคา.*หน่วย|ราคากลาง|Unit\s*Price|unit\s*price|BOQ|^ราคา$)/i.test(cell)) {
+          cFound.price = c; hits++;
+        }
+        else if (cFound.total < 0 && /^(จำนวนเงิน|ราคารวม|รวมเงิน|รวม|Total|Amount)$/i.test(cell)) {
+          cFound.total = c; hits++;
+        }
+      }
+      // ต้องเจอ ≥3 keywords และมี name + qty
+      if (hits >= 3 && cFound.name >= 0 && cFound.qty >= 0) {
+        headerRow = r;
+        Object.assign(COL, cFound);
+        break;
+      }
+    }
+    if (headerRow < 0 || COL.name < 0 || COL.qty < 0) return null;
+
+    // ---------- 2) หา project/work title (แถวก่อน header) ----------
+    let projectLine = '';
+    let workLine = '';
+    for (let r = 0; r < headerRow; r++) {
+      const row = aoa[r] || [];
+      const cells = row.filter(c => c !== '' && c !== null && c !== undefined);
+      if (cells.length === 0) continue;
+      const text = cells.map(c => String(c).trim()).filter(Boolean).join(' ');
+      if (r === 0 && text) projectLine = text;
+      if (/งาน|วงกบ|ประตู|ผนัง|พื้น|หลังคา|ระบบ|อาคาร|โครงการ|ก่อสร้าง/i.test(text)) {
+        workLine = text;
+      }
+    }
+
+    // ---------- 3) ดึง items ----------
+    const items = [];
+    for (let r = headerRow + 1; r < aoa.length; r++) {
+      const row = aoa[r] || [];
+      const no = COL.no >= 0 ? num(row[COL.no]) : null;
+      const name = String(row[COL.name] || '').trim();
+      const qtyRaw = COL.qty >= 0 ? num(row[COL.qty]) : null;
+      const unit = COL.unit >= 0 ? String(row[COL.unit] || '').trim() : '';
+      const priceRaw = COL.price >= 0 ? num(row[COL.price]) : null;
+      const totalRaw = COL.total >= 0 ? num(row[COL.total]) : null;
+
+      // skip empty rows
+      if (!name && qtyRaw == null && priceRaw == null) continue;
+      // skip summary rows
+      if (/^รวม|ราคารวม|รวมทั้งสิ้น|^Sub.?total/i.test(name)) continue;
+
+      const qty = qtyRaw != null && qtyRaw > 0 ? qtyRaw : 1;
+      const price = priceRaw != null && priceRaw > 0 ? priceRaw : 0;
+      const total = totalRaw != null && totalRaw > 0 ? totalRaw : (price * qty);
+
+      if (!name && price === 0) continue;
+
+      items.push({
+        idx: items.length,
+        wd: '',
+        wdNo: no != null ? String(no) : '',
+        wdTitle: '',
+        group: '',
+        groupQty: 1,
+        groupUnit: unit || 'ชุด',
+        name: name || `รายการที่ ${items.length + 1}`,
+        qty: qty,
+        unit: unit || 'ชุด',
+        // simple BOQ: มีแค่ BOQ supplier 1 รายการ (ราคากลาง)
+        suppliers: [{
+          name: 'BOQ',
+          price: price,
+          total: total,
+          isBOQ: true,
+        }],
+        boq: price,
+        boqTotal: total,
+      });
+    }
+
+    if (items.length === 0) return null;
+
+    return {
+      name: sheetName,
+      projectLine: projectLine,
+      workLine: workLine || projectLine,
+      items: items,
+      supplierNames: ['BOQ'],
+      hasBOQ: true,
+      isFinalShortlist: true,
+      _format: 'simple-boq',
     };
   }
 
