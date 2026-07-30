@@ -177,14 +177,13 @@ window.SAMPLE_DATA = {
     }
   ],
 
-  /* ---------- ประวัติการซื้อจริง (ย้อนหลัง) — ใช้เปรียบเทียบกับการซื้อใหม่ ---------- */
-  // ลบ sample data แล้ว — ใช้ js/purchase-history-sap.js แทน (51,071 รายการจาก SAP Export 4000)
-  // แต่ละ record = การซื้อจริง 1 ครั้ง จากโครงการหนึ่ง
-  // ระบบจะคำนวณ avg/min/max อัตโนมัติ เพื่อเทียบกับราคาที่เสนอใหม่
-  // aliases = ชื่อเรียกอื่นๆ ที่อาจปรากฏใน BOQ โครงการใหม่ (ใช้กับ Fuzzy Matching)
-  // unitConversions = ตารางแปลงหน่วย (1 sourceUnit = factor targetUnit) — ใช้เมื่อ BOQ ใช้หน่วยต่างจากประวัติ
-  // records[i].freight = ค่าขนส่งรวมของ order นี้ (บาท)
-  // records[i].creditDays = เครดิตที่ได้ (วัน)
+  /* ---------- ประวัติการซื้อจริง (ย้อนหลัง) — ไม่มีในตัวอย่างนี้ ----------
+     หน้าเปรียบเทียบราคา (alerts.html → supplier-comparison.js) ทำงานจาก
+     ไฟล์ .xlsx ที่ผู้ใช้อัปโหลดเท่านั้น — ไม่ต้องพึ่งประวัติการซื้อย้อนหลัง
+     ถ้าต้องการเพิ่ม avg/min/max price ให้ดึงจาก SAP Export 4000 ภายหลัง
+     ให้สร้าง purchasePlans/proposedPrice ใหม่ใน source หรือ hydrate
+     ผ่าน localStorage key 'procurement:supplier-compare:v2' ของ supplier-comparison module
+  */
   /* ---------- รายการที่กำลังจะสั่งซื้อ (ต้องตัดสินใจ) ---------- */
   // proposedPrice จะถูกนำไปเทียบกับราคาเฉลี่ยใน purchaseHistory
   purchasePlans: [
