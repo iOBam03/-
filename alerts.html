@@ -301,7 +301,17 @@
 
     /* ========== AI Scan Modal ========== */
     .ai-scan-modal { width: 100%; max-width: 880px; }
-    .ai-scan-body { padding: 16px 20px 20px; }
+    .ai-scan-body {
+      padding: 16px 20px 20px;
+      /* ทำให้ body กลายเป็น scroll area (คล้าย .modal-body) เพื่อแก้ปัญหา
+         .scan-actions/ปุ่ม "นำเข้าข้อมูล" ถูก clip ออกด้านล่างเมื่อ viewport สั้น
+         flex: 1 + min-height: 0 จำเป็นต่อการยุบตัวใน flex column */
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+    }
 
     .scan-stage {
       display: grid; grid-template-columns: 1fr 1fr; gap: 14px;
@@ -437,8 +447,16 @@
 
     .scan-actions {
       display: flex; gap: 8px; justify-content: flex-end;
-      margin-top: 14px; padding-top: 14px;
+      margin-top: 14px; padding: 12px 14px;
       border-top: 1px solid #e3e8ef;
+      /* sticky ไว้ที่ bottom ของ .ai-scan-body เพื่อให้ผู้ใช้เห็นปุ่ม
+         "ยกเลิก"/"นำเข้าข้อมูล" เสมอ แม้ scroll ดูรายการยาว ๆ */
+      position: sticky;
+      bottom: -20px; /* ชดเชย padding-bottom ของ .ai-scan-body */
+      background: #fff;
+      z-index: 2;
+      flex-shrink: 0;
+      box-shadow: 0 -8px 14px -10px rgba(15, 23, 42, 0.18);
     }
 
     /* ========== API Key bar (Gemini) ========== */
