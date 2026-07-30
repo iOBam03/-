@@ -843,9 +843,12 @@
   function renderFileInfoBar() {
     const supplierCount = getSupplierCount();
     const itemCount = getActiveItems().length;
-    const sheetOptions = state.sheets.map((s, i) =>
+    // Dropdown เลือกเวอร์ชัน Sheet — แสดงเฉพาะตอนไฟล์มี ≥ 2 Sheet
+    // (ส่วนใหญ่ผู้ใช้อัปโหลดไฟล์ BOQ ที่มี Sheet เดียว → ไม่ต้องเห็น dropdown)
+    const hasMultipleSheets = state.sheets.length > 1;
+    const sheetOptions = hasMultipleSheets ? state.sheets.map((s, i) =>
       `<option value="${i}" ${i === state.activeSheetIdx ? 'selected' : ''}>${escapeHtml(s.name)}${s.isFinalShortlist ? ' ★ (ฉบับสุดท้าย)' : ''}</option>`
-    ).join('');
+    ).join('') : '';
 
     return `
       <div class="file-info-bar">
@@ -863,14 +866,11 @@
           <div class="detail">
             งาน: <strong>${escapeHtml(state.workName || '—')}</strong>
             · ${supplierCount} ผู้ขาย
-            · ${itemCount} รายการ
-            · ${state.sheets.length} ฉบับ
+            · ${itemCount} รายการ${hasMultipleSheets ? ` · ${state.sheets.length} ฉบับ` : ''}
           </div>
         </div>
         <div style="display:flex;gap:8px;align-items:center;">
-          <select class="form-control" style="padding:6px 10px;font-size:12px;" onchange="SupplierCompareController.switchSheet(parseInt(this.value))">
-            ${sheetOptions}
-          </select>
+          ${hasMultipleSheets ? `<select class="form-control" title="เลือกเวอร์ชัน BOQ" style="padding:6px 10px;font-size:12px;" onchange="SupplierCompareController.switchSheet(parseInt(this.value))">${sheetOptions}</select>` : ''}
           <button class="btn" onclick="SupplierCompareController.clear()">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M18 6L6 18M6 6l12 12"/>
