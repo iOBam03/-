@@ -591,9 +591,19 @@
   //
   // state shape: state.multiBOQ.slots = [{ id, supplierName, fileId|null }]
   //               state.multiBOQ.files = [{ id, fileName, supplierName, items }]
+  //
+  // state resolution order:
+  //   1) window.SupplierCompareState (legacy alias)
+  //   2) window.MultiBOQ._stateRef (modern — set by renderUploadCard)
+  //   3) fallback → renderUploadPrompt (กัน error)
   // ──────────────────────────────────────────────────────────────
   function renderSlotGrid() {
-    const state = (typeof window !== 'undefined' && window.SupplierCompareState) || null;
+    let state = null;
+    if (typeof window !== 'undefined') {
+      state = window.SupplierCompareState
+          || (window.MultiBOQ && window.MultiBOQ._stateRef)
+          || null;
+    }
     if (!state || !state.multiBOQ) {
       return renderUploadPrompt();
     }

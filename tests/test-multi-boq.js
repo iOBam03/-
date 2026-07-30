@@ -9,6 +9,9 @@ const path = require('path');
 globalThis.window = globalThis;
 require('../js/fuzzy-match-sap.js');
 const MultiBOQ = require('../js/multi-boq.js');
+// ใน browser MultiBOQ ถูก expose ผ่าน window.MultiBOQ — replicate ใน node เพื่อให้ test path
+// resolution (SupplierCompareState → MultiBOQ._stateRef) ทำงานได้
+globalThis.MultiBOQ = MultiBOQ;
 
 let pass = 0, fail = 0;
 function check(label, cond, detail) {
@@ -543,6 +546,36 @@ console.log('\n[renderFileList = renderSlotGrid (alias)]');
   const a = MultiBOQ.renderFileList();
   const b = MultiBOQ.renderSlotGrid();
   check('renderFileList === renderSlotGrid', a === b);
+}
+
+console.log('\n[renderSlotGrid — fallback resolution ลำดับสำคัญ]');
+{
+  // 1) SupplierCompareState (legacy alias)
+  if (globalThis.MultiBOQ) globalThis.MultiBOQ._stateRef = null;
+  globalThis.SupplierCompareState = mkState();
+  MultiBOQ.ensureSlots(globalThis.SupplierCompareState);
+  const htmlViaSCS = MultiBOQ.renderSlotGrid();
+  check('path 1: SupplierCompareState → มี grid', /supplier-slot-grid/.test(htmlViaSCS));
+
+  // 2) ลบ SupplierCompareState → fallback ผ่าน MultiBOQ._stateRef
+  globalThis.SupplierCompareState = null;
+  if (globalThis.MultiBOQ) {
+    globalThis.MultiBOQ._stateRef = mkState();
+    MultiBOQ.ensureSlots(globalThis.MultiBOQ._stateRef);
+  }
+  const htmlViaSR = MultiBOQ.renderSlotGrid();
+  check('path 2: MultiBOQ._stateRef → มี grid', /supplier-slot-grid/.test(htmlViaSR));
+
+  // 3) ไม่มี state → fallback ไป renderUploadPrompt (ไม่ crash)
+  if (globalThis.MultiBOQ) globalThis.MultiBOQ._stateRef = null;
+  globalThis.SupplierCompareState = null;
+  const htmlFallback = MultiBOQ.renderSlotGrid();
+  check('path 3: ไม่มี state → fallback upload prompt (ไม่ crash)',
+    /อัปโหลด BOQ จากผู้ขาย 2-6/.test(htmlFallback));
+
+  // cleanup
+  globalThis.SupplierCompareState = undefined;
+  if (globalThis.MultiBOQ) globalThis.MultiBOQ._stateRef = undefined;
 }
 
 console.log(`\n${'='.repeat(50)}`);
