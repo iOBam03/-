@@ -90,27 +90,6 @@ window.SAMPLE_DATA = {
       projectManager: 'คุณอรุณ สว่างวงศ์',
       siteForeman: 'คุณชัยวัฒน์ แข็งแรง',
       blocks: ['Block A', 'Block B']
-    },
-    {
-      id: 'PRJ-2566-OFC',
-      name: 'ทิพยประกันภัย สาขาอุบลราชธานี',
-      location: 'อ.เมืองอุบลราชธานี จ.อุบลราชธานี',
-      type: 'ปรับปรุงอาคารสำนักงาน 2 ชั้น',
-      landArea: 'อาคารสำนักงาน',
-      totalUnits: 1,
-      completedUnits: 0,
-      inProgressUnits: 1,
-      notStartedUnits: 0,
-      startDate: '2566-05-23',
-      expectedFinish: '2566-12-31',
-      contractValue: 6300000,
-      spent: 0,
-      currentPhase: 'งานตกแต่งภายใน ชั้น 1',
-      phaseProgress: 0,
-      status: 'in-progress',
-      projectManager: 'รอข้อมูลจาก พี่ตะวัน',
-      siteForeman: 'รอข้อมูลจาก พี่ตะวัน',
-      blocks: ['ชั้น 1', 'ชั้น 2']
     }
   ],
 
