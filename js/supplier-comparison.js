@@ -58,7 +58,32 @@
     selectedTermsVendorIdx: null,  // idx ของ vendor ที่เลือกในหน้า terms (null = auto)
     extraTermsVendors: [],        // [{ id, name, terms: {key:value} }] — vendor ที่เพิ่มเอง
     sortByCheapest: false,        // toggle: เรียงแถวตามราคาต่ำสุด (ถูกสุดอยู่บน)
+
+    // ── NEW: mode discriminator ───────────────────────────────
+    mode: 'single',                      // 'single' | 'multi-boq'
+
+    // ── NEW: multi-BOQ sub-state ──────────────────────────────
+    multiBOQ: {
+      workName: '',
+      thresholdLabel: '',
+      files: [],                         // [{ id, fileName, supplierName, items:[{name,qty,unit,price,total}], _format:'simple-boq' }]
+      groups: [],                        // [{ id, canonicalName, unit, qty, members, vendorPrices, winnerIdx }]
+      fileOrder: [],                     // supplier names in upload order (column order)
+      matchThreshold: 0.62,
+      conclusionSupplier: '',
+      conclusionReason: '',
+      terms: {},                         // { vendorName: {key:value} }
+      extraTermsVendors: [],
+    },
   };
+
+  // sync window.__multiBOQState ให้ multi-boq.js DOM helpers อ่านได้
+  function syncMultiBOQState() {
+    if (typeof window !== 'undefined') {
+      window.__multiBOQState = state.multiBOQ;
+      window.__supplierState = state;
+    }
+  }
 
   /* ---------- Persistence (localStorage) — กัน state หายตอนสลับหน้า ---------- */
   let _persistTimer = null;
@@ -742,8 +767,22 @@
     const c = document.getElementById('supplierComparisonUploadSection');
     if (!c) return;
 
-    const hasData = state.sheets.length > 0;
+    // sync state → window.__multiBOQState (ให้ MultiBOQ.renderFileList อ่านได้)
+    syncMultiBOQState();
 
+    // multi-boq mode
+    if (state.mode === 'multi-boq') {
+      const hasData = (state.multiBOQ.files || []).length > 0;
+      if (hasData) {
+        c.innerHTML = window.MultiBOQ ? window.MultiBOQ.renderFileList() : renderUploadPrompt();
+      } else {
+        c.innerHTML = window.MultiBOQ ? window.MultiBOQ.renderUploadPrompt() : renderUploadPrompt();
+      }
+      return;
+    }
+
+    // single mode (เดิม)
+    const hasData = state.sheets.length > 0;
     if (hasData) {
       c.innerHTML = renderFileInfoBar();
     } else {
@@ -1460,6 +1499,10 @@
      EXPORT PAYLOAD — แปลง state ให้เป็น input ของ compare-excel-export
      ============================================================ */
   function buildExportPayload() {
+    if (state.mode === 'multi-boq') {
+      if (!window.MultiBOQ) throw new Error('MultiBOQ module ยังไม่ได้โหลด');
+      return window.MultiBOQ.buildExportPayload(state);
+    }
     const sheet = state.sheets[state.activeSheetIdx];
     if (!sheet) throw new Error('ยังไม่ได้เลือก sheet');
 
@@ -1571,14 +1614,48 @@
   /* ============================================================
      HELPERS
      ============================================================ */
+  /* ============================================================
+     ADAPTER — ให้ renderer เดิมรับได้ทั้ง single + multi-boq mode
+     ============================================================ */
+  function getActiveSource() {
+    if (state.mode === 'multi-boq') {
+      syncMultiBOQState();
+      const m = state.multiBOQ;
+      const items = (window.MultiBOQ && window.MultiBOQ.flattenMultiToItems)
+        ? window.MultiBOQ.flattenMultiToItems(m)
+        : [];
+      const suppliers = (m.fileOrder || []).map((name, i) => ({ name, idx: i, isBOQ: false }));
+      return {
+        kind: 'multi-boq',
+        workName: m.workName || '',
+        thresholdLabel: m.thresholdLabel || '',
+        fileName: (m.files || []).map(f => f.fileName).join(', '),
+        items: items,
+        suppliers: suppliers,
+      };
+    }
+    // single mode (เดิม)
+    const sheet = state.sheets[state.activeSheetIdx];
+    const items = sheet ? sheet.items : [];
+    const suppliers = items.length
+      ? items[0].suppliers.map((s, i) => ({ ...s, idx: i }))
+      : [];
+    return {
+      kind: 'single',
+      workName: state.workName,
+      thresholdLabel: state.thresholdLabel,
+      fileName: state.fileName,
+      items: items,
+      suppliers: suppliers,
+      sheet: sheet,
+    };
+  }
+
   function getActiveItems() {
-    const s = state.sheets[state.activeSheetIdx];
-    return s ? s.items : [];
+    return getActiveSource().items;
   }
   function getActiveSuppliers() {
-    const items = getActiveItems();
-    if (items.length === 0) return [];
-    return items[0].suppliers.map((s, i) => ({ ...s, idx: i }));
+    return getActiveSource().suppliers;
   }
   function getSupplierCount() {
     return getActiveSuppliers().length;
@@ -1598,9 +1675,18 @@
     init() {
       // restore state จาก localStorage ก่อน (กัน state หายตอนสลับหน้า)
       const restored = restoreState();
+      // default mode = single ถ้า state เก่าไม่มี mode
+      if (!state.mode) state.mode = 'single';
+      // sync ตัวแปร global
+      syncMultiBOQState();
+      // update tab UI ให้ตรงกับ state.mode
+      updateModeTabsUI();
       renderUploadCard();
       // ถ้ามี sheets ครบ → render ตารางเปรียบเทียบด้วย
-      if (restored && state.sheets && state.sheets.length > 0) {
+      const hasData = (state.mode === 'multi-boq')
+        ? (state.multiBOQ && state.multiBOQ.groups && state.multiBOQ.groups.length > 0)
+        : (state.sheets && state.sheets.length > 0);
+      if (restored && hasData) {
         renderComparisonView();
         if (state._sheetsOmitted) {
           showToast('กู้คืนข้อมูลบางส่วน — กรุณาอัปโหลดไฟล์อีกครั้งเพื่อคืนตารางเปรียบเทียบ', 'info');
@@ -1609,6 +1695,11 @@
     },
 
     handleFileUpload(event) {
+      // multi-boq mode → route ไป handler ใหม่
+      if (state.mode === 'multi-boq') {
+        return this.handleMultiFileUpload(event);
+      }
+
       const file = event.target.files[0];
       if (!file) return;
       const ext = (file.name.split('.').pop() || '').toLowerCase();
@@ -1800,6 +1891,15 @@
       state.winnerByItem = {};
       state.conclusionSupplier = '';
       state.conclusionReason = '';
+      // reset multi-BOQ sub-state ด้วย (ล้างทั้ง 2 โหมด กัน state leak)
+      state.multiBOQ = {
+        workName: '', thresholdLabel: '',
+        files: [], groups: [], fileOrder: [],
+        matchThreshold: 0.62,
+        conclusionSupplier: '', conclusionReason: '',
+        terms: {}, extraTermsVendors: [],
+      };
+      syncMultiBOQState();
       renderUploadCard();
       renderComparisonView();
       persistState();
@@ -1939,9 +2039,196 @@
       window.print();
     },
 
+    // ─────────────────────────────────────────────
+    // MULTI-BOQ mode handlers
+    // ─────────────────────────────────────────────
+
+    /**
+     * Multi-BOQ: handle multi-file upload
+     * รับ event จาก <input type="file" multiple> ทั้งใน upload prompt + file list
+     */
+    async handleMultiFileUpload(event) {
+      if (!window.MultiBOQ) {
+        showToast('Multi-BOQ module ยังโหลดไม่เสร็จ', 'error');
+        return;
+      }
+      const files = Array.from(event.target.files || []);
+      if (!files.length) return;
+      // reset input value เพื่อให้เลือกไฟล์เดิมซ้ำได้
+      try { event.target.value = ''; } catch (e) { /* ignore */ }
+
+      let added = 0, failed = 0;
+      for (const file of files) {
+        if (state.multiBOQ.files.length >= 6) {
+          showToast('ไม่เกิน 6 ไฟล์ — ข้ามไฟล์ที่เกิน', 'info');
+          break;
+        }
+        const ext = (file.name.split('.').pop() || '').toLowerCase();
+        if (ext !== 'xlsx') {
+          showToast(`ข้าม ${file.name} — รองรับเฉพาะ .xlsx`, 'info');
+          continue;
+        }
+        try {
+          const buf = await file.arrayBuffer();
+          const parsed = window.MultiBOQ.parseSupplierFile(buf, { fileName: file.name });
+          parsed.id = 'f' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+          state.multiBOQ.files.push(parsed);
+          added++;
+        } catch (err) {
+          console.error('[multi-boq upload]', err);
+          showToast(`อ่านไฟล์ ${file.name} ไม่สำเร็จ: ${err.message}`, 'error');
+          failed++;
+        }
+      }
+      if (added > 0) {
+        // invalidate groups (ต้อง re-match)
+        state.multiBOQ.groups = [];
+        renderUploadCard();
+        renderComparisonView();
+        persistState();
+        showToast(`เพิ่มไฟล์สำเร็จ ${added} ไฟล์${failed ? ` (ล้มเหลว ${failed})` : ''}`, 'success');
+      }
+    },
+
+    /**
+     * เปลี่ยนชื่อ supplier ใน file list
+     */
+    renameSupplierFile(fileIdx, newName) {
+      if (!window.MultiBOQ) return;
+      newName = String(newName || '').trim();
+      if (!newName) {
+        showToast('ชื่อผู้ขายต้องไม่ว่าง', 'error');
+        renderUploadCard();
+        return;
+      }
+      // ห้ามซ้ำ
+      const dupe = state.multiBOQ.files.some((f, i) => i !== fileIdx && f.supplierName === newName);
+      if (dupe) {
+        showToast(`มี supplier "${newName}" อยู่แล้ว — กรุณาใช้ชื่ออื่น`, 'error');
+        renderUploadCard();
+        return;
+      }
+      window.MultiBOQ.setSupplierName(state, fileIdx, newName);
+      renderUploadCard();
+      renderComparisonView();
+      persistState();
+    },
+
+    /**
+     * ลบไฟล์ supplier ออก
+     */
+    removeSupplierFile(fileIdx) {
+      if (!window.MultiBOQ) return;
+      if (!confirm('ลบไฟล์นี้? (กลุ่มที่จับคู่ไว้จะถูก reset)')) return;
+      window.MultiBOQ.removeFile(state, fileIdx);
+      renderUploadCard();
+      renderComparisonView();
+      persistState();
+    },
+
+    /**
+     * ปรับ threshold + re-run matching
+     */
+    updateMatchThreshold(v) {
+      state.multiBOQ.matchThreshold = v;
+      // ไม่ auto re-match ให้ user กดปุ่มเอง (อย่างไรก็ตาม update label ใน UI ให้ตรง)
+      persistState();
+    },
+
+    /**
+     * จับคู่รายการอัตโนมัติ
+     */
+    runMatching() {
+      if (!window.MultiBOQ) {
+        showToast('Multi-BOQ module ยังโหลดไม่เสร็จ', 'error');
+        return;
+      }
+      if (state.multiBOQ.files.length < 2) {
+        showToast('ต้องอัปโหลดอย่างน้อย 2 ไฟล์', 'error');
+        return;
+      }
+      try {
+        const t0 = performance.now();
+        window.MultiBOQ.runMatching(state);
+        const ms = (performance.now() - t0).toFixed(0);
+        const matched = state.multiBOQ.groups.filter(g => g.vendorPrices.filter(vp => vp.source === 'file').length > 1).length;
+        const total = state.multiBOQ.groups.length;
+        showToast(`จับคู่สำเร็จ: ${total} กลุ่ม (${matched} กลุ่มมีหลาย supplier, ${ms} ms)`, 'success');
+        renderUploadCard();
+        renderComparisonView();
+        persistState();
+      } catch (err) {
+        console.error('[runMatching]', err);
+        showToast('จับคู่ไม่สำเร็จ: ' + err.message, 'error');
+      }
+    },
+
+    /**
+     * แสดง/ซ่อน group review panel
+     */
+    _groupReviewVisible: false,
+    toggleGroupReview() {
+      this._groupReviewVisible = !this._groupReviewVisible;
+      const c = document.getElementById('supplierComparisonUploadSection');
+      if (!c) return;
+      // แทรก/ลบ review panel หลัง upload card
+      const existing = document.getElementById('multiBoqGroupReview');
+      if (this._groupReviewVisible && state.multiBOQ.groups.length) {
+        if (!existing) {
+          const div = document.createElement('div');
+          div.id = 'multiBoqGroupReview';
+          div.innerHTML = window.MultiBOQ.renderGroupReview();
+          c.appendChild(div);
+        }
+      } else if (existing) {
+        existing.remove();
+      }
+    },
+
+    /**
+     * สลับโหมด single ↔ multi-boq
+     */
+    switchMode(mode) {
+      if (mode !== 'single' && mode !== 'multi-boq') return;
+      if (state.mode === mode) {
+        // update tab UI anyway
+        updateModeTabsUI();
+        return;
+      }
+      const hasSingleData = state.sheets && state.sheets.length > 0;
+      const hasMultiData = state.multiBOQ && state.multiBOQ.files && state.multiBOQ.files.length > 0;
+      if (hasSingleData || hasMultiData) {
+        if (!confirm('สลับโหมดจะล้างข้อมูลของโหมดอื่น — ต้องการดำเนินการต่อหรือไม่?')) {
+          updateModeTabsUI();
+          return;
+        }
+        this.clear();
+      }
+      state.mode = mode;
+      updateModeTabsUI();
+      renderUploadCard();
+      renderComparisonView();
+      persistState();
+    },
+
     // For testing / external access
     _state: state,
   };
+
+  // sync UI ของ tab ให้ตรงกับ state.mode
+  function updateModeTabsUI() {
+    if (typeof document === 'undefined') return;
+    document.querySelectorAll('.mode-tab').forEach(btn => {
+      const m = btn.getAttribute('data-mode');
+      if (m === state.mode) {
+        btn.setAttribute('aria-selected', 'true');
+        btn.classList.add('active');
+      } else {
+        btn.setAttribute('aria-selected', 'false');
+        btn.classList.remove('active');
+      }
+    });
+  }
 
   window.SupplierCompareController = controller;
 })();
