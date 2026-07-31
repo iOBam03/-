@@ -948,7 +948,13 @@
   function renderComparisonView() {
     const sec = document.getElementById('supplierComparisonSection');
     if (!sec) return;
-    if (state.sheets.length === 0) {
+    // ตรวจว่ามี data พอแสดงหรือไม่ — single mode ใช้ state.sheets, multi-boq ใช้ state.multiBOQ.groups
+    const hasSingle = state.sheets.length > 0;
+    const hasMultiBOQ = state.mode === 'multi-boq'
+      && state.multiBOQ
+      && state.multiBOQ.groups
+      && state.multiBOQ.groups.length > 0;
+    if (!hasSingle && !hasMultiBOQ) {
       sec.style.display = 'none';
       return;
     }

@@ -26,6 +26,8 @@ config.local.js
 *.xls
 !js/supplier-comparison.js
 !js/data.js
+# Allow mock fixtures สำหรับ test multi-BOQ comparison (generate by tools/generate-mock-multi-boq.js)
+!tests/fixtures/*.xlsx
 
 # Node / build artifacts (ไม่ใช้ในโปรเจคนี้ แต่กันไว้)
 node_modules/
